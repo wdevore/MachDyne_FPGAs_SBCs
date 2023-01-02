@@ -46,6 +46,13 @@ pack: ${BUILD_BIN}/hardware_out.config
 	${BUILD_BIN}/hardware_out.config \
 	--bit ${BUILD_BIN}/hardware.bit
 
+packsvf: ${BUILD_BIN}/hardware_out.config
+	@echo "##### SVF Packing..."
+	${ICESTORM_TOOLCHAIN}/bin/ecppack \
+	-v \
+	${BUILD_BIN}/hardware_out.config \
+	--svf ${BUILD_BIN}/hardware.svf
+
 # Currently doesn't work via Tigard.
 tigard: ${BUILD_BIN}/hardware_out.config
 	@echo "##### Uploading..."
@@ -58,3 +65,13 @@ tigard: ${BUILD_BIN}/hardware_out.config
 dfu: ${BUILD_BIN}/hardware_out.config
 	@echo "##### DFU Uploading..."
 	dfu-util -R -a 0 -D ${BUILD_BIN}/hardware.bit
+
+# make openocd 2> /media/RAMDisk/ocd.log
+#	-d 3
+# -quiet
+openocd: ${BUILD_BIN}/hardware.svf
+	openocd \
+	-f ../tigard-jtag.cfg \
+	-f ../lfe5u-45f.cfg \
+	-d3 \
+	-c "init; scan_chain; jtag cget ecp5.tap -idcode; svf -tap ecp5.tap -progress ${BUILD_BIN}/hardware.svf; exit"
