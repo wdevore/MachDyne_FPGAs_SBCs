@@ -13,3 +13,21 @@ Note: Remember to cross the Tx and Rx signals.
 Turn off "flow control" [Ctrl-a x o]
 
 ```$ minicom -b 115200 -o -D /dev/ttyUSB0```
+
+# UART
+```
+PMOD_A layout
+         B O
+         r r
+         o a
+         w n
+         n g
+           e
+      C      R
+      T  T R T
+      S  x x S
+  ____________ 
+ |+.-.4 .3.2.1|  Top
+ |+.-.10.9.8.7|  Bottom
+  ------------ 
+```

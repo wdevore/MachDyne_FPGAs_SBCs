@@ -7,19 +7,11 @@ set_io LED_A	G3
 
 #  PMOD_A layout
 #
-#        C      R
-#        T  T R T
-#        S  x x S
 #    ____________ 
 #   |+.-.4 .3.2.1|  Top
 #   |+.-.10.9.8.7|  Bottom
 #    ------------ 
-#           B O
-#           r r
-#           o a
-#           w n
-#           n g
-#             e
+
 # PMOD_A
 set_io -nowarn PMOD_A1  L4
 set_io -nowarn PMOD_A2  L1
