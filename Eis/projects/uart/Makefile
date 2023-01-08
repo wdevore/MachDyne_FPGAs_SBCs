@@ -1,6 +1,12 @@
 TOP_FILE = Top.sv
 
-SUB_MODULES_FILES =
+SUB_MODULES_FILES = \
+	Enums.sv \
+	../../../common/CDCSynchron.sv \
+	../../../common/UART_Defines.sv \
+	../../../common/UART_Enums.sv \
+	../../../common/UARTTx.sv \
+	../../../common/UARTRx.sv
 
 MODULES_FILES = ${SUB_MODULES_FILES} ${TOP_FILE}
 
@@ -9,6 +15,8 @@ BUILD_BIN = /media/RAMDisk
 ICESTORM_TOOLCHAIN = /usr/local
 
 YOSYS_COMMAND = "synth_ice40 -blif ${BUILD_BIN}/chip.blif -json ${BUILD_BIN}/hardware.json -top Top"
+
+TARGET_PORT = /dev/ttyACM0
 
 PINS_CONSTRAINTS = ../eis.pcf
 
@@ -42,9 +50,7 @@ explain: ${BUILD_BIN}/hardware.asc
 
 time: ${BUILD_BIN}/hardware.bin
 	icetime -tmd hx8k ${BUILD_BIN}/hardware.asc
-
-# Note: you need a udev rule:
-# ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="2e8a", ATTRS{idProduct}=="1025", MODE="0666", GROUP="plugdev" ENV{ID_MM_DEVICE_IGNORE}="1"
+	
 upload: ${BUILD_BIN}/hardware.asc
 	@echo "##### Packing..."
 	${ICESTORM_TOOLCHAIN}/bin/icepack ${BUILD_BIN}/hardware.asc ${BUILD_BIN}/hardware.bin

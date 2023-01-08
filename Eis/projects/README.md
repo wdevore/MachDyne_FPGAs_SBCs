@@ -83,35 +83,3 @@ cmake .. -DENABLE_CMSISDAP=OFF -DBUILD_STATIC=OFF -DENABLE_LIBGPIOD=OFF -DENABLE
 
 make -j$(nproc)
 
-# Ecp5
-- https://github.com/YosysHQ/prjtrellis
-- http://bygone.clairexen.net/icestorm/  related but not ECP5
-- https://github.com/YosysHQ/nextpnr
-- https://trabucayre.github.io/openFPGALoader/guide/install.html#install
-
-```
-cmake -DARCH=ecp5 -DTRELLIS_INSTALL_PREFIX=/usr/local .
-```
-
-```
-$ openFPGALoader --scan-usb
-
-found 17 USB device
-Bus device vid:pid       probe type      manufacturer serial               product
-001 037    0x0403:0x6010 FTDI2232        SecuringHardware.com TG1106c8             Tigard V1.1
-```
-
-# Tigard
-- https://github.com/tigard-tools/tigard
-
-# dfu-util
-
-```
-new full-speed USB device number 44 using xhci_hcd
-usb 1-1.4.1: New USB device found, idVendor=16d0, idProduct=116d, bcdDevice= 0.00
-usb 1-1.4.1: New USB device strings: Mfr=1, Product=2, SerialNumber=3
-usb 1-1.4.1: Product: Schoko DFU Bootloader
-usb 1-1.4.1: Manufacturer: Lone Dynamics Corporation
-usb 1-1.4.1: SerialNumber: 000000
-usb 1-1.4.1: USB disconnect, device number 44
-```
