@@ -54,9 +54,10 @@ packsvf: ${BUILD_BIN}/hardware_out.config
 	--svf ${BUILD_BIN}/hardware.svf
 
 # Currently doesn't work via Tigard.
+# Use "-v" to get verbose messages
 tigard: ${BUILD_BIN}/hardware_out.config
 	@echo "##### Uploading..."
-	openFPGALoader -v -c tigard ${BUILD_BIN}/hardware.bit
+	openFPGALoader -c tigard ${BUILD_BIN}/hardware.bit
 
 # The "-a 0" is important. You don't want to wipe-out the bootloader.
 # "-a 0" is the user-image.

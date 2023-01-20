@@ -1,5 +1,4 @@
 // 115200 bits per second = 8.68us
-`define BAUD 115200
 // 48MHz = ~20ns period
 `define SOURCE_FREQ 48000000
 
@@ -10,12 +9,22 @@
 // 
 
 // ---------- Settings for a 48MHz system clock ----------------
+// `define BAUD 115200
 // Bit size of accumulator
-`define ACCUMULATOR_WIDTH 20
+// `define ACCUMULATOR_WIDTH 20
+// The number added to the accumulator on every clock tick.
+// `define ACCUM_INC 2517
+
+// ---------- Settings for a 48MHz system clock ----------------
+`define BAUD 921600
+// Bit size of accumulator
+`define ACCUMULATOR_WIDTH 17
 // The number added to the accumulator on every clock tick.
 `define ACCUM_INC 2517
 
+
 // ---------- Settings for a 25MHz system clock ----------------
+// `define BAUD 115200
 // Bit size of accumulator
 // `define ACCUMULATOR_WIDTH 16
 // The number added to the accumulator on every clock tick.
