@@ -15,14 +15,14 @@ module UARTRx
     output logic rx_complete        // Signal a byte was received (active high) for 1 cycle.
 );
 
-/*verilator public_module*/
-
 RxState state = RxIdle;  // Default to 
 
 // ----------------------------------------------------
 // CDC Sync-ed signal for Rx
 // ----------------------------------------------------
+/* verilator lint_off UNUSED */
 logic Rx_risingedge;
+/* verilator lint_on UNUSED */
 logic Rx_fallingedge;
 logic Rx_sync;
 

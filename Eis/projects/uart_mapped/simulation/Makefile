@@ -13,6 +13,8 @@ GTKWAVE_SETTINGS = waveform
 
 # HDL modules
 MODULES_FILES =  \
+	../../../../common/Mux4.sv \
+	../../../../common/DeMux2.sv \
 	../../../../common/Memory.sv \
 	../../../../common/UART_Defines.sv \
 	../../../../common/UART_Enums.sv \
@@ -21,7 +23,7 @@ MODULES_FILES =  \
 	../../../../common/UARTRx.sv \
 	Enums.sv \
 	../UART_Enums.sv \
-	../UART_Component.sv \
+	../UART_Component_V3.sv \
 	Top.sv
 	
 # output build directory

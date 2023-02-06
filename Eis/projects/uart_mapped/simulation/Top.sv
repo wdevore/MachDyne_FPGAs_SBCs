@@ -9,22 +9,25 @@
 
 module Top
 (
-    input logic  pllClk_i      // System High Freq Clock (PLL)
+    input logic  sysClock      // System High Freq Clock
 );
 
 // -----------------------------------------------------------
 // Memory mapped UART Module
 // -----------------------------------------------------------
 UART_Component uart_uut (
-    .clock(pllClk_i),
+    .clock(sysClock),
     .reset(reset),
-    .rd(),
-    .wr(),
-    .rx_in(),
-    .tx_out(),
-    .addr(),
-    .out_data(),
-    .in_data()
+    .cs(cs),
+    .rd(rd),
+    .wr(wr),
+    .rx_in(rx_in[0]),           // Generally interfacing to hardware ports
+    .tx_out(tx_out),         // Generally interfacing to hardware ports
+    .addr(addr),
+    .out_data(out_data),
+    .in_data(in_data),
+    .irq(irq),
+    .irq_id(irq_id)
 );
 
 // ------------------------------------------------------------------------
@@ -36,50 +39,21 @@ SimState next_state;
 /* verilator lint_off UNUSED */
 logic reset_complete;
 logic [3:0] reset_cnt;
-logic reset;
+logic reset = 0;
 logic rd;
 logic wr;
-
+logic irq;
+logic [2:0] irq_id;
+// Toggle this to simulate data in coming bits from a fake client
+logic [7:0] rx_in;
+logic tx_out;
+logic [3:0] addr;
+logic [7:0] out_data;
+logic [7:0] in_data;
+logic cs;
 /* verilator lint_on UNUSED */
 
-always_comb begin
-    next_state = SMReset0;
-    reset = 1;
-
-    // --------------------------------
-    // Reset
-    // --------------------------------
-    case (state)
-        SMReset0: begin
-            // $display("SMReset");
-            reset = 0;
-            next_state = SMReset1;
-        end
-
-        SMReset1: begin
-            next_state = SMReset1;
-
-            // $display("SMReset1");
-            if (reset_cnt == 4'b1111) begin
-                next_state = SMResetComplete;
-            end
-            else
-                reset = 0;
-        end
-
-        SMResetComplete: begin
-            // $display("SMResetComplete");
-            next_state = SMResetComplete;
-        end
-
-        default: begin
-            $display("********* UNKNOWN STATE ***********");
-        end
-
-    endcase
-end
-
-always_ff @(posedge pllClk_i) begin
+always_ff @(posedge sysClock) begin
     // --------------------------------
     // Reset
     // --------------------------------
@@ -88,12 +62,20 @@ always_ff @(posedge pllClk_i) begin
             // $display("SMReset");
             reset_complete <= 0;
             reset_cnt <= 0;
+            rd <= 1'b1;  // disable
+            wr <= 1'b1;  // disable
+            rx_in <= 0;
+            addr <= 0;
+            in_data <= 0;
+            reset <= 0;
+            cs <= 1;
         end
 
         SMReset1: begin
             // $display("SMReset1");
             if (reset_cnt == 4'b1111) begin
                 reset_complete <= 1;
+                reset <= 1;
             end
             reset_cnt <= reset_cnt + 1;
         end
@@ -111,5 +93,39 @@ always_ff @(posedge pllClk_i) begin
 
     state <= next_state;
 end
+
+always_comb begin
+    next_state = SMReset0;
+
+    // --------------------------------
+    // Reset
+    // --------------------------------
+    case (state)
+        SMReset0: begin
+            // $display("SMReset");
+            next_state = SMReset1;
+        end
+
+        SMReset1: begin
+            next_state = SMReset1;
+
+            // $display("SMReset1");
+            if (reset_cnt == 4'b1111) begin
+                next_state = SMResetComplete;
+            end
+        end
+
+        SMResetComplete: begin
+            // $display("SMResetComplete");
+            next_state = SMResetComplete;
+        end
+
+        default: begin
+            $display("********* UNKNOWN STATE ***********");
+        end
+
+    endcase
+end
+
 
 endmodule

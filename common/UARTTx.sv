@@ -115,6 +115,9 @@ always_ff @(posedge sourceClk) begin
         default: begin
         end
     endcase
+
+    if (~reset)
+        state <= RxReset;
 end
 
 endmodule

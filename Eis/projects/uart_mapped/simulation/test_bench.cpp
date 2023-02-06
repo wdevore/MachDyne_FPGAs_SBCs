@@ -27,7 +27,7 @@ int step(int timeStep, TESTBENCH<VTop> *tb, VTop *top)
     timeStep++;
 
     if (timeStep % 10 == 0)
-        top->pllClk_i ^= 1;
+        top->sysClock ^= 1;
 
     return timeStep;
 }
@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
     vluint64_t timeStep = 0;
     int duration = 0;
 
-    top->pllClk_i = 0;
+    top->sysClock = 0;
 
     // Allow any initial blocks to execute
     tb->eval();
