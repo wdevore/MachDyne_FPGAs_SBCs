@@ -4,33 +4,40 @@ typedef enum logic [5:0] {
     UAResetComplete,
     UAIdle,
     // -------------------------------------
+    // Device
+    // -------------------------------------
+    // --- Send Granted signal to Client ---
+    UADeviceCRCSignalEnter,
+    UADeviceTriggerCRCSignal,
+    UADeviceSendingCRCSignal,
+    // -------------------------------------
     // Client
     // -------------------------------------
-    // Client Request control sequence
-    UABeginCRCSignal,
-    UASendCRCSignal,
-    UASendingCRCSignal,
-    // Rx Sequence
+    // --- Client idle ---
+    UAClientEnter,
+    UAClientIdle,
+
+    // --- Rx Sequence ---
     // -------------------------------------
     // System
     // -------------------------------------
-    // System relinquish sequence
+    // --- System relinquish sequence ---
     UASystemEnter,
     UASystemIdle,
     UASystemRelinquish,
-    UASendSECSignal,
-    UASendingSECSignal,
-    // Tx Sequence
-    UATransmitEnter,
-    UATransmitRead,
-    UATransmitEnable,
-    UATransmitSending,
-    // Read Rx buffer
+    UASystemSendSECSignal,
+    UASystemSendingSECSignal,
+    // -- Tx Sequence ---
+    UASystemTransmitEnter,
+    UASystemTransmitRead,
+    UASystemTransmitEnable,
+    UASystemTransmitSending,
+    // --- Read Rx buffer ---
     UASystemReadEnter,
     UASystemRead
 } UARTState; 
 
-typedef enum logic [3:0] {
+typedef enum logic [2:0] {
     // The party that has control sets this bit when no more data is
     // to be sent.
     CTL_EOT,
@@ -47,7 +54,10 @@ typedef enum logic [3:0] {
     CTL_CLI_CRC,
     // Client-Control-Granted (CCG) allows the Client to request control.
     // It is set if the client gains the mutex
-    CTL_CLI_CCG,
+    CTL_CLI_CCG
+} UARTControl1Bits; 
+
+typedef enum logic [2:0] {
     // -------------------------------------
     // System
     // -------------------------------------
@@ -69,4 +79,25 @@ typedef enum logic [3:0] {
     CTL_SYS_SEC,
     // System-Data-Sent (SDS) bit
     CTL_SYS_SDS
-} UARTControlBits; 
+} UARTControl2Bits; 
+
+// ------------------------------------------------------------------
+// Signals
+// ------------------------------------------------------------------
+// Signals are broken into 2 parts:
+// |---3bits---|------5bits------|
+// |  Signal   |    Data Count   |
+
+typedef enum logic [7:0] {
+    RGC_Signal = 8'b000_00000,
+    CRC_Signal = 8'b001_00000,
+    SEC_Signal = 8'b010_00000,
+    KEY_Signal = 8'b100_00000
+} UARTSignals; 
+
+typedef enum logic [1:0] {
+    Storage_Select,
+    RGC_Signal_Select,
+    CRC_Signal_Select,
+    SEC_Signal_Select
+} UARTSignalSelects; 

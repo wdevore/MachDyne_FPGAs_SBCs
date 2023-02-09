@@ -10,11 +10,11 @@ ICESTORM_TOOLCHAIN = /usr/local
 
 YOSYS_COMMAND = "synth_ecp5 -blif ${BUILD_BIN}/chip.blif -json ${BUILD_BIN}/hardware.json -top Top"
 
-PINS_CONSTRAINTS = ../schoko_v1.lpf
+PINS_CONSTRAINTS = ../konfekt_v0.lpf
 
 .PHONY: all
 
-all: build route pack upload
+all: build route pack tigard
 
 compile: build route pack
 
@@ -31,7 +31,7 @@ route: ${BUILD_BIN}/hardware.json
 	${ICESTORM_TOOLCHAIN}/bin/nextpnr-ecp5 \
 	-q \
 	-l ${BUILD_BIN}/next.log \
-	--45k \
+	--12k \
 	--package CABGA256 \
 	--lpf ${PINS_CONSTRAINTS} \
 	--json ${BUILD_BIN}/hardware.json \
@@ -55,7 +55,7 @@ packsvf: ${BUILD_BIN}/hardware_out.config
 
 # Use "-v" to get verbose messages
 tigard: ${BUILD_BIN}/hardware_out.config
-	@echo "##### Uploading..."
+	@echo "##### Uploading via Tigard..."
 	openFPGALoader -c tigard ${BUILD_BIN}/hardware.bit
 
 # The "-a 0" is important. You don't want to wipe-out the bootloader.
