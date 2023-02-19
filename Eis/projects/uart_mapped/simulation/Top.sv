@@ -47,7 +47,7 @@ logic [2:0] irq_id;
 // Toggle this to simulate data in coming bits from a fake client
 logic [7:0] rx_in;
 logic tx_out;
-logic [1:0] addr;
+logic [2:0] addr;
 logic [7:0] out_data;
 logic [7:0] in_data;
 logic cs;

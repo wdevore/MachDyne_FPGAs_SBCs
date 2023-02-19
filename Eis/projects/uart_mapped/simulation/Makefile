@@ -15,6 +15,7 @@ GTKWAVE_SETTINGS = waveform
 MODULES_FILES =  \
 	../../../../common/Mux2.sv \
 	../../../../common/Mux4.sv \
+	../../../../common/Mux8.sv \
 	../../../../common/DeMux4.sv \
 	../../../../common/Memory.sv \
 	../../../../common/UART_Defines.sv \

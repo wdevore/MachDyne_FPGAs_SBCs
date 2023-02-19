@@ -103,9 +103,9 @@ Each signal is a byte and can be followed by 0 or more bytes with in a chunk.
 - **KEY**: Key-Code was sent and the next byte is a key code. This signal can only be sent when the Client is not streaming. This prevents confusion between a Key-Code signal and actual data.
 - **ABT**: An abort signal sent to the Client to let it know the current stream has been aborted.
 - **CRC**: The Client is requesting control.
-- **CGT**: The Client has been granted control.
 - **RFC**: The Device is asking the Client if it wants control.
-- **SHC**: Device is telling Client System has control
+- **SHC**: Device is telling Client System has control.
+- **RGC**: Device is telling Client it has been granted control.
 
 # Control bits
 

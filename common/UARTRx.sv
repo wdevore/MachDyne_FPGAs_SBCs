@@ -11,6 +11,7 @@ module UARTRx
     input  logic sourceClk,         // Source clock
     input  logic reset,             // Reset
     input  logic rx_in,             // Incoming bits
+    input  logic rx_ack,            // Acknowledge the rx_complete signal
     output logic [7:0] rx_byte,     // Byte received
     output logic rx_complete        // Signal a byte was received (active high) for 1 cycle.
 );
@@ -121,14 +122,16 @@ always_ff @(posedge sourceClk) begin
                 state <= RxComplete;
                 baud_counter <= 0;
                 bitCnt <= 0;
-                // hold "complete" signal for 1 cycle
+                // hold "complete" signal for at least 1 cycle
                 rx_complete <= 1;
             end
         end
 
         RxComplete: begin
-            rx_complete <= 0;
-            state <= RxIdle;
+            if (rx_ack) begin
+                rx_complete <= 0;
+                state <= RxIdle;
+            end
         end
 
         default: begin
