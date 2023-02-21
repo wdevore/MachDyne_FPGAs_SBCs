@@ -1,0 +1,20 @@
+0 SMReset0
+1 SMReset1
+2 SMResetComplete
+3 SMIdle
+4 SMSendKeySetup
+5 SMSendKeyTrigger
+6 SMSendKeyUnTrigger
+7 SMSendKeySending
+8 SMSendKeyCodeSetup
+9 SMSendKeyCodeTrigger
+10 SMSendKeyCodeUnTrigger
+11 SMSendKeyCodeSending
+12 SMReadControl1
+13 SMReadControl1_A
+14 SMReadControl1_B
+15 SMReadKeycode_A
+16 SMReadKeycode_B
+17 SMReadKeycode_C
+18 SMStop
+

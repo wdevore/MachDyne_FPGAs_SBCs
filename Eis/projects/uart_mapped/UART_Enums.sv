@@ -1,41 +1,41 @@
 typedef enum logic [5:0] {
-    UAReset0,
-    UAReset1,
-    UAResetComplete,
+    UAReset0,                       // 0
+    UAResetComplete,                // 1
 
     // -------------------------------------
     // Device
     // -------------------------------------
-    UADeviceIdle,
-    UADeviceTransmit,
-    UADeviceTransmitSending,
-    UADeviceCheckBuffer,
+    UADeviceIdle,                   // 2
+    UADeviceTransmit,               // 3
+    UADeviceTransmitSending,        // 4
+    UADeviceCheckBuffer,            // 5
 
     // --- Send Granted signal to Client ---
-    UADeviceRGCSignalEnter,
-    UADeviceTriggerRGCSignal,
-    UADeviceSendingRGCSignal,
+    UADeviceRGCSignalEnter,         // 6
+    UADeviceTriggerRGCSignal,       // 7
+    UADeviceSendingRGCSignal,       // 8
 
     // -------------------------------------
     // Client
     // -------------------------------------
     // --- Client main process ---
-    UAClientIdle,
-    UAClientCheckBuffer,
+    UAClientIdle,                   // 9
+    UAClientCheckBuffer,            // 10
 
     // --- Client Key-code ---
-    UAClientKeyCodeAcknowledge,
-    UAClientKeyCodeStore,
-    UAClientKeyCodeExit,
+    UAClientKeyCodeAcknowledge,     // 11
+    UAClientKeyCodeStore,           // 12
+    UAClientKeyCodeRxAck,           // 13
+    UAClientKeyCodeExit,            // 14
 
     // -------------------------------------
     // System
     // -------------------------------------
     // --- System relinquish sequence ---
-    UASystemIdle,
-    UASystemCheckByte,
-    UASystemREJSignalEnter,
-    UASystemSendingREJSignal
+    UASystemIdle,                   // 15
+    UASystemCheckByte,              // 16
+    UASystemREJSignalEnter,         // 17
+    UASystemSendingREJSignal        // 18
 } UARTState; 
 
 typedef enum logic [2:0] {
@@ -63,7 +63,9 @@ typedef enum logic [2:0] {
     // System-Request-Control (SRC) bit = 1 if requesting control
     CTL_SYS_SRC,
     // If Set then System has the mutex and has control.
-    CTL_SYS_GRNT
+    CTL_SYS_GRNT,
+    // The Device is transmitting byte
+    CTL_DEV_TRX
 } UARTControl2Bits; 
 
 // ------------------------------------------------------------------

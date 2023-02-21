@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
     timeStep = step(timeStep, tb, top);
 
     // Run enough clocks for module to do its thing.
-    duration = 20000 + timeStep;
+    duration = 40000 + timeStep;
     while (timeStep < duration)
     {
         timeStep = step(timeStep, tb, top);

@@ -32,14 +32,16 @@ localparam Component_ID = 3'b000;
 localparam DATA_WIDTH = 8;
 localparam ZERO = 0;
 
-logic wr_active;
-assign wr_active = ~cs & ~wr;
-
-logic [DATA_WIDTH-1:0] key_code;  // Address 0x00
-
 // ------------------------------------------------------------------
 // Internal signals
 // ------------------------------------------------------------------
+logic wr_active;        // Active low
+assign wr_active = cs | wr;
+
+// ------------------------------------------------------------------------
+// Key codes
+// ------------------------------------------------------------------------
+logic [DATA_WIDTH-1:0] key_code;  // Address 0x00
 
 // ------------------------------------------------------------------
 // Control registers N-bits
@@ -48,10 +50,10 @@ localparam CONTROL_SIZE = 8;
 logic [CONTROL_SIZE-1:0] control1;  // Address 0x01
 logic [CONTROL_SIZE-1:0] control2;  // Address 0x02
 
-logic control1_wr;
-assign control1_wr = ~(wr_active & (addr[2:0] == 3'b001) & control1[CTL_SYS_GRNT]);
+logic control1_wr;  // Active low
+assign control1_wr = (wr_active | ~(addr[2:0] == 3'b001));
 logic control2_wr;
-assign control2_wr = ~(wr_active & (addr[2:0] == 3'b010) & control1[CTL_SYS_GRNT]);
+assign control2_wr = (wr_active | ~(addr[2:0] == 3'b010));
 
 // ------------------------------------------------------------------------
 // Tx/Rx buffer at address 0x03/0x04
@@ -59,8 +61,8 @@ assign control2_wr = ~(wr_active & (addr[2:0] == 3'b010) & control1[CTL_SYS_GRNT
 logic [CONTROL_SIZE-1:0] rx_buffer;  // Address 0x03
 logic [CONTROL_SIZE-1:0] tx_buffer;  // Address 0x04
 
-logic tx_buff_wr;       // active (low)
-assign tx_buff_wr = ~(wr_active & (addr[2:0] == 3'b100) & control1[CTL_SYS_GRNT]);
+logic tx_buff_wr;       // Active (low)
+assign tx_buff_wr = (wr_active | ~(addr[2:0] == 3'b100));
 
 // ------------------------------------------------------------------------
 // Data Ports
@@ -161,19 +163,17 @@ always_ff @(posedge clock) begin
     // --------------------------------
     // IO interface accessing: Control registers and Buffers
     // --------------------------------
-    if (~cs) begin
-        if (control1_wr)
-            control1 <= control1_in;
-        else if (control2_wr)
-            control2 <= control2_in;
-        // The System can write to the buffer if it is sending an ACK
-        // or if it has control and is sending a stream.
-        else if (tx_buff_wr) begin
-            // Anytime a byte is written to the Tx buffer
-            // the device immediately sends it.
-            tx_buffer <= byte_in;
-            next_state <= UADeviceTransmit;
-        end
+    if (~control1_wr)
+        control1 <= control1_in;
+    else if (~control2_wr)
+        control2 <= control2_in;
+    // The System can write to the buffer if it is sending an ACK
+    // or if it has control and is sending a stream.
+    else if (~tx_buff_wr) begin
+        // Anytime a byte is written to the Tx buffer
+        // the device immediately sends it.
+        tx_buffer <= byte_in;
+        control2[CTL_DEV_TRX] <= 1;     // Siganl that a Trx is in progress
     end
 
     case (state)
@@ -181,6 +181,8 @@ always_ff @(posedge clock) begin
         // Reset
         // --------------------------------
         UAReset0: begin
+            // $display("UAReset0");
+
             control1 <= 0;
             control2 <= 0;
             key_code <= 0;
@@ -189,14 +191,12 @@ always_ff @(posedge clock) begin
             tx_en <= 1;
             rx_ack <= 0;
             
-            irq <= 1;       // Non-active
+            irq <= 0;       // Non-active
             irq_id <= Component_ID;    // UART component id
-
-            next_state <= UAResetComplete;
         end
 
         UAResetComplete: begin
-            next_state <= UADeviceIdle;
+            // $display("UAResetComplete");
         end
 
         // #### __---__---__---__---__---__---__---__---__---__---__--- ####
@@ -215,10 +215,9 @@ always_ff @(posedge clock) begin
 
                 // We can acknowlegde immediately because we are not doing anything with the byte.
                 rx_ack <= 1;
-
-                next_state <= UADeviceCheckBuffer;
             end
             else if (neither_have_control & control2[CTL_SYS_SRC]) begin
+                $display("Granting System control");
                 // The System is requesting control
                 // Grant control to System.
                 // The System is either polling this bit
@@ -227,9 +226,6 @@ always_ff @(posedge clock) begin
 
                 // Clear request bit too
                 control1[CTL_SYS_SRC] <= 0;
-
-                // Enter System sequence
-                next_state <= UASystemIdle;
             end
         end
 
@@ -239,16 +235,17 @@ always_ff @(posedge clock) begin
         UADeviceCheckBuffer: begin
             rx_ack <= 0;
 
-            if ((signal == KEY_Signal) & (neither_have_control | control1[CTL_SYS_GRNT])) begin
-                // Client sent a key-code. Store it and potentially notify System
-                next_state <= UAClientKeyCodeAcknowledge;
-            end
-            else if (neither_have_control & (signal == CRC_Signal)) begin
+            // if ((signal == KEY_Signal) & (neither_have_control | control1[CTL_SYS_GRNT])) begin
+            //     // Client sent a key-code. Store it and potentially notify System
+            //     // next_state <= UAClientKeyCodeAcknowledge;
+            // end
+            // else
+            if (neither_have_control & (signal == CRC_Signal)) begin
                 // Grant control to Client.
+                $display("Granting control to Client");
                 control1[CTL_CLI_GRNT] <= 1;
 
                 // Send Request-Granted-Control (RGC) byte to Client
-                next_state <= UADeviceRGCSignalEnter;
             end
         end
 
@@ -257,8 +254,7 @@ always_ff @(posedge clock) begin
         // -------------------------------------
         // Device will wait and then store key-code
         UAClientKeyCodeAcknowledge: begin
-            rx_ack <= 0;
-            next_state <= UAClientKeyCodeStore;
+            // rx_ack <= 0;
         end
 
         UAClientKeyCodeStore: begin
@@ -266,18 +262,27 @@ always_ff @(posedge clock) begin
             if (rx_complete) begin
                 // Store key-code byte
                 key_code <= rx_byte;
-                // Either generate interrupt (TODO) or set control bit.
-                control1[CTL_KEY_RDY] <= 1; // System polls this bit.
+
+                // Either generate an interrupt and/or set control bit.
+                if (control1[CTL_IRQ_EN]) begin
+                    irq <= 1;       // Raise interrupt signal
+                end
+                else begin
+                    control1[CTL_KEY_RDY] <= 1; // System can poll this bit.
+                end
 
                 // Acknowledge UARTRx's signal
                 rx_ack <= 1;
-                next_state <= UAClientKeyCodeExit;
             end
         end
 
-        UAClientKeyCodeExit: begin
+        UAClientKeyCodeRxAck: begin
             rx_ack <= 0;
-            next_state <= UADeviceIdle;
+        end
+
+        UAClientKeyCodeExit: begin
+            // $display("C key ready 0x%h", control1);
+            irq <= 0;       // Lower interrupt signal
         end
 
         // -------------------------------------
@@ -287,7 +292,7 @@ always_ff @(posedge clock) begin
         UADeviceTransmit: begin
             tx_en <= 0; // Trigger transmission
             tx_select <= TxByte_Select;
-            next_state <= UADeviceTransmitSending;
+            // next_state <= UADeviceTransmitSending;
         end
 
         UADeviceTransmitSending: begin
@@ -295,7 +300,8 @@ always_ff @(posedge clock) begin
             
             // Wait for the byte to finish transmitting.
             if (tx_complete) begin
-                next_state <= UAClientIdle;
+                control2[CTL_DEV_TRX] <= 0;     // Signal System byte is sent.
+                // next_state <= UAClientIdle;
             end
         end
 
@@ -306,12 +312,10 @@ always_ff @(posedge clock) begin
         // are sending only 1 byte signal.
         UADeviceRGCSignalEnter: begin
             tx_select <= RGC_Signal_Select;        // Select the signal value
-            next_state <= UADeviceTriggerRGCSignal;
         end
 
         UADeviceTriggerRGCSignal: begin
             tx_en <= 0; // Trigger transmission
-            next_state <= UADeviceSendingRGCSignal;
         end
 
         UADeviceSendingRGCSignal: begin
@@ -320,9 +324,6 @@ always_ff @(posedge clock) begin
             // Wait for the byte to finish transmitting.
             if (tx_complete) begin
                 tx_select <= TxByte_Select;
-                // The Client is now aware it has control.
-                // Move to Client's idle sequence
-                next_state <= UAClientIdle;
             end
         end
 
@@ -342,8 +343,6 @@ always_ff @(posedge clock) begin
 
                 // We can acknowlegde immediately because we are not doing anything with the byte.
                 rx_ack <= 1;
-
-                next_state <= UASystemCheckByte;
             end
         end
 
@@ -354,15 +353,11 @@ always_ff @(posedge clock) begin
             if (signal == CRC_Signal) begin
                 // Reject it because System currently has control.
                 tx_select <= REJ_Signal_Select;  // Select the signal value
-                next_state <= UASystemREJSignalEnter;
             end
-            else
-                next_state <= UASystemIdle;
         end
 
         UASystemREJSignalEnter: begin
             tx_en <= 0; // Trigger transmission
-            next_state <= UASystemSendingREJSignal;
         end
 
         UASystemSendingREJSignal: begin
@@ -373,7 +368,7 @@ always_ff @(posedge clock) begin
                 tx_select <= TxByte_Select;
                 // The Client is now aware it has control.
                 // Move to Client's idle sequence
-                next_state <= UASystemIdle;
+                // next_state <= UASystemIdle;
             end
         end
 
@@ -393,8 +388,6 @@ always_ff @(posedge clock) begin
 
                 // We can acknowlegde immediately because we are not doing anything with the byte.
                 rx_ack <= 1;
-
-                next_state <= UAClientCheckBuffer;
             end
         end
 
@@ -421,8 +414,6 @@ always_ff @(posedge clock) begin
                     control1[CTL_STR_BYT] <= 1;
                 end
             endcase
-
-            next_state <= UAClientIdle;
         end
 
         // -------------------------------------
@@ -440,6 +431,203 @@ always_ff @(posedge clock) begin
         state <= UAReset0;
     else
         state <= next_state;
+end
+
+always_comb begin
+    next_state = UADeviceIdle;
+
+    if (~tx_buff_wr) begin
+        next_state = UADeviceTransmit;
+    end
+
+    case (state)
+        // --------------------------------
+        // Reset
+        // --------------------------------
+        UAReset0: begin
+            next_state = UAResetComplete;
+        end
+
+        UAResetComplete: begin
+        end
+
+        // #### __---__---__---__---__---__---__---__---__---__---__--- ####
+        // Main process
+        // #### __---__---__---__---__---__---__---__---__---__---__--- ####
+        UADeviceIdle: begin
+            next_state = UADeviceIdle;
+
+            // While the Device is idling either party can request control.
+            // The System will request via a control bit.
+            // The Client will request via an Rx byte.
+            // The Client has priority thus it is checked first.
+            // We only return to DeviceIdle when a party loses control via EOS.
+
+            if (rx_complete) begin
+                next_state = UADeviceCheckBuffer;
+            end
+            else if (neither_have_control & control2[CTL_SYS_SRC]) begin
+                $display("Granting System control");
+                // Enter System sequence
+                next_state = UASystemIdle;
+            end
+        end
+
+        // #### __---__---__---__---__---__---__---__---__---__---__--- ####
+        // Device sequences
+        // #### __---__---__---__---__---__---__---__---__---__---__--- ####
+        UADeviceCheckBuffer: begin
+            // next_state = UADeviceCheckBuffer;
+
+            if ((signal == KEY_Signal) & (neither_have_control | control1[CTL_SYS_GRNT])) begin
+                // Client sent a key-code. Store it and potentially notify System
+                next_state = UAClientKeyCodeAcknowledge;
+            end
+            else if (neither_have_control & (signal == CRC_Signal)) begin
+                // Send Request-Granted-Control (RGC) byte to Client
+                next_state = UADeviceRGCSignalEnter;
+            end
+        end
+
+        // -------------------------------------
+        // Key-code sub-sequence
+        // -------------------------------------
+        // Device will wait and then store key-code
+        UAClientKeyCodeAcknowledge: begin
+            next_state = UAClientKeyCodeStore;
+        end
+
+        UAClientKeyCodeStore: begin
+            next_state = UAClientKeyCodeStore;
+
+            if (rx_complete) begin
+                next_state = UAClientKeyCodeRxAck;
+            end
+        end
+
+        UAClientKeyCodeRxAck: begin
+            next_state = UAClientKeyCodeExit;
+        end
+
+        UAClientKeyCodeExit: begin
+            next_state = UADeviceIdle;
+        end
+
+        // -------------------------------------
+        // Device transmission of Tx buffer
+        // -------------------------------------
+        // Most likely a ACK is being sent by the System
+        UADeviceTransmit: begin
+            next_state = UADeviceTransmitSending;
+        end
+
+        UADeviceTransmitSending: begin
+            next_state = UADeviceTransmitSending;
+
+            // Wait for the byte to finish transmitting.
+            if (tx_complete) begin
+                next_state = UAClientIdle;
+            end
+        end
+
+        // -------------------------------------
+        // Send RGC Granted signal to Client
+        // -------------------------------------
+        // Write RGC byte directly to UART sub-module because we
+        // are sending only 1 byte signal.
+        UADeviceRGCSignalEnter: begin
+            next_state = UADeviceTriggerRGCSignal;
+        end
+
+        UADeviceTriggerRGCSignal: begin
+            next_state = UADeviceSendingRGCSignal;
+        end
+
+        UADeviceSendingRGCSignal: begin
+            next_state = UADeviceSendingRGCSignal;
+
+            if (tx_complete) begin
+                // The Client is now aware it has control.
+                // Move to Client's idle sequence
+                next_state = UAClientIdle;
+            end
+        end
+
+        // #### __---__---__---__---__---__---__---__---__---__---__--- ####
+        // System sequences (has control)
+        // #### __---__---__---__---__---__---__---__---__---__---__--- ####
+        // The only thing the System does is send bytes. The Client responds with
+        // ACK signals.
+        // TODO:NOT-IMPLEMENTED:
+        // The Client can still send Key-codes and this will in turn generate
+        // interrupts (if enabled).
+        UASystemIdle: begin
+            next_state = UASystemIdle;
+
+            if (rx_complete) begin
+                next_state = UASystemCheckByte;
+            end
+        end
+
+        UASystemCheckByte: begin
+            // Check if the Client is requesting control.
+            if (signal == CRC_Signal) begin
+                next_state = UASystemREJSignalEnter;
+            end
+            else
+                next_state = UASystemIdle;
+        end
+
+        UASystemREJSignalEnter: begin
+            next_state = UASystemSendingREJSignal;
+        end
+
+        UASystemSendingREJSignal: begin
+            next_state = UASystemSendingREJSignal;
+
+            // Wait for the byte to finish transmitting.
+            if (tx_complete) begin
+                // The Client is now aware it has control.
+                // Move to Client's idle sequence
+                next_state = UASystemIdle;
+            end
+        end
+
+        // #### __---__---__---__---__---__---__---__---__---__---__--- ####
+        // Client sequences (has control)
+        // #### __---__---__---__---__---__---__---__---__---__---__--- ####
+
+        // The Client will either send a Key-code via 2 bytes or start a stream.
+        // Once the Client begins streaming it can't send a Key-code until
+        // the stream ends.
+        // The Device handles Key-codes directly.
+        UAClientIdle: begin
+            next_state = UAClientIdle;
+
+            if (rx_complete) begin
+                next_state = UAClientCheckBuffer;
+            end
+        end
+
+        UAClientCheckBuffer: begin
+            next_state = UAClientIdle;
+        end
+
+        // -------------------------------------
+        // Unknown State
+        // -------------------------------------
+        default: begin
+            `ifdef SIMULATE
+                $display("********* UNKNOWN STATE ***********");
+            `endif
+        end
+
+    endcase
+
+    // if (~reset)
+    //     state <= UAReset0;
+    // else
+    //     state <= next_state;
 end
 
 endmodule

@@ -1,0 +1,20 @@
+0 UAReset0
+1 UAResetComplete
+2 UADeviceIdle
+3 UADeviceTransmit
+4 UADeviceTransmitSending
+5 UADeviceCheckBuffer
+6 UADeviceRGCSignalEnter
+7 UADeviceTriggerRGCSignal
+8 UADeviceSendingRGCSignal
+9 UAClientIdle
+10 UAClientCheckBuffer
+11 UAClientKeyCodeAcknowledge
+12 UAClientKeyCodeStore
+13 UAClientKeyCodeRxAck
+14 UAClientKeyCodeExit
+15 UASystemIdle
+16 UASystemCheckByte
+17 UASystemREJSignalEnter
+18 UASystemSendingREJSignal
+
