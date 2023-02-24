@@ -169,11 +169,13 @@ always_ff @(posedge clock) begin
         control2 <= control2_in;
     // The System can write to the buffer if it is sending an ACK
     // or if it has control and is sending a stream.
-    else if (~tx_buff_wr) begin
+    else if ((byte_in[7:4] == ACK_Signal) | control2[CTL_SYS_GRNT]) begin
         // Anytime a byte is written to the Tx buffer
         // the device immediately sends it.
-        tx_buffer <= byte_in;
-        control2[CTL_DEV_TRX] <= 1;     // Siganl that a Trx is in progress
+        if (~tx_buff_wr) begin
+            tx_buffer <= byte_in;
+            control2[CTL_DEV_TRX] <= 1;     // Siganl that a Trx should begin
+        end
     end
 
     case (state)
@@ -225,7 +227,7 @@ always_ff @(posedge clock) begin
                 control2[CTL_SYS_GRNT] <= 1;
 
                 // Clear request bit too
-                control1[CTL_SYS_SRC] <= 0;
+                control2[CTL_SYS_SRC] <= 0;
             end
         end
 
@@ -286,26 +288,6 @@ always_ff @(posedge clock) begin
         end
 
         // -------------------------------------
-        // Device transmission of Tx buffer
-        // -------------------------------------
-        // Most likely a ACK is being sent by the System
-        UADeviceTransmit: begin
-            tx_en <= 0; // Trigger transmission
-            tx_select <= TxByte_Select;
-            // next_state <= UADeviceTransmitSending;
-        end
-
-        UADeviceTransmitSending: begin
-            tx_en <= 1; // Disable trigger
-            
-            // Wait for the byte to finish transmitting.
-            if (tx_complete) begin
-                control2[CTL_DEV_TRX] <= 0;     // Signal System byte is sent.
-                // next_state <= UAClientIdle;
-            end
-        end
-
-        // -------------------------------------
         // Send RGC Granted signal to Client
         // -------------------------------------
         // Write RGC byte directly to UART sub-module because we
@@ -344,6 +326,9 @@ always_ff @(posedge clock) begin
                 // We can acknowlegde immediately because we are not doing anything with the byte.
                 rx_ack <= 1;
             end
+            else if (control2[CTL_DEV_TRX]) begin
+                control2[CTL_DEV_TRX]  <= 0;
+            end
         end
 
         UASystemCheckByte: begin
@@ -369,6 +354,26 @@ always_ff @(posedge clock) begin
                 // The Client is now aware it has control.
                 // Move to Client's idle sequence
                 // next_state <= UASystemIdle;
+            end
+        end
+
+        // -------------------------------------
+        // Device transmission of Tx buffer
+        // -------------------------------------
+        // Most likely a ACK is being sent by the System
+        UASystemTransmit: begin
+            $display("Starting transmission");
+            tx_en <= 0; // Trigger transmission
+            tx_select <= TxByte_Select;
+        end
+
+        UASystemTransmitSending: begin
+            tx_en <= 1; // Disable trigger
+            
+            // Wait for the byte to finish transmitting.
+            if (tx_complete) begin
+                control2[CTL_DEV_TRX] <= 0;     // Signal System byte is sent.
+                // Transition back to idle
             end
         end
 
@@ -436,9 +441,9 @@ end
 always_comb begin
     next_state = UADeviceIdle;
 
-    if (~tx_buff_wr) begin
-        next_state = UADeviceTransmit;
-    end
+    // if (~tx_buff_wr) begin
+    //     next_state = UASystemTransmit;
+    // end
 
     case (state)
         // --------------------------------
@@ -467,7 +472,6 @@ always_comb begin
                 next_state = UADeviceCheckBuffer;
             end
             else if (neither_have_control & control2[CTL_SYS_SRC]) begin
-                $display("Granting System control");
                 // Enter System sequence
                 next_state = UASystemIdle;
             end
@@ -514,23 +518,6 @@ always_comb begin
         end
 
         // -------------------------------------
-        // Device transmission of Tx buffer
-        // -------------------------------------
-        // Most likely a ACK is being sent by the System
-        UADeviceTransmit: begin
-            next_state = UADeviceTransmitSending;
-        end
-
-        UADeviceTransmitSending: begin
-            next_state = UADeviceTransmitSending;
-
-            // Wait for the byte to finish transmitting.
-            if (tx_complete) begin
-                next_state = UAClientIdle;
-            end
-        end
-
-        // -------------------------------------
         // Send RGC Granted signal to Client
         // -------------------------------------
         // Write RGC byte directly to UART sub-module because we
@@ -567,6 +554,10 @@ always_comb begin
             if (rx_complete) begin
                 next_state = UASystemCheckByte;
             end
+            else if (control2[CTL_DEV_TRX]) begin
+                next_state = UASystemTransmit;
+            end
+
         end
 
         UASystemCheckByte: begin
@@ -589,6 +580,23 @@ always_comb begin
             if (tx_complete) begin
                 // The Client is now aware it has control.
                 // Move to Client's idle sequence
+                next_state = UASystemIdle;
+            end
+        end
+
+        // -------------------------------------
+        // Device transmission of Tx buffer
+        // -------------------------------------
+        // Most likely a ACK is being sent by the System
+        UASystemTransmit: begin
+            next_state = UASystemTransmitSending;
+        end
+
+        UASystemTransmitSending: begin
+            next_state = UASystemTransmitSending;
+
+            // Wait for the byte to finish transmitting.
+            if (tx_complete) begin
                 next_state = UASystemIdle;
             end
         end
