@@ -22,7 +22,7 @@ UART_Component uart_uut (
     .rd(rd),
     .wr(wr),
     .rx_in(client_tx_out),      // From Client
-    .tx_out(client_rx_in),            // To Client
+    .tx_out(client_rx_in),      // To Client
     .addr(addr),
     .out_data(out_data),
     .in_data(in_data),
@@ -58,7 +58,6 @@ logic client_rx_in;
 SimState state = SMReset0;
 SimState next_state;
 
-/* verilator lint_off UNUSED */
 logic reset_complete;
 logic [3:0] reset_cnt;
 logic reset = 0;
@@ -70,17 +69,8 @@ logic [2:0] addr;
 logic [7:0] out_data;
 logic [7:0] in_data;
 logic cs;
-/* verilator lint_on UNUSED */
 
 logic [7:0] component_data;
-
-// always_ff @(negedge sysClock) begin
-//     case (state)
-//         SMReset0: begin
-//             component_data <= 0;
-//         end
-//     endcase
-// end
 
 always_ff @(posedge sysClock) begin
     // --------------------------------
@@ -93,7 +83,6 @@ always_ff @(posedge sysClock) begin
             reset_cnt <= 0;
             rd <= 1'b1;  // disable
             wr <= 1'b1;  // disable
-            // rx_in <= 0;
             addr <= 0;
             in_data <= 0;
             reset <= 0;
@@ -116,83 +105,8 @@ always_ff @(posedge sysClock) begin
         SMIdle: begin
         end
 
-        // __--__##__--__##__--__##__--__##__--__##__--__##__--__##
-        // Send Key-code
-        // __--__##__--__##__--__##__--__##__--__##__--__##__--__##
-        // At this point the component is idling.
-        // We simulate a Client sending a key-code pair: 0x70 and 0x42
-
-        // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-        // Send key signal
-        // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-        SMSendKeySetup: begin
-            tx_byte <= 8'h70;   // KEY_Signal
-        end
-
-        SMSendKeyTrigger: begin
-            tx_en <= 0; // Trigger transmission
-        end
-
-        SMSendKeyUnTrigger: begin
-            tx_en <= 1; // Disable trigger
-        end
-
-        SMSendKeySending: begin
-        end
-
-        // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-        // Send key code
-        // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-        SMSendKeyCodeSetup: begin
-            tx_byte <= 8'h42;   // Ascii
-        end
-
-        SMSendKeyCodeTrigger: begin
-            tx_en <= 0; // Trigger transmission
-        end
-
-        SMSendKeyCodeUnTrigger: begin
-            tx_en <= 1; // Disable trigger
-        end
-
-        SMSendKeyCodeSending: begin
-        end
-
-        // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-        // Read control1 for key ready signal
-        // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-        SMReadControl1: begin
-            addr <= 3'b001; // Address control1 register
-            cs <= 0;    // Chip select active
-        end
-
-        SMReadControl1_A: begin
-            component_data <= out_data;
-        end
-
-        SMReadControl1_B: begin
-            cs <= 1;    // Disable chip
-            if (component_data[CTL_KEY_RDY] == 0) begin
-                $display("!!!!!!! Expected CTL_KEY_RDY to be Set !!!!!!!");
-                $exit();
-            end
-        end
-
-        // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-        // Read key-code
-        // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-        SMReadKeycode_A: begin
-            addr <= 3'b000; // Address key-code register
-            cs <= 0;    // Chip select active
-        end
-
-        SMReadKeycode_B: begin
-            component_data <= out_data;
-        end
-        
-        SMReadKeycode_C: begin
-            cs <= 1;    // Disable chip
-        end
+        // `include "Client_Send_Keycode_Top_FF.sv"
+        `include "System_Set_Bits_Top_FF.sv"
 
         SMStop: begin
             // $display(" STOPPED !");
@@ -232,79 +146,8 @@ always_comb begin
             next_state = SMIdle;
         end
 
-        SMIdle: begin
-            next_state = SMSendKeySetup;
-        end
-
-        SMSendKeySetup: begin
-            next_state = SMSendKeyTrigger;
-        end
-
-        SMSendKeyTrigger: begin
-            next_state = SMSendKeyUnTrigger;
-        end
-
-        SMSendKeyUnTrigger: begin
-            next_state = SMSendKeySending;
-        end
-
-        SMSendKeySending: begin
-            next_state = SMSendKeySending;
-
-            // Wait for the byte to finish transmitting.
-            if (tx_complete) begin
-                next_state = SMSendKeyCodeSetup;
-            end
-        end
-
-        SMSendKeyCodeSetup: begin
-            next_state = SMSendKeyCodeTrigger;
-        end
-
-        SMSendKeyCodeTrigger: begin
-            next_state = SMSendKeyCodeUnTrigger;
-        end
-
-        SMSendKeyCodeUnTrigger: begin
-            next_state = SMSendKeyCodeSending;
-        end
-
-        SMSendKeyCodeSending: begin
-            next_state = SMSendKeyCodeSending;
-
-            // Wait for the byte to finish transmitting.
-            if (tx_complete) begin
-                next_state = SMReadControl1;
-            end
-        end
-
-        SMReadControl1: begin
-            next_state = SMReadControl1_A;
-        end
-
-        SMReadControl1_A: begin
-            next_state = SMReadControl1_B;
-        end
-
-        SMReadControl1_B: begin
-            if (component_data[CTL_KEY_RDY] == 1) begin
-                next_state = SMReadKeycode_A;
-            end
-            else
-                next_state = SMStop;
-        end
-
-        SMReadKeycode_A: begin
-            next_state = SMReadKeycode_B;
-        end
-
-        SMReadKeycode_B: begin
-            next_state = SMReadKeycode_C;
-        end
-
-        SMReadKeycode_C: begin
-            next_state = SMStop;
-        end
+        // `include "Client_Send_Keycode_Top_Comb.sv"
+        `include "System_Set_Bits_Top_Comb.sv"
 
         SMStop: begin
             next_state = SMStop;

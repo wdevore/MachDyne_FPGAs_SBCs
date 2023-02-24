@@ -6,36 +6,36 @@ typedef enum logic [5:0] {
     // Device
     // -------------------------------------
     UADeviceIdle,                   // 2
-    UADeviceTransmit,               // 3
-    UADeviceTransmitSending,        // 4
-    UADeviceCheckBuffer,            // 5
+    UADeviceCheckBuffer,            // 3
 
     // --- Send Granted signal to Client ---
-    UADeviceRGCSignalEnter,         // 6
-    UADeviceTriggerRGCSignal,       // 7
-    UADeviceSendingRGCSignal,       // 8
+    UADeviceRGCSignalEnter,         // 4
+    UADeviceTriggerRGCSignal,       // 5
+    UADeviceSendingRGCSignal,       // 6
 
     // -------------------------------------
     // Client
     // -------------------------------------
     // --- Client main process ---
-    UAClientIdle,                   // 9
-    UAClientCheckBuffer,            // 10
+    UAClientIdle,                   // 7
+    UAClientCheckBuffer,            // 8
 
     // --- Client Key-code ---
-    UAClientKeyCodeAcknowledge,     // 11
-    UAClientKeyCodeStore,           // 12
-    UAClientKeyCodeRxAck,           // 13
-    UAClientKeyCodeExit,            // 14
+    UAClientKeyCodeAcknowledge,     // 9
+    UAClientKeyCodeStore,           // 10
+    UAClientKeyCodeRxAck,           // 11
+    UAClientKeyCodeExit,            // 12
 
     // -------------------------------------
     // System
     // -------------------------------------
     // --- System relinquish sequence ---
-    UASystemIdle,                   // 15
-    UASystemCheckByte,              // 16
-    UASystemREJSignalEnter,         // 17
-    UASystemSendingREJSignal        // 18
+    UASystemIdle,                   // 13
+    UASystemCheckByte,              // 14
+    UASystemREJSignalEnter,         // 15
+    UASystemSendingREJSignal,       // 16
+    UASystemTransmit,               // 17
+    UASystemTransmitSending         // 18
 } UARTState; 
 
 typedef enum logic [2:0] {
@@ -64,7 +64,7 @@ typedef enum logic [2:0] {
     CTL_SYS_SRC,
     // If Set then System has the mutex and has control.
     CTL_SYS_GRNT,
-    // The Device is transmitting byte
+    // The a transmission sequence should begin.
     CTL_DEV_TRX
 } UARTControl2Bits; 
 
@@ -84,7 +84,8 @@ typedef enum logic [3:0] {
     BOS_Signal = 4'b0100,    // Beginging-of-Stream Signal
     EOS_Signal = 4'b0101,    // End-of-Stream Signal
     REJ_Signal = 4'b0110,    // Reject Control request
-    KEY_Signal = 4'b0111     // Key code
+    ACK_Signal = 4'b0111,    // Acknowledge a data byte
+    KEY_Signal = 4'b1000     // Key code
 } UARTSignals; 
 
 typedef enum logic [1:0] {

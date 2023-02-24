@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.103 (w)1999-2019 BSI
-[*] Tue Feb 21 04:20:16 2023
+[*] Fri Feb 24 03:22:38 2023
 [*]
 [dumpfile] "/media/RAMDisk/waveform.vcd"
-[dumpfile_mtime] "Tue Feb 21 04:19:52 2023"
-[dumpfile_size] 421828
+[dumpfile_mtime] "Fri Feb 24 03:15:20 2023"
+[dumpfile_size] 421190
 [savefile] "/media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Eis/projects/uart_mapped/simulation/waveform.gtkw"
-[timestart] 21999
+[timestart] 0
 [size] 2082 913
-[pos] 40 274
-*-6.018809 22163 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[pos] 61 303
+*-12.018808 620 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] TOP.
 [treeopen] TOP.Top.
 [treeopen] TOP.Top.uart_uut.
@@ -24,15 +24,14 @@
 TOP.Top.sysClock
 [color] 1
 TOP.Top.reset
-@2024
-^1 /media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Eis/projects/uart_mapped/simulation/filter_top_states.txt
+@24
 TOP.Top.state[5:0]
 @28
 TOP.Top.reset_complete
 @22
 TOP.Top.reset_cnt[3:0]
+TOP.Top.in_data[7:0]
 TOP.Top.out_data[7:0]
-@23
 [color] 7
 TOP.Top.component_data[7:0]
 @200
@@ -48,7 +47,7 @@ TOP.Top.client_uart.tx_bits[7:0]
 @200
 -UARTComp
 @2024
-^2 /media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Eis/projects/uart_mapped/simulation/filter_ua_states.txt
+^1 /media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Eis/projects/uart_mapped/simulation/filter_ua_states.txt
 TOP.Top.uart_uut.state[5:0]
 @28
 TOP.Top.uart_uut.addr[2:0]
@@ -72,8 +71,8 @@ TOP.Top.uart_uut.control1[7:0]
 -group_end
 @28
 TOP.Top.uart_uut.control2_wr
-@22
 TOP.Top.uart_uut.control2[7:0]
+@22
 [color] 7
 TOP.Top.uart_uut.key_code[7:0]
 @28
@@ -84,8 +83,19 @@ TOP.Top.uart_uut.rx_ack
 @22
 TOP.Top.uart_uut.rx_buffer[7:0]
 @28
+TOP.Top.uart_uut.tx_en
 TOP.Top.uart_uut.tx_buff_wr
 @22
 TOP.Top.uart_uut.tx_buffer[7:0]
+@200
+-UARTTx
+@28
+TOP.Top.uart_uut.uart_tx.state[2:0]
+@22
+TOP.Top.uart_uut.uart_tx.tx_byte[7:0]
+@29
+TOP.Top.uart_uut.uart_tx.tx_complete
+@28
+TOP.Top.uart_uut.uart_tx.tx_out
 [pattern_trace] 1
 [pattern_trace] 0
