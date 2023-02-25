@@ -327,7 +327,13 @@ always_ff @(posedge clock) begin
                 rx_ack <= 1;
             end
             else if (control2[CTL_DEV_TRX]) begin
+                $display("Data written to tx buffer");
+                // A byte has been written to the Tx buffer.
+                // Transmit it.
                 control2[CTL_DEV_TRX]  <= 0;
+                // Reset data sent bit too.
+                control2[CTL_TRX_CMP] <= 0;
+                // Move to: UASystemTransmit
             end
         end
 
@@ -358,7 +364,7 @@ always_ff @(posedge clock) begin
         end
 
         // -------------------------------------
-        // Device transmission of Tx buffer
+        // System transmission of Tx buffer
         // -------------------------------------
         // Most likely a ACK is being sent by the System
         UASystemTransmit: begin
@@ -372,8 +378,18 @@ always_ff @(posedge clock) begin
             
             // Wait for the byte to finish transmitting.
             if (tx_complete) begin
-                control2[CTL_DEV_TRX] <= 0;     // Signal System byte is sent.
-                // Transition back to idle
+                control2[CTL_DEV_TRX] <= 0;     // Signal the System a byte is sent.
+                // Automatically relinqesh control if detected EOS
+                if (tx_buffer[7:4] == EOS_Signal) begin
+                    $display("EOS sent and detected");
+                    control2[CTL_SYS_GRNT] <= 0;
+                end
+
+                tx_buffer <= 0;
+                
+                control2[CTL_TRX_CMP] <= 1; // Signal data sent
+
+                // Transition back to idle: UASystemIdle
             end
         end
 

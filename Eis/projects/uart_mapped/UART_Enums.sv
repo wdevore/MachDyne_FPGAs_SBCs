@@ -64,8 +64,10 @@ typedef enum logic [2:0] {
     CTL_SYS_SRC,
     // If Set then System has the mutex and has control.
     CTL_SYS_GRNT,
-    // The a transmission sequence should begin.
-    CTL_DEV_TRX
+    // Indidate a transmission sequence should begin.
+    CTL_DEV_TRX,
+    // Indicator that byte was sent via UARTTx
+    CTL_TRX_CMP
 } UARTControl2Bits; 
 
 // ------------------------------------------------------------------

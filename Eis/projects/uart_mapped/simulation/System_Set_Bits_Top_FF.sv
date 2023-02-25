@@ -94,3 +94,74 @@
             cs <= 1;    // Disable Chip select
             wr <= 1;    // Disable writing to component
         end
+
+        // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        // Now wait for the data to send. This means we need to
+        // poll control2 register
+        // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        SMEnableInterrupts_S16: begin
+            addr <= 3'b010; // Address control2 register
+            cs <= 0;    // Enable Chip select
+        end
+
+        SMEnableInterrupts_S17: begin
+            component_data <= out_data;
+        end
+
+        SMEnableInterrupts_S18: begin
+            // Default to SMEnableInterrupts_S16
+            cs <= 1;    // Disable chip select
+            if (component_data[CTL_TRX_CMP]) begin
+                $display("------- Data sent! %h", in_data);
+                // Move to SMEnableInterrupts_S19
+            end
+        end
+
+        // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        // Finally relinquesh control
+        // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        SMEnableInterrupts_S19: begin
+            in_data <= 8'b0101_0000;    // EOS signal
+            addr <= 3'b100; // Address Tx register
+            cs <= 0;    // Enable Chip select
+        end
+
+        SMEnableInterrupts_S20: begin
+            wr <= 0;    // Enable writing to component
+        end
+
+        SMEnableInterrupts_S21: begin
+            wr <= 0;
+        end
+
+        SMEnableInterrupts_S22: begin
+            cs <= 1;    // Disable Chip select
+            wr <= 1;    // Disable writing to component
+        end
+
+        // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        // Now wait for the data to send. This means we need to
+        // poll control2 register
+        // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        SMEnableInterrupts_S23: begin
+            addr <= 3'b010; // Address control2 register
+            cs <= 0;    // Enable Chip select
+        end
+
+        SMEnableInterrupts_S24: begin
+            component_data <= out_data;
+        end
+
+        SMEnableInterrupts_S25: begin
+            // Default to SMEnableInterrupts_S23
+            cs <= 1;    // Disable chip select
+            if (component_data[CTL_TRX_CMP]) begin
+                $display("------- Data sent! %h", in_data);
+                // Move to SMEnableInterrupts_S26
+            end
+        end
+
+        SMEnableInterrupts_S26: begin
+        end
+
+        // Stop 

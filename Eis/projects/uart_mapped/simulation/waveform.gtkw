@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.103 (w)1999-2019 BSI
-[*] Fri Feb 24 03:22:38 2023
+[*] Sat Feb 25 22:10:40 2023
 [*]
 [dumpfile] "/media/RAMDisk/waveform.vcd"
-[dumpfile_mtime] "Fri Feb 24 03:15:20 2023"
-[dumpfile_size] 421190
+[dumpfile_mtime] "Sat Feb 25 22:10:33 2023"
+[dumpfile_size] 499149
 [savefile] "/media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Eis/projects/uart_mapped/simulation/waveform.gtkw"
 [timestart] 0
-[size] 2082 913
-[pos] 61 303
-*-12.018808 620 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[size] 1604 913
+[pos] 0 182
+*-13.018808 12211 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] TOP.
 [treeopen] TOP.Top.
 [treeopen] TOP.Top.uart_uut.
@@ -24,7 +24,8 @@
 TOP.Top.sysClock
 [color] 1
 TOP.Top.reset
-@24
+@2024
+^1 /media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Eis/projects/uart_mapped/simulation/filter_System_Set_Bits_top_states.txt
 TOP.Top.state[5:0]
 @28
 TOP.Top.reset_complete
@@ -47,7 +48,7 @@ TOP.Top.client_uart.tx_bits[7:0]
 @200
 -UARTComp
 @2024
-^1 /media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Eis/projects/uart_mapped/simulation/filter_ua_states.txt
+^2 /media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Eis/projects/uart_mapped/simulation/filter_ua_states.txt
 TOP.Top.uart_uut.state[5:0]
 @28
 TOP.Top.uart_uut.addr[2:0]
@@ -71,7 +72,19 @@ TOP.Top.uart_uut.control1[7:0]
 -group_end
 @28
 TOP.Top.uart_uut.control2_wr
+@c00029
 TOP.Top.uart_uut.control2[7:0]
+@29
+(0)TOP.Top.uart_uut.control2[7:0]
+(1)TOP.Top.uart_uut.control2[7:0]
+(2)TOP.Top.uart_uut.control2[7:0]
+(3)TOP.Top.uart_uut.control2[7:0]
+(4)TOP.Top.uart_uut.control2[7:0]
+(5)TOP.Top.uart_uut.control2[7:0]
+(6)TOP.Top.uart_uut.control2[7:0]
+(7)TOP.Top.uart_uut.control2[7:0]
+@1401201
+-group_end
 @22
 [color] 7
 TOP.Top.uart_uut.key_code[7:0]
@@ -93,9 +106,8 @@ TOP.Top.uart_uut.tx_buffer[7:0]
 TOP.Top.uart_uut.uart_tx.state[2:0]
 @22
 TOP.Top.uart_uut.uart_tx.tx_byte[7:0]
-@29
-TOP.Top.uart_uut.uart_tx.tx_complete
 @28
+TOP.Top.uart_uut.uart_tx.tx_complete
 TOP.Top.uart_uut.uart_tx.tx_out
 [pattern_trace] 1
 [pattern_trace] 0

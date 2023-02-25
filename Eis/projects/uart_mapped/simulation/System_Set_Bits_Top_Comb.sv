@@ -70,7 +70,58 @@
         SMEnableInterrupts_S15: begin
             next_state = SMEnableInterrupts_S16;
         end
+        // -------------------------------------------
 
         SMEnableInterrupts_S16: begin
+            next_state = SMEnableInterrupts_S17;
+        end
+
+        SMEnableInterrupts_S17: begin
+            next_state = SMEnableInterrupts_S18;
+        end
+
+        SMEnableInterrupts_S18: begin
+            next_state = SMEnableInterrupts_S16;
+
+            if (component_data[CTL_TRX_CMP]) begin
+                next_state = SMEnableInterrupts_S19;
+            end
+        end
+        // -------------------------------------------
+
+        SMEnableInterrupts_S19: begin
+            next_state = SMEnableInterrupts_S20;
+        end
+
+        SMEnableInterrupts_S20: begin
+            next_state = SMEnableInterrupts_S21;
+        end
+
+        SMEnableInterrupts_S21: begin
+            next_state = SMEnableInterrupts_S22;
+        end
+
+        SMEnableInterrupts_S22: begin
+            next_state = SMEnableInterrupts_S23;
+        end
+
+        // -------------------------------------------
+        SMEnableInterrupts_S23: begin
+            next_state = SMEnableInterrupts_S24;
+        end
+
+        SMEnableInterrupts_S24: begin
+            next_state = SMEnableInterrupts_S25;
+        end
+
+        SMEnableInterrupts_S25: begin
+            next_state = SMEnableInterrupts_S23;
+
+            if (component_data[CTL_TRX_CMP]) begin
+                next_state = SMEnableInterrupts_S26;
+            end
+        end
+
+        SMEnableInterrupts_S26: begin
             next_state = SMStop;
         end

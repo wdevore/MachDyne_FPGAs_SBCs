@@ -109,7 +109,7 @@ always_ff @(posedge sysClock) begin
         `include "System_Set_Bits_Top_FF.sv"
 
         SMStop: begin
-            // $display(" STOPPED !");
+            // $display(" STOPPED ! %d", state);
             // $finish();
         end
 
