@@ -1,0 +1,24 @@
+0 SMReset0
+1 SMReset1
+2 SMResetComplete
+3 SMIdle
+4 S1
+5 S2
+6 S3
+7 S4
+8 S5
+9 S6
+10 S7
+11 S8
+12 S9
+13 S10
+14 S11
+15 S12
+16 S13
+17 S14
+18 S15
+19 S16
+20 S17
+21 S18
+22 SMStop
+

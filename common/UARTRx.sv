@@ -5,6 +5,7 @@
 
 // UART receiver
 // Receives a byte using 8N1 format
+// The rx_start signal remains active for 1 baud
 
 module UARTRx
 (
@@ -13,6 +14,7 @@ module UARTRx
     input  logic rx_in,             // Incoming bits
     input  logic rx_ack,            // Acknowledge the rx_complete signal
     output logic [7:0] rx_byte,     // Byte received
+    output logic rx_start,          // Signal a byte has just arrived
     output logic rx_complete        // Signal a byte was received (active high) for 1 cycle.
 );
 
@@ -56,6 +58,7 @@ always_ff @(posedge sourceClk) begin
         RxReset: begin
             rx_bits <= 0;
             rx_complete <= 0;
+            rx_start <= 0;
             state <= RxIdle;
             baud_counter <= 0;
             rx_byte <= 0;
@@ -65,6 +68,7 @@ always_ff @(posedge sourceClk) begin
             // Detect Start bit falling edge
             if (Rx_fallingedge) begin
                 state <= RxStartBit;
+                rx_start <= 1;          // Signal data is arriving
                 rx_byte <= 0;
                 rx_bits <= 0;
                 baud_counter <= 0;
@@ -84,6 +88,7 @@ always_ff @(posedge sourceClk) begin
             // hold for 1 bit period.
             if (baud_tick == 1'b1) begin
                 state <= RxReceiving;
+                rx_start <= 0;      // Signal no longer relevant
                 baud_counter <= 0;
                 // Sample first bit
                 rx_bits <= {Rx_sync, rx_bits[7:1]};
@@ -128,10 +133,10 @@ always_ff @(posedge sourceClk) begin
         end
 
         RxComplete: begin
-            if (rx_ack) begin
+            // if (rx_ack) begin
                 rx_complete <= 0;
                 state <= RxIdle;
-            end
+            // end
         end
 
         default: begin

@@ -1,0 +1,7 @@
+0 Reset
+1 Idle
+2 HalfBit
+3 StartBit
+4 Receiving
+5 StopBit
+6 Complete

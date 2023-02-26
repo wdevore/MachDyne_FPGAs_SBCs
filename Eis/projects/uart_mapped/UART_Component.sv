@@ -135,14 +135,16 @@ UARTTx uart_tx (
 // UART Receiver writes to the buffer
 logic [DATA_WIDTH-1:0] rx_byte;
 logic rx_complete;
+logic rx_start;
 logic rx_ack;       // Active high
 
 UARTRx uart_rx (
     .sourceClk(clock),
     .reset(reset),
-    .rx_in(rx_in),
+    .rx_in(rx_in),      // bits
     .rx_ack(rx_ack),
     .rx_byte(rx_byte),
+    .rx_start(rx_start),
     .rx_complete(rx_complete)
 );
 
@@ -319,19 +321,22 @@ always_ff @(posedge clock) begin
         // interrupts (if enabled).
         UASystemIdle: begin
             // Wait for ACK from Client (software)
+            // However, it could be something rouge like a Request for control.
             if (rx_complete) begin
                 // Capture byte
                 rx_buffer <= rx_byte;
 
                 // We can acknowlegde immediately because we are not doing anything with the byte.
                 rx_ack <= 1;
+
+                // Move to: UASystemCheckByte
             end
             else if (control2[CTL_DEV_TRX]) begin
                 $display("Data written to tx buffer");
                 // A byte has been written to the Tx buffer.
                 // Transmit it.
                 control2[CTL_DEV_TRX]  <= 0;
-                // Reset data sent bit too.
+                // Reset data sent signal too.
                 control2[CTL_TRX_CMP] <= 0;
                 // Move to: UASystemTransmit
             end
@@ -344,6 +349,7 @@ always_ff @(posedge clock) begin
             if (signal == CRC_Signal) begin
                 // Reject it because System currently has control.
                 tx_select <= REJ_Signal_Select;  // Select the signal value
+                control2[CTL_DVC_BSY] <= 1; // Device is now busy sending Reject signal
             end
         end
 
@@ -357,7 +363,9 @@ always_ff @(posedge clock) begin
             // Wait for the byte to finish transmitting.
             if (tx_complete) begin
                 tx_select <= TxByte_Select;
-                // The Client is now aware it has control.
+                // The Client has been notified of rejection
+                control2[CTL_DVC_BSY] <= 0; // Device is no longer busy
+
                 // Move to Client's idle sequence
                 // next_state <= UASystemIdle;
             end

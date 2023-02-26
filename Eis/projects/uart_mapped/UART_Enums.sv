@@ -67,7 +67,9 @@ typedef enum logic [2:0] {
     // Indidate a transmission sequence should begin.
     CTL_DEV_TRX,
     // Indicator that byte was sent via UARTTx
-    CTL_TRX_CMP
+    CTL_TRX_CMP,
+    // Device is busy. Most likely sending REJ_Signal or something else
+    CTL_DVC_BSY
 } UARTControl2Bits; 
 
 // ------------------------------------------------------------------

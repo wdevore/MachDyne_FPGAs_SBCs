@@ -1,22 +1,22 @@
 [*]
 [*] GTKWave Analyzer v3.3.103 (w)1999-2019 BSI
-[*] Sat Feb 25 22:10:40 2023
+[*] Sun Feb 26 20:34:36 2023
 [*]
 [dumpfile] "/media/RAMDisk/waveform.vcd"
-[dumpfile_mtime] "Sat Feb 25 22:10:33 2023"
-[dumpfile_size] 499149
+[dumpfile_mtime] "Sun Feb 26 18:18:07 2023"
+[dumpfile_size] 487247
 [savefile] "/media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Eis/projects/uart_mapped/simulation/waveform.gtkw"
 [timestart] 0
-[size] 1604 913
+[size] 2583 1104
 [pos] 0 182
-*-13.018808 12211 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-12.434776 7620 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] TOP.
 [treeopen] TOP.Top.
 [treeopen] TOP.Top.uart_uut.
 [sst_width] 221
 [signals_width] 406
 [sst_expanded] 1
-[sst_vpaned_height] 251
+[sst_vpaned_height] 320
 @200
 -Top
 @28
@@ -25,9 +25,12 @@ TOP.Top.sysClock
 [color] 1
 TOP.Top.reset
 @2024
-^1 /media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Eis/projects/uart_mapped/simulation/filter_System_Set_Bits_top_states.txt
+^1 /media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Eis/projects/uart_mapped/simulation/filter_Client_Rejected_top_states.txt
 TOP.Top.state[5:0]
+@22
+TOP.Top.client_tx_byte[7:0]
 @28
+TOP.Top.client_tx_out
 TOP.Top.reset_complete
 @22
 TOP.Top.reset_cnt[3:0]
@@ -35,16 +38,20 @@ TOP.Top.in_data[7:0]
 TOP.Top.out_data[7:0]
 [color] 7
 TOP.Top.component_data[7:0]
-@200
--Client
-@22
-TOP.Top.tx_byte[7:0]
 @28
-TOP.Top.tx_en
 [color] 3
 TOP.Top.tx_complete
+TOP.Top.tx_en
+@200
+-Psuedo Client
+@28
+TOP.Top.client_uart.state[2:0]
+TOP.Top.client_uart.tx_en
+TOP.Top.client_uart.tx_complete
 @22
 TOP.Top.client_uart.tx_bits[7:0]
+@28
+TOP.Top.client_uart.tx_out
 @200
 -UARTComp
 @2024
@@ -72,9 +79,9 @@ TOP.Top.uart_uut.control1[7:0]
 -group_end
 @28
 TOP.Top.uart_uut.control2_wr
-@c00029
+@c00028
 TOP.Top.uart_uut.control2[7:0]
-@29
+@28
 (0)TOP.Top.uart_uut.control2[7:0]
 (1)TOP.Top.uart_uut.control2[7:0]
 (2)TOP.Top.uart_uut.control2[7:0]
@@ -83,7 +90,7 @@ TOP.Top.uart_uut.control2[7:0]
 (5)TOP.Top.uart_uut.control2[7:0]
 (6)TOP.Top.uart_uut.control2[7:0]
 (7)TOP.Top.uart_uut.control2[7:0]
-@1401201
+@1401200
 -group_end
 @22
 [color] 7
@@ -91,17 +98,30 @@ TOP.Top.uart_uut.key_code[7:0]
 @28
 [color] 5
 TOP.Top.uart_uut.neither_have_control
-TOP.Top.uart_uut.rx_complete
-TOP.Top.uart_uut.rx_ack
 @22
 TOP.Top.uart_uut.rx_buffer[7:0]
+@28
+TOP.Top.uart_uut.rx_ack
+@200
+-UARTRx comp
+@28
+TOP.Top.uart_uut.uart_rx.baud_tick
+@2024
+^3 /media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Eis/projects/uart_mapped/simulation/filter_UARTRx_states.txt
+TOP.Top.uart_uut.uart_rx.state[2:0]
+@29
+TOP.Top.uart_uut.uart_rx.rx_in
+@28
+TOP.Top.uart_uut.uart_rx.Rx_fallingedge
+TOP.Top.uart_uut.rx_start
+TOP.Top.uart_uut.rx_complete
+@200
+-UARTTx
 @28
 TOP.Top.uart_uut.tx_en
 TOP.Top.uart_uut.tx_buff_wr
 @22
 TOP.Top.uart_uut.tx_buffer[7:0]
-@200
--UARTTx
 @28
 TOP.Top.uart_uut.uart_tx.state[2:0]
 @22

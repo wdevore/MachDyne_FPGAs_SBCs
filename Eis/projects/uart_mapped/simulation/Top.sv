@@ -21,8 +21,8 @@ UART_Component uart_uut (
     .cs(cs),
     .rd(rd),
     .wr(wr),
-    .rx_in(client_tx_out),      // From Client
-    .tx_out(client_rx_in),      // To Client
+    .rx_in(client_tx_out),      // From Client (bit)
+    .tx_out(client_rx_in),      // To Client (bit)
     .addr(addr),
     .out_data(out_data),
     .in_data(in_data),
@@ -36,14 +36,15 @@ UART_Component uart_uut (
 // -----------------------------------------------------------
 logic tx_en;
 logic tx_complete;
-logic [7:0] tx_byte;
+logic [7:0] client_tx_byte;
 logic client_tx_out;
 
+// Pseudo Client
 UARTTx client_uart (
     .sourceClk(sysClock),
     .reset(reset),
     .tx_en(tx_en),
-    .tx_byte(tx_byte),
+    .tx_byte(client_tx_byte),
     .tx_out(client_tx_out),        // Routes to rx_in on uart_uut
     .tx_complete(tx_complete)
 );
@@ -106,7 +107,8 @@ always_ff @(posedge sysClock) begin
         end
 
         // `include "Client_Send_Keycode_Top_FF.sv"
-        `include "System_Set_Bits_Top_FF.sv"
+        // `include "System_Set_Bits_Top_FF.sv"
+        `include "Client_Rejected_Request_Top_FF.sv"
 
         SMStop: begin
             // $display(" STOPPED ! %d", state);
@@ -114,7 +116,7 @@ always_ff @(posedge sysClock) begin
         end
 
         default: begin
-            $display("********* UNKNOWN STATE *********** %d",state);
+            $display("FF ********* UNKNOWN STATE *********** %d",state);
         end
 
     endcase
@@ -147,14 +149,14 @@ always_comb begin
         end
 
         // `include "Client_Send_Keycode_Top_Comb.sv"
-        `include "System_Set_Bits_Top_Comb.sv"
+        `include "Client_Rejected_Request_Top_Comb.sv"
 
         SMStop: begin
             next_state = SMStop;
         end
 
         default: begin
-            $display("********* UNKNOWN STATE *********** Sync: %d", next_state);
+            $display("Comb ********* UNKNOWN STATE *********** Sync: %d", next_state);
         end
 
     endcase
