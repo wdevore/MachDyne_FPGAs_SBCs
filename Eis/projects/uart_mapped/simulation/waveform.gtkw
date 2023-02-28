@@ -1,17 +1,18 @@
 [*]
 [*] GTKWave Analyzer v3.3.103 (w)1999-2019 BSI
-[*] Sun Feb 26 20:34:36 2023
+[*] Tue Feb 28 04:09:10 2023
 [*]
 [dumpfile] "/media/RAMDisk/waveform.vcd"
-[dumpfile_mtime] "Sun Feb 26 18:18:07 2023"
-[dumpfile_size] 487247
+[dumpfile_mtime] "Tue Feb 28 04:06:52 2023"
+[dumpfile_size] 525721
 [savefile] "/media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Eis/projects/uart_mapped/simulation/waveform.gtkw"
 [timestart] 0
 [size] 2583 1104
 [pos] 0 182
-*-12.434776 7620 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-11.825675 542 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] TOP.
 [treeopen] TOP.Top.
+[treeopen] TOP.Top.client_rx_uart.
 [treeopen] TOP.Top.uart_uut.
 [sst_width] 221
 [signals_width] 406
@@ -43,7 +44,7 @@ TOP.Top.component_data[7:0]
 TOP.Top.tx_complete
 TOP.Top.tx_en
 @200
--Psuedo Client
+-Psuedo Tx Client
 @28
 TOP.Top.client_uart.state[2:0]
 TOP.Top.client_uart.tx_en
@@ -52,6 +53,12 @@ TOP.Top.client_uart.tx_complete
 TOP.Top.client_uart.tx_bits[7:0]
 @28
 TOP.Top.client_uart.tx_out
+@200
+-Psuedo Rx Client
+@28
+TOP.Top.client_rx_uart.rx_complete
+@23
+TOP.Top.client_rx_uart.rx_byte[7:0]
 @200
 -UARTComp
 @2024
@@ -109,9 +116,8 @@ TOP.Top.uart_uut.uart_rx.baud_tick
 @2024
 ^3 /media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Eis/projects/uart_mapped/simulation/filter_UARTRx_states.txt
 TOP.Top.uart_uut.uart_rx.state[2:0]
-@29
-TOP.Top.uart_uut.uart_rx.rx_in
 @28
+TOP.Top.uart_uut.uart_rx.rx_in
 TOP.Top.uart_uut.uart_rx.Rx_fallingedge
 TOP.Top.uart_uut.rx_start
 TOP.Top.uart_uut.rx_complete

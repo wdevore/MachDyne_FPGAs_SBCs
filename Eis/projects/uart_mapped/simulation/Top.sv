@@ -39,7 +39,7 @@ logic tx_complete;
 logic [7:0] client_tx_byte;
 logic client_tx_out;
 
-// Pseudo Client
+// Pseudo Client Transmitter
 UARTTx client_uart (
     .sourceClk(sysClock),
     .reset(reset),
@@ -49,9 +49,24 @@ UARTTx client_uart (
     .tx_complete(tx_complete)
 );
 
-/* verilator lint_off UNUSED */
+logic rx_in;
+logic rx_ack;
+logic [7:0] rx_byte;
+logic rx_start;
+logic rx_complete;
+
+// Pseudo Client Receiver
+UARTRx client_rx_uart (
+    .sourceClk(sysClock),
+    .reset(reset),
+    .rx_in(client_rx_in),
+    .rx_ack(rx_ack),
+    .rx_byte(rx_byte),
+    .rx_start(rx_start),        
+    .rx_complete(rx_complete)
+);
+
 logic client_rx_in;
-/* verilator lint_on UNUSED */
 
 // ------------------------------------------------------------------------
 // State machine controlling simulation
@@ -108,7 +123,8 @@ always_ff @(posedge sysClock) begin
 
         // `include "Client_Send_Keycode_Top_FF.sv"
         // `include "System_Set_Bits_Top_FF.sv"
-        `include "Client_Rejected_Request_Top_FF.sv"
+        // `include "Client_Rejected_Request_Top_FF.sv"
+        `include "Client_Accepted_Request_Top_FF.sv"
 
         SMStop: begin
             // $display(" STOPPED ! %d", state);
@@ -149,7 +165,9 @@ always_comb begin
         end
 
         // `include "Client_Send_Keycode_Top_Comb.sv"
-        `include "Client_Rejected_Request_Top_Comb.sv"
+        // `include "System_Set_Bits_Top_Comb.sv"
+        // `include "Client_Rejected_Request_Top_Comb.sv"
+        `include "Client_Accepted_Request_Top_Comb.sv"
 
         SMStop: begin
             next_state = SMStop;
