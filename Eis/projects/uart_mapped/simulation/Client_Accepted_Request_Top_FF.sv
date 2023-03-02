@@ -23,7 +23,7 @@
         // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
         SM_S4: begin
             if (rx_complete) begin
-                $display("Client response is: %h", );
+                $display("Client response is: %h", rx_byte);
             end
         end
 
