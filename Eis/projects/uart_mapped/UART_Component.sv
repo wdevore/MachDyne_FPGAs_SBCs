@@ -418,6 +418,9 @@ always_ff @(posedge clock) begin
                 // We can acknowlegde immediately because we are not doing anything with the byte.
                 rx_ack <= 1;
             end
+            else if (control1[CTL_STR_EOS])  begin
+                control1[CTL_STR_EOS] <= 0;
+            end
         end
 
         UAClientCheckBuffer: begin
@@ -429,12 +432,14 @@ always_ff @(posedge clock) begin
             // The System (software) is polling these bits.
             case (signal)
                 BOS_Signal: begin
+                    $display("Client is begining stream");
                     control1[CTL_STR_BOS] <= 1;
                 end
                 DAT_Signal: begin
                     control1[CTL_STR_DAT] <= 1;
                 end
                 EOS_Signal: begin
+                    $display("Client is ending stream");
                     control1[CTL_STR_EOS] <= 1;
                 end
                 default: begin
@@ -638,6 +643,9 @@ always_comb begin
 
             if (rx_complete) begin
                 next_state = UAClientCheckBuffer;
+            end
+            else if (control1[CTL_STR_EOS])  begin
+                next_state = UADeviceIdle;
             end
         end
 
