@@ -420,6 +420,8 @@ always_ff @(posedge clock) begin
             end
             else if (control1[CTL_STR_EOS])  begin
                 control1[CTL_STR_EOS] <= 0;
+                $display("Auto removing control of client");
+                control1[CTL_CLI_GRNT] <= 0; // Auto relinguish control
             end
         end
 
@@ -429,7 +431,7 @@ always_ff @(posedge clock) begin
             // Once any one of these bits are sets the System will write
             // an ACK signal to the Tx buffer. The System does not need control to
             // perform it part.
-            // The System (software) is polling these bits.
+            // The System (software) is polling clearing these bits
             case (signal)
                 BOS_Signal: begin
                     $display("Client is begining stream");
@@ -506,9 +508,6 @@ always_comb begin
             end
         end
 
-        // #### __---__---__---__---__---__---__---__---__---__---__--- ####
-        // Device sequences
-        // #### __---__---__---__---__---__---__---__---__---__---__--- ####
         UADeviceCheckBuffer: begin
             // next_state = UADeviceCheckBuffer;
 
