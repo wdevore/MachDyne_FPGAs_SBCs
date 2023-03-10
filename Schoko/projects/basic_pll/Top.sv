@@ -24,12 +24,13 @@ pll basic_pll (
 
 logic [26:0] counter = 0;
 
-assign LED_G = 1'b1;
-assign LED_B = ~counter[21];//1'b1;
-assign LED_R = ~counter[21];
+assign LED_G = ~counter[22];
+assign LED_B = ~counter[21];
+assign LED_R = ~counter[20];
 
 always @(posedge clk_25MHz) begin
-	counter <= counter + 1;
+	if (locked)
+		counter <= counter + 1;
 end
 
 endmodule

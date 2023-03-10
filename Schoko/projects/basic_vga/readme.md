@@ -46,9 +46,7 @@ Vert Total Pixels = 480 + 10 +2 + 33 = 525
 
 # PLL
 
-If the core clock is 48MHz and M = 2^20 = 1048576:
 ```
-
 ecppll -i 48 --reset -o 25.175 --highres -f pll.v
 
 Pll parameters:
@@ -60,5 +58,4 @@ clkout1 divisor: 22
 clkout1 frequency: 25.1748 MHz
 clkout1 phase shift: 0 degrees
 VCO frequency: 553.846
-
-
+```
