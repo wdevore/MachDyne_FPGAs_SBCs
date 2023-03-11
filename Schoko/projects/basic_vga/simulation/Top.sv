@@ -25,7 +25,6 @@ pixel_clk_480p pix_clk (
 
 logic vga_h_sync;
 logic vga_v_sync;
-logic inDisplayArea;
 logic [9:0] counter_x = 0;
 logic [9:0] counter_y = 0;
 
@@ -34,7 +33,6 @@ hvsync_generator sync_gen (
 	.reset(0),
 	.h_sync(vga_h_sync),
 	.v_sync(vga_v_sync),
-	.inDisplayArea(inDisplayArea),
 	.h_count(counter_x),
 	.v_count(counter_y),
 	.display_en(display_en)

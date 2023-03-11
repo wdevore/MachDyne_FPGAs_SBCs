@@ -7,7 +7,7 @@ module pll
     input reset, // 0:inactive, 1:reset
     input clkin, // 48 MHz, 0 deg
     output clkout0, // 25.1748 MHz, 0 deg
-    output locked
+    output locked       // Active High
 );
 wire clkfb;
 (* FREQUENCY_PIN_CLKI="48" *)

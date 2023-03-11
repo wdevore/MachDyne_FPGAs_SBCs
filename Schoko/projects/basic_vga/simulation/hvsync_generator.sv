@@ -1,11 +1,11 @@
 // https://github.com/imuguruza/alhambra_II_test/blob/master/vga/vga_test/vga_sync.v
+// http://javiervalcarce.eu/html/vga-signal-format-timming-specs-en.html
 
 module hvsync_generator(
     input  logic clk,
     input  logic reset,     // Active low
     output logic h_sync,
     output logic v_sync,
-    output logic inDisplayArea,
     output logic [9:0] h_count,
     output logic [9:0] v_count,
     output logic display_en

@@ -1,6 +1,9 @@
 TOP_FILE = Top.sv
 
-SUB_MODULES_FILES = pll.v
+SUB_MODULES_FILES = \
+	hvsync_generator.sv \
+	pll.v \
+	pixel_clk_480p.sv
 
 MODULES_FILES = ${SUB_MODULES_FILES} ${TOP_FILE}
 
