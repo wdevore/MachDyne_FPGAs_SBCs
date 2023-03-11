@@ -27,50 +27,6 @@ logic clock_locked;
 logic display_en;
 logic reset = 0;
 
-logic green_channel;
-logic red_channel;
-logic blue_channel;
-
-assign vga_r = red_channel;
-assign vga_g = green_channel;
-assign vga_b = blue_channel;
-
-logic [9:0] x_pos = 1;
-logic [9:0] y_pos = 1;
-logic [7:0] cnt = 0;
-
-logic flip = 1;
-
-always_comb begin
-	green_channel = 0;
-	red_channel = 0;
-	blue_channel = 0;
-
-	if (display_en) begin
-		// if (pix_pos_x < 100 && pix_pos_y < 100)
-		if (pix_pos_x >= (x_pos + 100) && pix_pos_x < (x_pos + 200) && pix_pos_y >= (y_pos + 100) && (pix_pos_y < (y_pos + 200)))
-			green_channel = 1;
-
-		if (pix_pos_x >= 100 && pix_pos_x < 200 && pix_pos_y < 100)
-			red_channel = 1;
-
-		if (pix_pos_x >= 200 && pix_pos_x < 300 && pix_pos_y < 100)
-			blue_channel = 1;
-	end
-end
-
-always_ff @(posedge counter[20]) begin
-	cnt <= cnt + 1;
-
-	if (cnt > 25) begin
-		flip = ~flip;
-		cnt <= 0;
-	end
-
-	x_pos <= x_pos + (flip ? 1 : -1);
-	y_pos <= y_pos + (flip ? 1 : -1);
-end
-
 pixel_clk_480p clk_480p (
 	.clk_48mhz(CLK_48),
 	.reset(reset),
@@ -90,5 +46,20 @@ hvsync_generator sync_gen (
 	.v_count(pix_pos_y),
 	.display_en(display_en)
 );
+
+// ---------------------------------------------------------------
+// Fun stuff below ;-)
+// ---------------------------------------------------------------
+logic green_channel;
+logic red_channel;
+logic blue_channel;
+
+assign vga_r = red_channel;
+assign vga_g = green_channel;
+assign vga_b = blue_channel;
+
+// `include "white_background.sv"
+// `include "black_background.sv"
+`include "modulo.sv"
 
 endmodule
