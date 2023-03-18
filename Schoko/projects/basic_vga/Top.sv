@@ -3,6 +3,7 @@
 module Top
 (
 	input logic CLK_48,
+	// Note: the default .lpf has the Red and Green backwards
 	output logic LED_R,
 	output logic LED_G,
 	output logic LED_B,
@@ -14,9 +15,9 @@ module Top
 );
 
 logic [26:0] counter = 0;
-assign LED_G = ~counter[22];
-assign LED_B = ~counter[21];
-assign LED_R = ~counter[20];
+assign LED_R = ~counter[22];
+assign LED_G = ~counter[21];
+assign LED_B = ~counter[20];
 
 always @(posedge CLK_48) begin
 	counter <= counter + 1;

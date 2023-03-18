@@ -1,0 +1,28 @@
+[*]
+[*] GTKWave Analyzer v3.3.103 (w)1999-2019 BSI
+[*] Sat Mar 18 03:23:45 2023
+[*]
+[dumpfile] "/media/RAMDisk/waveform.vcd"
+[dumpfile_mtime] "Sat Mar 18 03:21:14 2023"
+[dumpfile_size] 894193
+[savefile] "/media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Schoko/projects/femto/simulation/waveform.gtkw"
+[timestart] 0
+[size] 1813 845
+[pos] -1 -1
+*-9.000000 690 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] TOP.
+[treeopen] TOP.Top.
+[treeopen] TOP.Top.soc.
+[sst_width] 221
+[signals_width] 206
+[sst_expanded] 1
+[sst_vpaned_height] 230
+@28
+TOP.sysClock
+@22
+TOP.Top.soc.state[4:0]
+TOP.Top.soc.next_state[4:0]
+@28
+TOP.Top.soc.reset
+[pattern_trace] 1
+[pattern_trace] 0

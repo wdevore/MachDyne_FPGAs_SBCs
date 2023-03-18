@@ -1,9 +1,6 @@
-TOP_FILE = Top.sv
+TOP_FILE = SoC.sv
 
-SUB_MODULES_FILES = \
-	hvsync_generator.sv \
-	pll.v \
-	pixel_clk_480p.sv
+SUB_MODULES_FILES =
 
 MODULES_FILES = ${SUB_MODULES_FILES} ${TOP_FILE}
 
@@ -25,7 +22,7 @@ build: ${MODULES_FILES} ${PINS_CONSTRAINTS}
 	@echo "##### Building..."
 	${ICESTORM_TOOLCHAIN}/bin/yosys -p ${YOSYS_COMMAND} \
 	-l ${BUILD_BIN}/yo.log \
-	-v \
+	-q \
 	-defer \
 	${MODULES_FILES}
 

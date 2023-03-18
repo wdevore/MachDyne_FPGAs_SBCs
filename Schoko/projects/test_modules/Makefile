@@ -1,9 +1,9 @@
 TOP_FILE = Top.sv
 
 SUB_MODULES_FILES = \
-	hvsync_generator.sv \
+	femtorv32_intermissum.sv \
 	pll.v \
-	pixel_clk_480p.sv
+	SoC.sv
 
 MODULES_FILES = ${SUB_MODULES_FILES} ${TOP_FILE}
 
@@ -11,7 +11,9 @@ BUILD_BIN = /media/RAMDisk
 
 ICESTORM_TOOLCHAIN = /usr/local
 
-YOSYS_COMMAND = "synth_ecp5 -blif ${BUILD_BIN}/chip.blif -json ${BUILD_BIN}/hardware.json -top Top"
+# -blif ${BUILD_BIN}/chip.blif
+# -noflatten
+YOSYS_COMMAND = "synth_ecp5 -json ${BUILD_BIN}/hardware.json -top Top"
 
 PINS_CONSTRAINTS = ../schoko_v1.lpf
 
@@ -29,11 +31,12 @@ build: ${MODULES_FILES} ${PINS_CONSTRAINTS}
 	-defer \
 	${MODULES_FILES}
 
+# 	-v
 route: ${BUILD_BIN}/hardware.json
 	@echo "##### Routing..."
 	${ICESTORM_TOOLCHAIN}/bin/nextpnr-ecp5 \
-	-q \
 	-l ${BUILD_BIN}/next.log \
+	-v \
 	--45k \
 	--package CABGA256 \
 	--lpf ${PINS_CONSTRAINTS} \
