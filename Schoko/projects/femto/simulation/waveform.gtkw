@@ -1,28 +1,186 @@
 [*]
 [*] GTKWave Analyzer v3.3.103 (w)1999-2019 BSI
-[*] Sat Mar 18 03:23:45 2023
+[*] Tue Mar 21 21:26:59 2023
 [*]
 [dumpfile] "/media/RAMDisk/waveform.vcd"
-[dumpfile_mtime] "Sat Mar 18 03:21:14 2023"
-[dumpfile_size] 894193
+[dumpfile_mtime] "Tue Mar 21 21:25:51 2023"
+[dumpfile_size] 1173059
 [savefile] "/media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Schoko/projects/femto/simulation/waveform.gtkw"
-[timestart] 0
-[size] 1813 845
-[pos] -1 -1
-*-9.000000 690 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[timestart] 1146
+[size] 2797 1373
+[pos] 61 104
+*-7.000000 1867 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] TOP.
 [treeopen] TOP.Top.
 [treeopen] TOP.Top.soc.
 [sst_width] 221
-[signals_width] 206
+[signals_width] 385
 [sst_expanded] 1
-[sst_vpaned_height] 230
+[sst_vpaned_height] 407
 @28
+[color] 2
 TOP.sysClock
 @22
 TOP.Top.soc.state[4:0]
 TOP.Top.soc.next_state[4:0]
 @28
+[color] 1
 TOP.Top.soc.reset
+@200
+-CPU
+@c02024
+^1 /media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Schoko/projects/femto/simulation/filter_states.txt
+TOP.Top.soc.processor.state[3:0]
+@28
+(0)TOP.Top.soc.processor.state[3:0]
+(1)TOP.Top.soc.processor.state[3:0]
+(2)TOP.Top.soc.processor.state[3:0]
+(3)TOP.Top.soc.processor.state[3:0]
+@1401200
+-group_end
+@22
+TOP.Top.soc.processor.PC[23:0]
+@c00022
+TOP.Top.soc.processor.instr[31:2]
+@28
+(0)TOP.Top.soc.processor.instr[31:2]
+(1)TOP.Top.soc.processor.instr[31:2]
+(2)TOP.Top.soc.processor.instr[31:2]
+(3)TOP.Top.soc.processor.instr[31:2]
+(4)TOP.Top.soc.processor.instr[31:2]
+(5)TOP.Top.soc.processor.instr[31:2]
+(6)TOP.Top.soc.processor.instr[31:2]
+(7)TOP.Top.soc.processor.instr[31:2]
+(8)TOP.Top.soc.processor.instr[31:2]
+(9)TOP.Top.soc.processor.instr[31:2]
+(10)TOP.Top.soc.processor.instr[31:2]
+(11)TOP.Top.soc.processor.instr[31:2]
+(12)TOP.Top.soc.processor.instr[31:2]
+(13)TOP.Top.soc.processor.instr[31:2]
+(14)TOP.Top.soc.processor.instr[31:2]
+(15)TOP.Top.soc.processor.instr[31:2]
+(16)TOP.Top.soc.processor.instr[31:2]
+(17)TOP.Top.soc.processor.instr[31:2]
+(18)TOP.Top.soc.processor.instr[31:2]
+(19)TOP.Top.soc.processor.instr[31:2]
+(20)TOP.Top.soc.processor.instr[31:2]
+(21)TOP.Top.soc.processor.instr[31:2]
+(22)TOP.Top.soc.processor.instr[31:2]
+(23)TOP.Top.soc.processor.instr[31:2]
+(24)TOP.Top.soc.processor.instr[31:2]
+(25)TOP.Top.soc.processor.instr[31:2]
+(26)TOP.Top.soc.processor.instr[31:2]
+(27)TOP.Top.soc.processor.instr[31:2]
+(28)TOP.Top.soc.processor.instr[31:2]
+(29)TOP.Top.soc.processor.instr[31:2]
+@1401200
+-group_end
+@28
+TOP.Top.soc.processor.interrupt_request
+[color] 3
+TOP.Top.soc.processor.writeBack
+@22
+TOP.Top.soc.processor.loadstore_addr[23:0]
+TOP.Top.soc.processor.mem_addr[31:0]
+@28
+TOP.Top.soc.processor.mem_rbusy
+@c00022
+TOP.Top.soc.processor.mem_rdata[31:0]
+@28
+(0)TOP.Top.soc.processor.mem_rdata[31:0]
+(1)TOP.Top.soc.processor.mem_rdata[31:0]
+(2)TOP.Top.soc.processor.mem_rdata[31:0]
+(3)TOP.Top.soc.processor.mem_rdata[31:0]
+(4)TOP.Top.soc.processor.mem_rdata[31:0]
+(5)TOP.Top.soc.processor.mem_rdata[31:0]
+(6)TOP.Top.soc.processor.mem_rdata[31:0]
+(7)TOP.Top.soc.processor.mem_rdata[31:0]
+(8)TOP.Top.soc.processor.mem_rdata[31:0]
+(9)TOP.Top.soc.processor.mem_rdata[31:0]
+(10)TOP.Top.soc.processor.mem_rdata[31:0]
+(11)TOP.Top.soc.processor.mem_rdata[31:0]
+(12)TOP.Top.soc.processor.mem_rdata[31:0]
+(13)TOP.Top.soc.processor.mem_rdata[31:0]
+(14)TOP.Top.soc.processor.mem_rdata[31:0]
+(15)TOP.Top.soc.processor.mem_rdata[31:0]
+(16)TOP.Top.soc.processor.mem_rdata[31:0]
+(17)TOP.Top.soc.processor.mem_rdata[31:0]
+(18)TOP.Top.soc.processor.mem_rdata[31:0]
+(19)TOP.Top.soc.processor.mem_rdata[31:0]
+(20)TOP.Top.soc.processor.mem_rdata[31:0]
+(21)TOP.Top.soc.processor.mem_rdata[31:0]
+(22)TOP.Top.soc.processor.mem_rdata[31:0]
+(23)TOP.Top.soc.processor.mem_rdata[31:0]
+(24)TOP.Top.soc.processor.mem_rdata[31:0]
+(25)TOP.Top.soc.processor.mem_rdata[31:0]
+(26)TOP.Top.soc.processor.mem_rdata[31:0]
+(27)TOP.Top.soc.processor.mem_rdata[31:0]
+(28)TOP.Top.soc.processor.mem_rdata[31:0]
+(29)TOP.Top.soc.processor.mem_rdata[31:0]
+(30)TOP.Top.soc.processor.mem_rdata[31:0]
+(31)TOP.Top.soc.processor.mem_rdata[31:0]
+@1401200
+-group_end
+@28
+TOP.Top.soc.processor.mem_rstrb
+TOP.Top.soc.processor.mem_wbusy
+@22
+TOP.Top.soc.processor.mem_wdata[31:0]
+TOP.Top.soc.processor.mem_wmask[3:0]
+@28
+TOP.Top.soc.processor.mem_byteAccess
+TOP.Top.soc.processor.mem_halfwordAccess
+@22
+TOP.Top.soc.processor.registerFile[0][31:0]
+TOP.Top.soc.processor.registerFile[1][31:0]
+TOP.Top.soc.processor.registerFile[2][31:0]
+TOP.Top.soc.processor.registerFile[3][31:0]
+TOP.Top.soc.processor.rs1[31:0]
+TOP.Top.soc.processor.rs2[31:0]
+TOP.Top.soc.processor.rdId[4:0]
+@28
+TOP.Top.soc.processor.isSYSTEM
+TOP.Top.soc.processor.isLoad
+TOP.Top.soc.processor.isStore
+TOP.Top.soc.processor.isBranch
+TOP.Top.soc.processor.funcM
+@c00028
+TOP.Top.soc.processor.funct3Is[7:0]
+@28
+(0)TOP.Top.soc.processor.funct3Is[7:0]
+(1)TOP.Top.soc.processor.funct3Is[7:0]
+(2)TOP.Top.soc.processor.funct3Is[7:0]
+(3)TOP.Top.soc.processor.funct3Is[7:0]
+(4)TOP.Top.soc.processor.funct3Is[7:0]
+(5)TOP.Top.soc.processor.funct3Is[7:0]
+(6)TOP.Top.soc.processor.funct3Is[7:0]
+(7)TOP.Top.soc.processor.funct3Is[7:0]
+@1401200
+-group_end
+@200
+-ALU
+@28
+TOP.Top.soc.processor.isALU
+TOP.Top.soc.processor.isALUimm
+TOP.Top.soc.processor.isALUreg
+@22
+TOP.Top.soc.processor.aluIn1[31:0]
+TOP.Top.soc.processor.aluIn2[31:0]
+TOP.Top.soc.processor.aluOut_base[31:0]
+[color] 7
+TOP.Top.soc.processor.aluOut[31:0]
+@200
+-SoC
+@28
+TOP.Top.soc.mem_address_is_io
+TOP.Top.soc.mem_address_is_ram
+@22
+TOP.Top.soc.ram_word_address[19:0]
+TOP.Top.soc.mem_address[31:0]
+TOP.Top.soc.ram_rdata[31:0]
+TOP.Top.soc.mem_rdata[31:0]
+@23
+[color] 3
+TOP.Top.port_a[7:0]
 [pattern_trace] 1
 [pattern_trace] 0

@@ -48,8 +48,7 @@ Vert Total Pixels = 480 + 10 +2 + 33 = 525
 
 If the core clock is 48MHz and M = 2^20 = 1048576:
 ```
-
-ecppll -i 48 --reset -o 25.175 --highres -f pll.v
+$ ecppll -i 48 --reset -o 25.175 --highres -f pll.v
 
 Pll parameters:
 Refclk divisor: 13

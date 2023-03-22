@@ -15,9 +15,9 @@ module Top
 );
 
 logic [26:0] counter = 0;
-assign LED_R = ~counter[22];
-assign LED_G = ~counter[21];
-assign LED_B = ~counter[20];
+assign LED_R = ~counter[24];
+assign LED_G = ~counter[23];
+assign LED_B = ~counter[22];
 
 always @(posedge CLK_48) begin
 	counter <= counter + 1;

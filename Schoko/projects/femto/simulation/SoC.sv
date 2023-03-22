@@ -31,37 +31,87 @@ logic locked;
 assign clk = clk_48mhz;
 
 // ------------------------------------------------------------------
-// Memory
+// IO
+// ------------------------------------------------------------------
+logic [31:0] io_rdata; 
+
+// ------------------------------------------------------------------
+// Memory and Mapping
 // ------------------------------------------------------------------
 `define NRV_RAM 65536
+
+//  --------------
+//  |            |  0x00000000
+//  |            |  
+//  |            |  RAM
+//  |            | 
+//  |            |  0x003FFFFF
+//  --------------
+//  |            |  0x00400000   LEDs
+//  |            |  
+//  |            |  IO
+//  |            | 
+//  |            |  ...
+//  --------------
+// 00000000_01000000_00000000_00000000 = 0x00400000
 
 logic mem_address_is_io  =  mem_address[22];
 logic mem_address_is_ram = !mem_address[22];
 logic [19:0] ram_word_address = mem_address[21:2];
+// 256 IO addresses
+logic [7:0] io_word_address = mem_address[7:0];
 
 (* no_rw_check *)
 logic [31:0] RAM[0:(`NRV_RAM/4)-1];
 logic [31:0] ram_rdata;
+logic read_mem;
 
 // The power of YOSYS: it infers BRAM primitives automatically ! (and recognizes
 // masked writes, amazing ...)
 /* verilator lint_off WIDTH */
-always @(posedge clk) begin
+always_ff @(posedge clk) begin
 	if (mem_address_is_ram) begin
+		if (mem_wmask != 0) begin
+			read_mem <= 1;
+			$display("Writing '%h' at 0x%h : mask: %b", mem_wdata, ram_word_address, mem_wmask);
+		end
 		if (mem_wmask[0]) RAM[ram_word_address][ 7:0 ] <= mem_wdata[ 7:0 ];
 		if (mem_wmask[1]) RAM[ram_word_address][15:8 ] <= mem_wdata[15:8 ];
 		if (mem_wmask[2]) RAM[ram_word_address][23:16] <= mem_wdata[23:16];
 		if (mem_wmask[3]) RAM[ram_word_address][31:24] <= mem_wdata[31:24];	 
-	end 
+	end
+
+	if (read_mem) begin
+		read_mem <= 0;
+		$display("RAM at 0x%h = 0x%h", ram_word_address, RAM[ram_word_address]);
+	end
+
+	if (mem_address_is_io) begin
+		case (io_word_address)
+			0: begin
+				$display("Writing to IO: %h", mem_wdata);
+				port_a <= mem_wdata[7:0];
+			end
+		endcase
+	end
+
 	ram_rdata <= RAM[ram_word_address];
 end
 /* verilator lint_on WIDTH */
 
-initial begin
-	// $readmemh("FIRMWARE/firmware.hex",RAM);
-	RAM[0] = 32'h00000001;
-	RAM[1] = 32'h00000002;
+// ----------- Reading -------------------
+// Either reading from IO or Ram.
+assign mem_rdata = mem_address_is_io ? io_rdata : ram_rdata;
 
+initial begin
+	`ifdef PRELOAD_MEMORY
+	$display("Preloading memory");
+	$readmemh("binaries/firmware.hex",RAM);
+	`endif
+
+	`ifdef SHOW_MEMORY
+	for (int i=0; i<10; i++) $display("0x%h", RAM[i]);
+	`endif
 end
 
 // ------------------------------------------------------------------
@@ -72,15 +122,15 @@ FemtoRV32 #(
 	.RESET_ADDR(`NRV_RESET_ADDR)	      
 ) processor (
 	.clk(clk),
-	.mem_addr(mem_address),
-	.mem_wdata(mem_wdata),
-	.mem_wmask(mem_wmask),
-	.mem_rdata(mem_rdata),
-	.mem_rstrb(mem_rstrb),
-	.mem_rbusy(mem_rbusy),
-	.mem_wbusy(mem_wbusy),
-	.interrupt_request(interrupt_request),	      
-	.reset(reset)				// Active Low
+	.mem_addr(mem_address),		// (out) to Ram and peripherals
+	.mem_wdata(mem_wdata),		// out
+	.mem_wmask(mem_wmask),		// out
+	.mem_rdata(mem_rdata),		// in
+	.mem_rstrb(mem_rstrb),		// out
+	.mem_rbusy(mem_rbusy),		// in
+	.mem_wbusy(mem_wbusy),		// in
+	.interrupt_request(interrupt_request),	// in
+	.reset(reset)				// (in) Active Low
 );
 
 SimState state = SMReset;
@@ -92,6 +142,7 @@ always_ff @(posedge clk) begin
         SMReset: begin
             // Hold CPU in reset while Top module starts up.
             reset <= 1'b0;
+			read_mem <= 0;
         end
 
         SMResetComplete: begin
@@ -124,8 +175,6 @@ always_comb begin
 
         SMIdle: begin
 			next_state = SMIdle;
-
-			port_a = mem_wdata[7:0];
         end
 
         default: begin

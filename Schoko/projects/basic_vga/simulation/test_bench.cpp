@@ -56,9 +56,6 @@ int main(int argc, char *argv[])
     tb->setup();
 
     VTop *top = tb->core();
-    // Not really needed unless you want to mess with sub-modules
-    // VTop_Top *topTop = top->Top;
-    // VTop_SPIMaster *spiMaster = topTop->master;
     std::cout << "period: " << period << std::endl;
     std::cout << "hPeriod: " << hPeriod << std::endl;
 
@@ -71,7 +68,7 @@ int main(int argc, char *argv[])
     tb->eval();
     timeStep = step(timeStep, tb, top);
 
-    // Run enough clocks for module to do its thing.
+    // Run enough clocks for atleast 2 video frames
     duration = 26000000*2 + timeStep;
     while (timeStep < duration)
     {

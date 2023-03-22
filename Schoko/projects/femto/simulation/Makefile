@@ -40,7 +40,9 @@ compile:
 	${SIMULATION_TOOLCHAIN} --Mdir ${BUILD_DIR} \
 	--trace -cc \
 	--top-module ${TOP} \
-	--exe --build ${TEST_BENCH} ${MODULES_FILES}
+	--exe --build ${TEST_BENCH} ${MODULES_FILES} \
+	-DPRELOAD_MEMORY \
+	-DSHOW_MEMORY
 
 run:
 	@echo "################## Simulating ##################"
@@ -48,7 +50,20 @@ run:
 
 view:
 	@echo "################## Viewing ##################"
-	gtkwave ${BUILD_DIR}/waveform.vcd ${GTKWAVE_SETTINGS}.gtkw
+	gtkwave ${BUILD_DIR}/waveform.vcd \
+	${GTKWAVE_SETTINGS}.gtkw \
+	--rcvar 'splash_disable on' \
+	--rcvar 'fontname_signals Monospace 14' \
+	--rcvar 'fontname_waves Monospace 14' \
+	--rcvar 'color_back 222222' \
+	--rcvar 'color_trans 999999' \
+	--rcvar 'color_time 00ddff' \
+	--rcvar 'enable_horiz_grid off' \
+	--rcvar 'highlight_wavewindow on' \
+	--rcvar 'show_base_symbols on' \
+	--rcvar 'fill_waveform on' \
+	--rcvar 'disable_mouseover off'
+	
 
 go: compile run view
 	@echo "################## Simulated via Verilator ##################"

@@ -11,7 +11,7 @@ BUILD_BIN = /media/RAMDisk
 
 ICESTORM_TOOLCHAIN = /usr/local
 
-YOSYS_COMMAND = "synth_ecp5 -blif ${BUILD_BIN}/chip.blif -json ${BUILD_BIN}/hardware.json -top Top"
+YOSYS_COMMAND = "synth_ecp5 -json ${BUILD_BIN}/hardware.json -top Top"
 
 PINS_CONSTRAINTS = ../schoko_v1.lpf
 
@@ -25,7 +25,7 @@ build: ${MODULES_FILES} ${PINS_CONSTRAINTS}
 	@echo "##### Building..."
 	${ICESTORM_TOOLCHAIN}/bin/yosys -p ${YOSYS_COMMAND} \
 	-l ${BUILD_BIN}/yo.log \
-	-v \
+	-q \
 	-defer \
 	${MODULES_FILES}
 
@@ -49,6 +49,7 @@ pack: ${BUILD_BIN}/hardware_out.config
 	${BUILD_BIN}/hardware_out.config \
 	--bit ${BUILD_BIN}/hardware.bit
 
+# ----------------------------------- UNUSED ------------------------------------------
 packsvf: ${BUILD_BIN}/hardware_out.config
 	@echo "##### SVF Packing..."
 	${ICESTORM_TOOLCHAIN}/bin/ecppack \
