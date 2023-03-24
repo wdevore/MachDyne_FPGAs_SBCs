@@ -9,8 +9,8 @@
 module SoC
 (
 	input  logic clk_48mhz,
-	input  logic reset,			// Active Low
-	output logic [7:0] port_a
+	output logic [7:0] port_a,
+	output logic [7:0] port_b
 );
 
 // The memory bus.
@@ -21,7 +21,7 @@ logic [31:0] mem_wdata;   // processor -> (mem and peripherals)
 logic        mem_rstrb;   // mem read strobe. Goes high to initiate memory write.
 logic        mem_rbusy;   // processor <- (mem and peripherals). Stays high until a read transfer is finished.
 logic        mem_wbusy;   // processor <- (mem and peripherals). Stays high until a write transfer is finished.
-logic        interrupt_request;
+logic        interrupt_request; // Active high
 
 logic clk;
 logic locked;
@@ -33,17 +33,26 @@ pll soc_pll (
     .clkin(clk_48mhz),
 	.reset(~reset),		// Expects Active High
     .clkout0(clk),		// ~10MHz
-    .locked(locked)
+    .locked(locked)		// Active High
 );
 
 // ------------------------------------------------------------------
-// Memory
+// IO
+// ------------------------------------------------------------------
+localparam LEDs = 0;
+logic [31:0] io_rdata;
+
+// ------------------------------------------------------------------
+// Memory and Mapping
 // ------------------------------------------------------------------
 `define NRV_RAM 65536
 
 logic mem_address_is_io  =  mem_address[22];
 logic mem_address_is_ram = !mem_address[22];
 logic [19:0] ram_word_address = mem_address[21:2];
+
+// 256 IO addresses
+logic [7:0] io_word_address = mem_address[7:0];
 
 (* no_rw_check *)
 logic [31:0] RAM[0:(`NRV_RAM/4)-1];
@@ -57,16 +66,33 @@ always @(posedge clk) begin
 		if (mem_wmask[1]) RAM[ram_word_address][15:8 ] <= mem_wdata[15:8 ];
 		if (mem_wmask[2]) RAM[ram_word_address][23:16] <= mem_wdata[23:16];
 		if (mem_wmask[3]) RAM[ram_word_address][31:24] <= mem_wdata[31:24];	 
-	end 
+	end
+
+	if (mem_address_is_io) begin
+		case (io_word_address)
+			8'b00000000: begin
+				// $display("Writing to IO: %h", mem_wdata);
+				port_a <= mem_wdata[7:0];
+			end
+		endcase
+	end
+
 	ram_rdata <= RAM[ram_word_address];
 end
 
 initial begin
-	// $readmemh("FIRMWARE/firmware.hex",RAM);
-	RAM[0] = 32'h00000001;
-	RAM[1] = 32'h00000002;
-
+	`ifdef PRELOAD_MEMORY
+	$readmemh("binaries/firmware.hex",RAM);
+	`endif
 end
+
+// ----------- Reading -------------------
+// Either reading from IO or Ram.
+assign mem_rdata = mem_address_is_io ? io_rdata : ram_rdata;
+assign interrupt_request = 0;
+assign mem_wbusy = 0;
+assign mem_rbusy = 0;
+assign io_rdata = 0;
 
 // ------------------------------------------------------------------
 // CPU
@@ -76,27 +102,105 @@ FemtoRV32 #(
 	.RESET_ADDR(`NRV_RESET_ADDR)	      
 ) processor (
 	.clk(clk),			
-	.mem_addr(mem_address),
-	.mem_wdata(mem_wdata),
-	.mem_wmask(mem_wmask),
-	.mem_rdata(mem_rdata),
-	.mem_rstrb(mem_rstrb),
-	.mem_rbusy(mem_rbusy),
-	.mem_wbusy(mem_wbusy),
-	.interrupt_request(interrupt_request),	      
-	.reset(reset)				// Active Low
+	.mem_addr(mem_address),		// (out) to Ram and peripherals
+	.mem_wdata(mem_wdata),		// out
+	.mem_wmask(mem_wmask),		// out
+	.mem_rdata(mem_rdata),		// in
+	.mem_rstrb(mem_rstrb),		// out
+	.mem_rbusy(mem_rbusy),		// in
+	.mem_wbusy(mem_wbusy),		// in
+	.interrupt_request(interrupt_request),	// in
+	.reset(reset)				// (in) Active Low
 );
 
-always_ff @(posedge clk) begin
-	if (reset) begin
-	end
+// assign port_a[0] = 1;
+// assign port_a[1] = 1;
+// assign port_a[2] = 1;
+// assign port_a[3] = 1;
+// assign port_a[4] = 1;
+// assign port_a[5] = 1;
+// assign port_a[6] = 1;
+// assign port_a[7] = clk;
 
-	port_a[0] <= mem_rstrb;
-	port_a[1] <= mem_wmask[0];
-	port_a[2] <= mem_address_is_io;
-	port_a[3] <= mem_wdata[0];
+// ------------------------------------------------------------------
+// SoC FSM
+// ------------------------------------------------------------------
+SynState state = SoCReset;
+SynState next_state;
+logic reset;
+
+always_ff @(posedge clk_48mhz) begin
+	// port_a[3] <= 0;
+
+    case (state)
+        SoCReset: begin
+            // Hold CPU in reset while Top module starts up.
+            reset <= 1'b0;
+			// port_a[0] <= 1;
+        end
+
+		SoCResetting: begin
+            reset <= 1'b0;
+			// port_a[1] <= 1;
+		end
+
+        SoCResetComplete: begin
+            reset <= 1'b1;
+			// port_a[2] <= 1;
+        end
+
+        SoCIdle: begin
+			// port_a[3] <= 1;
+        end
+
+        default: begin
+        end
+    endcase
+
+
+	state <= next_state;
 
 end
 
+always_comb begin
+	next_state = SoCReset;
+
+	// port_a[0] = 0;
+	// port_a[1] = 0;
+	// port_a[2] = 0;
+	// port_a[3] = 0;
+	// port_a[4] = 0;
+	// port_a[5] = 0;
+	// port_a[6] = 0;
+	// port_a[7] = 0;
+
+    case (state)
+        SoCReset: begin
+			// port_a[0] = 1;
+            next_state = SoCResetting;
+        end
+
+		SoCResetting: begin
+			next_state = SoCResetComplete;
+			// port_a[1] = 1;
+		end
+
+        SoCResetComplete: begin
+			next_state = SoCResetComplete;
+			// port_a[2] = 1;
+			if (locked)
+				next_state = SoCIdle;
+        end
+
+        SoCIdle: begin
+			// port_a[3] = 1;
+
+			next_state = SoCIdle;
+        end
+
+        default: begin
+        end
+    endcase
+end
 
 endmodule

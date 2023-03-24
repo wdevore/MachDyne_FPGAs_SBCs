@@ -1,7 +1,5 @@
 typedef enum logic [4:0] {
     SMReset,
     SMResetComplete,
-    SMIdle,
-    Vector2,
-    Vector3
+    SMIdle
 } SimState /*verilator public*/; 

@@ -5,7 +5,7 @@ TOP = Top
 TEST_BENCH = \
 	test_bench.cpp
 
-TEMPLATE_HEADER = ../module.h
+TEMPLATE_HEADER = module.h
 
 # VERILATOR_PUBLICS = 
 # The vcd data for viewing
@@ -14,7 +14,7 @@ GTKWAVE_SETTINGS = waveform
 # HDL modules
 MODULES_FILES =  \
 	SimEnums.sv \
-	femtorv32_intermissum.v \
+	../femtorv32_intermissum.v \
 	SoC.sv \
 	Top.sv
 	

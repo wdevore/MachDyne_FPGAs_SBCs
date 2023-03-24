@@ -11,7 +11,8 @@ module Top
 	output logic vga_g,
 	output logic vga_b,
 	output logic vga_hsync,
-	output logic vga_vsync
+	output logic vga_vsync,
+	output logic PMOD_A1
 );
 
 logic [26:0] counter = 0;
@@ -59,6 +60,7 @@ assign vga_r = red_channel;
 assign vga_g = green_channel;
 assign vga_b = blue_channel;
 
+assign PMOD_A1 = pix_clk;
 // `include "white_background.sv"
 // `include "black_background.sv"
 `include "modulo.sv"

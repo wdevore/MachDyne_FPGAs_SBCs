@@ -1,6 +1,7 @@
 TOP_FILE = Top.sv
 
 SUB_MODULES_FILES = \
+	SynEnums.sv \
 	femtorv32_intermissum.v \
 	pll.v \
 	SoC.sv
@@ -29,6 +30,7 @@ build: ${MODULES_FILES} ${PINS_CONSTRAINTS}
 	-l ${BUILD_BIN}/yo.log \
 	-q \
 	-defer \
+	-DPRELOAD_MEMORY \
 	${MODULES_FILES}
 
 # 	-v
