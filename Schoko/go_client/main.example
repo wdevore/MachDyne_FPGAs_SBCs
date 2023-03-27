@@ -1,0 +1,172 @@
+package main
+// This is an example of two channels scanning different ports
+// NOT USED at this time.
+import (
+	"bufio"
+	"fmt"
+	"log"
+	"os"
+	"sync"
+
+	"go.bug.st/serial"
+)
+
+const (
+	CRC_Signal byte = 0x00
+	RGC_Signal byte = 0x10
+	DAT_Signal byte = 0x30
+	BOS_Signal byte = 0x40
+	EOS_Signal byte = 0x50
+	REJ_Signal byte = 0x60
+	ACK_Signal byte = 0x70
+	KEY_Signal byte = 0x80
+)
+
+var clientExiting bool
+var wg sync.WaitGroup
+
+func main() {
+	clientExiting = false
+
+	// Two channels: one from the keyboard and other from uart.
+	chKey := make(chan string)
+	chUart := make(chan byte)
+
+	// ---------------------------------------------------------
+	// UART port
+	// ---------------------------------------------------------
+	mode := &serial.Mode{
+		BaudRate: 115200,
+	}
+	port, err := serial.Open("/dev/ttyUSB0", mode)
+	if err != nil {
+		fmt.Println("Difficulty opening serial port")
+		log.Fatal(err)
+	}
+	defer port.Close()
+
+	// ---------------------------------------------------------
+	// Co-routines
+	// ---------------------------------------------------------
+	go keyboard(chKey)
+
+	go uartScan(chUart, port)
+
+	wg.Add(2)
+
+	// ---------------------------------------------------------
+	// Loop
+	// ---------------------------------------------------------
+	fmt.Println("Client is ready")
+	fmt.Print("]")
+
+mainloop:
+	for {
+		select {
+		case termIn, ok := <-chKey:
+			if !ok {
+				break mainloop
+			}
+
+			if termIn == "quit" {
+				// Close the serial port of uartScan completes.
+				port.Close()
+
+				break mainloop
+			} else {
+				// Send string to device
+				sendData(termIn)
+			}
+		case chByte, ok := <-chUart:
+			if !ok {
+				break mainloop
+			}
+
+			fmt.Print(chByte)
+			// Send "ACK" back
+			uartSend(ACK_Signal, port)
+		}
+	}
+
+	wg.Wait()
+	fmt.Println("Good bye")
+}
+
+// ---------------------------------------------------------
+// Functions
+// ---------------------------------------------------------
+func sendData(data string) {
+	// Request control from device
+	uartSend(CRC_Signal, port)
+
+	// Either we were granted or denied
+
+}
+
+// ---------------------------------------------------------
+// UART port
+// ---------------------------------------------------------
+func uartSend(data byte, port serial.Port) {
+	_, err := port.Write([]byte{data})
+	if err != nil {
+		fmt.Println("UART port write error")
+		log.Fatal(err)
+	}
+}
+
+// Go routine to wait for bytes from device
+func uartScan(ch chan byte, port serial.Port) {
+	rxBuf := make([]byte, 1)
+
+scanLoop:
+	for {
+		_, err := port.Read(rxBuf)
+		// fmt.Printf("n: %d %x\n", n, rxBuf[0])
+		if !clientExiting {
+			if err != nil {
+				fmt.Printf("UART port read error: %v\n", err)
+				close(ch)
+				break scanLoop
+			}
+			ch <- rxBuf[0]
+		} else {
+			break scanLoop
+		}
+	}
+
+	wg.Done()
+	fmt.Println("Leaving uart scan")
+}
+
+// ---------------------------------------------------------
+// Stdin
+// ---------------------------------------------------------
+func keyboard(ch chan string) {
+	reader := bufio.NewReader(os.Stdin)
+
+keyLoop:
+	for {
+		input, _, err := reader.ReadLine()
+
+		if err != nil {
+			fmt.Printf("could not process input %v\n", input)
+			close(ch)
+			break keyLoop
+		}
+
+		switch string(input) {
+		case "`":
+			fmt.Println("Quit requested")
+
+			clientExiting = true
+
+			ch <- "quit"
+			break keyLoop
+		default:
+			ch <- ""
+		}
+	}
+
+	wg.Done()
+	fmt.Println("Leaving key scan")
+}

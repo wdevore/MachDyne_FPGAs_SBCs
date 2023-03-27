@@ -45,7 +45,7 @@ logic [31:0] io_rdata;
 // ------------------------------------------------------------------
 // Memory and Mapping
 // ------------------------------------------------------------------
-`define NRV_RAM 65536
+`define NRV_RAM 16384
 
 logic mem_address_is_io  =  mem_address[22];
 logic mem_address_is_ram = !mem_address[22];

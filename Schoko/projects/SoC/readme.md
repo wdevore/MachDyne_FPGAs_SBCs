@@ -4,10 +4,6 @@ A port of Femto-intermissum from Verilog to SystemVerilog and Modulerized.
 # Links
 - https://github.com/Ravenslofty/yosys-cookbook/blob/master/ecp5.md
 
-# Tasks
-- **done** Pull fresh versions of Yosys, Nextpnr and ecp5 tools.
-- Synth Femto and drive 8 LEDs on PMOD
-- Connect UART and send to Minicom a boot message
 
 # Description
 A port of Femto-intermissum from Verilog to SystemVerilog and Modulerized.
@@ -74,8 +70,24 @@ Main: @
     ebreak              // Stop
 ```
 
-## Online assembler
-[RISC-V Online Assembler](https://riscvasm.lucasteske.dev/#)
+## Assembly references and tools
+- [RISC-V Online Assembler](https://riscvasm.lucasteske.dev/#)
+- [TopRerenece/RISC-V Assembly Language Programming (Draft v0.18).pdf](https://github.com/johnwinans/rvalp)
+- The RISC-V Reader Oct2017.pdf
+- RISC-v Assembly language Programmer Manual Part 1 Shakti 2020.pdf
+- https://github.com/riscv-collab/riscv-gnu-toolchain  installs and stuff
+- https://en.wikipedia.org/wiki/GNU_Assembler
+- https://dmytrish.net/lib/riscv/linux/hello-gas.html
+- https://sourceware.org/binutils/docs/ld/  linker manual
+
+**as** is the GNU Assembler. It's found in binutils but if you do:
+
+sudo apt-get install build-essential
+
+You will get gas along with gcc (which default uses gas for assembling on the back end).
+
+For a 'tutorial' about using gas, you probably want to read [Programming From the Ground Up](http://download.savannah.gnu.org/releases/pgubook/), which uses it.
+
 
 # SoC
 ```
@@ -94,3 +106,19 @@ Main: @
 //  --------------
 // 00000000_01000000_00000000_00000000 = 0x00400000
 ```
+
+---
+# Tasks
+| Done | Description|
+|:---:| ---|
+| &#9745; | Pull fresh versions of Yosys, Nextpnr and ecp5 tools. |
+| &#9745; | Phase 1: Synth Femto and drive 8 LEDs on PMOD |
+| &#9744; | Write Go client to interface to SoC UART port |
+| &#9744; | Phase 2: Connect UART and send to Client a boot message |
+
+# Go Client
+There are several ways to approach the client.
+
+- Build a basic turn based io (the simplest)
+- C++ ncurses with [Serialib](https://github.com/imabot2/serialib)
+- or [Termui](https://github.com/gizak/termui) (Go)
