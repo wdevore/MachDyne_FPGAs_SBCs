@@ -9,9 +9,10 @@
 module SoC
 (
 	input  logic clk_48mhz,
-	// input  logic uart_rx_in,		// From client
-	// output logic uart_tx_out,		// To Client
-	output logic [7:0] port_a
+	input  logic uart_rx_in,		// From client
+	output logic uart_tx_out,		// To Client
+	output logic [7:0] port_a//,
+	// output logic [7:0] port_b
 );
 
 logic clk;
@@ -30,18 +31,29 @@ pll soc_pll (
 // ------------------------------------------------------------------
 // Memory and Mapping
 // ------------------------------------------------------------------
-`define NRV_RAM 16384
+// (16384 * 4 =  64K) because each word is 32bits
+// 16384 requires only 14 bits to address
+localparam WORD = 4;
+localparam NRV_RAM = 2**14 * WORD;
+localparam BIT_WIDTH = $clog2(NRV_RAM);
 
 logic mem_address_is_io  =  mem_address[22];
 logic mem_address_is_ram = !mem_address[22];
-logic [19:0] ram_word_address = mem_address[21:2];
 
+// $clog2(`NRV_RAM)-1
+// logic [19:0] ram_word_address = mem_address[21:2];
+// logic [BIT_WIDTH-1:0] ram_word_address = mem_address[BIT_WIDTH+1:2];
+logic [13:0] ram_word_address = mem_address[15:2];
+
+// 256 IO addresses
+logic [7:0] io_word_address = mem_address[7:0];
+// 16 devices each with 16 address = 256
+// The upper 4 bits selects the device.
+logic [7:0] io_address = mem_address[7:0];
 
 (* no_rw_check *)
-logic [31:0] RAM[0:(`NRV_RAM/4)-1];
+logic [31:0] RAM[0:(NRV_RAM/4)-1];
 logic [31:0] ram_rdata;
-
-// logic [7:0] io_word_address = mem_address[7:0];
 
 // The power of YOSYS: it infers BRAM primitives automatically ! (and recognizes
 // masked writes, amazing ...)
@@ -53,12 +65,10 @@ always @(posedge clk) begin
 		if (mem_wmask[3]) RAM[ram_word_address][31:24] <= mem_wdata[31:24];	 
 	end
 
-	// Unconditionally reading memory is part of the inference of dual-port memory
 	ram_rdata <= RAM[ram_word_address];
 end
 
 initial begin
-	// This will eventually be the boot Monitor.
 	`ifdef PRELOAD_MEMORY
 	$readmemh("binaries/firmware.hex",RAM);
 	`endif
@@ -72,43 +82,24 @@ end
 localparam IO_PORT_A = 4'b0000;
 localparam IO_UART = 4'b0001;
 
+localparam LEDs = 0;
 logic [31:0] io_rdata;
 logic [3:0] io_device = io_address[7:4];
-
-logic [7:0] io_word_address = mem_address[7:0];
-
-always @(posedge clk) begin
-	if (mem_address_is_io) begin
-		case (io_word_address)
-			8'b00000000: begin
-				// $display("Writing to IO: %h", mem_wdata);
-				port_a <= mem_wdata[7:0];
-			end
-		endcase
-	end
-
-	// if (port_a_cs) begin
-	// 	port_a <= mem_wdata[7:0];
-	// end
-	
-	// if (uart_cs & uart_rd) begin
-	// 	// UART is only 8 bits, thus needing expanding
-	// 	io_rdata <= {{24{1'b0}}, uart_out_data};
-	// end
-
-	// if (uart_cs & uart_wr) begin
-	// 	uart_in_data <= mem_wdata[ 7:0 ];
-	// end
-end
-
 
 // -----------------------------------------------------------
 // Port A
 // -----------------------------------------------------------
-logic port_a_cs = mem_address_is_io & io_device == IO_PORT_A;
+logic port_a_wr = mem_address_is_io & (io_device == IO_PORT_A);
+
+always @(posedge clk) begin
+	if (port_a_wr) begin
+		// Write lower 8 bits to port A
+		port_a <= mem_wdata[7:0];
+	end
+end
 
 // -----------------------------------------------------------
-// Memory mapped UART Module
+// UART Module
 // -----------------------------------------------------------
 logic uart_cs = mem_address_is_io & io_device == IO_UART;
 
@@ -117,30 +108,29 @@ logic uart_cs = mem_address_is_io & io_device == IO_UART;
 //   0      |  Control 1 register
 //   1      |  Rx buffer (byte, read only)
 //   2      |  Tx buffer (byte, write only)
-// logic [2:0] uart_addr = io_address[2:0]; // Only the lower 3 bits are needed
+logic [2:0] uart_addr = io_address[2:0]; // Only the lower 3 bits are needed
 
-// logic uart_wr = mem_wmask != 0 & mem_address_is_io;
-// logic uart_rd = mem_address_is_io;
-// logic [7:0] uart_out_data;
-// logic [7:0] uart_in_data;
-// logic uart_irq;
-// logic [2:0] uart_irq_id;
+logic uart_wr = mem_wmask != 0 & mem_address_is_io;
+logic uart_rd = mem_address_is_io;
+logic [7:0] uart_out_data;
+logic [7:0] uart_in_data;
+logic uart_irq;
+logic [2:0] uart_irq_id;
 
-// UART_Component uart_comp (
-//     .clock(clk),
-//     .reset(reset),
-//     .cs(~uart_cs),				// Active low
-//     .rd(~uart_rd),				// Active low
-//     .wr(~uart_wr),				// Active low
-//     .rx_in(uart_rx_in),         // From Client (bit)
-//     .tx_out(uart_tx_out),       // To Client (bit)
-//     .addr(uart_addr),
-//     .out_data(uart_out_data),	// Byte received
-//     .in_data(uart_in_data),		// Byte to transmit
-//     .irq(uart_irq),
-//     .irq_id(uart_irq_id)
-// );
-
+UART_Component uart_comp (
+    .clock(clk),
+    .reset(reset),
+    .cs(~uart_cs),				// Active low
+    .rd(~uart_rd),				// Active low
+    .wr(~uart_wr),				// Active low
+    .rx_in(uart_rx_in),         // From Client (bit)
+    .tx_out(uart_tx_out),       // To Client (bit)
+    .addr(uart_addr),
+    .out_data(uart_out_data),	// Byte received
+    .in_data(uart_in_data),		// Byte to transmit
+    .irq(uart_irq),
+    .irq_id(uart_irq_id)
+);
 
 // ----------- Reading -------------------
 // Either reading from IO or Ram.
@@ -159,7 +149,9 @@ logic        mem_rbusy;   // processor <- (mem and peripherals). Stays high unti
 logic        mem_wbusy;   // processor <- (mem and peripherals). Stays high until a write transfer is finished.
 logic        interrupt_request = 0; // Active high
 
-assign mem_rbusy = 1;	// Never busy (at least for now)
+assign mem_wbusy = 0;
+assign mem_rbusy = 0;
+assign io_rdata = 0;
 
 FemtoRV32 #(
 	.ADDR_WIDTH(`NRV_ADDR_WIDTH),
@@ -171,7 +163,7 @@ FemtoRV32 #(
 	.mem_wmask(mem_wmask),		// out
 	.mem_rdata(mem_rdata),		// in
 	.mem_rstrb(mem_rstrb),		// out
-	.mem_rbusy(mem_rbusy),		// in (Active low)
+	.mem_rbusy(mem_rbusy),		// in
 	.mem_wbusy(mem_wbusy),		// in
 	.interrupt_request(interrupt_request),	// in
 	.reset(reset)				// (in) Active Low
@@ -182,7 +174,7 @@ FemtoRV32 #(
 // ------------------------------------------------------------------
 SynState state = SoCReset;
 SynState next_state;
-logic reset;  // Active low
+logic reset;
 
 always_comb begin
 	next_state = SoCReset;
@@ -219,6 +211,7 @@ always_ff @(posedge clk_48mhz) begin
 
     // case (state)
     //     SoCReset: begin
+    //         // Hold CPU in reset while Top module starts up.
     //     end
 
 	// 	SoCResetting: begin
@@ -233,7 +226,6 @@ always_ff @(posedge clk_48mhz) begin
     //     default: begin
     //     end
     // endcase
-
 
 	state <= next_state;
 

@@ -13,9 +13,10 @@ A port of Femto-intermissum from Verilog to SystemVerilog and Modulerized.
 
 # Tasks
 - **done** Pull fresh versions of Yosys, Nextpnr and ecp5 tools.
+- **done** Synth Femto and drive 8 LEDs on PMOD
+- Update UART component to set byte arrived bit
 - Create hex files using assembler
-- Synth Femto and drive 8 LEDs on PMOD
-- Connect UART and send to Minicom a boot message
+- Connect UART and send to Client a boot message
 
 
 

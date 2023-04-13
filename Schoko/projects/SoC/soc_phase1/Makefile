@@ -16,7 +16,7 @@ ICESTORM_TOOLCHAIN = /usr/local
 # -noflatten
 YOSYS_COMMAND = "synth_ecp5 -json ${BUILD_BIN}/hardware.json -top Top"
 
-PINS_CONSTRAINTS = ../schoko_v1.lpf
+PINS_CONSTRAINTS = ../../schoko_v1.lpf
 
 .PHONY: all
 

@@ -1,3 +1,5 @@
+**UART V5**
+
 # <span style='color: green;'>Description</span>
 Version 4 is a simple byte-for-byte communication protocol via software handshaking.
 This version the Device the absolute minimum.
@@ -191,18 +193,24 @@ Each signal is 4 bits.
 ------------------------------------------------------------------
 # <span style='color: green;'>Control bits</span>
 
-## Control register #1
+## Control register 1
 | Bit               | Description |
 | ---               | --- |
 | **CTL_IRQ_EN**    | Enable/Disable interrupts |
 | **CTL_CLI_GRNT**  | Client has been granted control. |
 | **CTL_CLI_CRC**   | Client-Request-Control. Client is requesting control |
 | **CTL_KEY_RDY**   | Signal that a Key-code is ready for the System to read |
+| **CTL_STR_BOS**   | Begin stream |
+| **CTL_STR_DAT**   | Data leader signal |
+| **CTL_STR_BYT**   | Actual byte transmitting |
+| **CTL_STR_EOS**   | End of stream |
 
-## Control register #1
+## Control register 2
 | Bit               | Description |
 | ---               | --- |
 | **CTL_SYS_SRC**   | System-Request-Control. The System is requesting control. |
 | **CTL_SYS_GRNT**  | If Set the System has been granted control |
-| **CTL_SYS_ABORT** | DEP The System is cancelling the current stream |
-| **CTL_SYS_ARE**   | System polls this bit to identify when to send the ACK signal |
+| **CTL_DEV_TRX**   | Indidate a transmission sequence should begin. |
+| **CTL_TRX_CMP**   | Indicator that byte was sent via UARTTx |
+| **CTL_DVC_BSY**   | Device is busy. Most likely sending REJ_Signal or something else |
+| **CTL_TRX_RDY**   | A byte has arrived via UARTRx and ready for access |

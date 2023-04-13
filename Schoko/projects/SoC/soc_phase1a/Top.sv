@@ -20,7 +20,7 @@ module Top
 	// ------------ PMOD B ---------------------
 	// output logic PMOD_B1,
 	// output logic PMOD_B2,
-	input  logic PMOD_B3,		// Tx  (from client)
+	output logic PMOD_B3,		// Tx  (from client)
 	output logic PMOD_B4 		// Rx  (to client)
 	// B5 = GRD, B6 = VSS
 	// output logic PMOD_B7,
@@ -62,9 +62,9 @@ logic [7:0] port_a;
 
 SoC soc(
 	.clk_48mhz(CLK_48),
-	// .uart_rx_in(PMOD_B3),			// Cross Tx with Rx
-	// .uart_tx_out(PMOD_B4),
-	.port_a(port_a)
+	.uart_rx_in(PMOD_B3),			// Cross Tx with Rx
+	.uart_tx_out(PMOD_B4),
+	.port_a(port_a)//,
 	// .port_b(port_b)
 );
 

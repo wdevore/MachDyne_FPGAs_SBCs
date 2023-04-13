@@ -1,0 +1,733 @@
+Info: constraining clock net 'CLK_48' to 48.00 MHz
+
+Info: Logic utilisation before packing:
+Info:     Total LUT4s:      3328/43848     7%
+Info:         logic LUTs:   2614/43848     5%
+Info:         carry LUTs:    522/43848     1%
+Info:           RAM LUTs:    128/ 5481     2%
+Info:          RAMW LUTs:     64/10962     0%
+
+Info:      Total DFFs:       463/43848     1%
+
+Info: Packing IOs..
+Info: pin 'PMOD_B9$tr_io' constrained to Bel 'X44/Y0/PIOB'.
+Info: pin 'PMOD_B8$tr_io' constrained to Bel 'X51/Y0/PIOB'.
+Info: pin 'PMOD_B7$tr_io' constrained to Bel 'X51/Y0/PIOA'.
+Info: pin 'PMOD_B4$tr_io' constrained to Bel 'X53/Y0/PIOA'.
+Info: pin 'PMOD_B3$tr_io' constrained to Bel 'X58/Y0/PIOA'.
+Info: pin 'PMOD_B2$tr_io' constrained to Bel 'X71/Y0/PIOA'.
+Info: pin 'PMOD_B10$tr_io' constrained to Bel 'X47/Y0/PIOA'.
+Info: pin 'PMOD_B1$tr_io' constrained to Bel 'X71/Y0/PIOB'.
+Info: pin 'PMOD_A9$tr_io' constrained to Bel 'X15/Y0/PIOB'.
+Info: pin 'PMOD_A8$tr_io' constrained to Bel 'X11/Y0/PIOB'.
+Info: pin 'PMOD_A7$tr_io' constrained to Bel 'X4/Y0/PIOB'.
+Info: pin 'PMOD_A4$tr_io' constrained to Bel 'X18/Y0/PIOA'.
+Info: pin 'PMOD_A3$tr_io' constrained to Bel 'X6/Y0/PIOB'.
+Info: pin 'PMOD_A2$tr_io' constrained to Bel 'X6/Y0/PIOA'.
+Info: pin 'PMOD_A10$tr_io' constrained to Bel 'X18/Y0/PIOB'.
+Info: pin 'PMOD_A1$tr_io' constrained to Bel 'X4/Y0/PIOA'.
+Info: pin 'LED_R$tr_io' constrained to Bel 'X0/Y17/PIOA'.
+Info: pin 'LED_G$tr_io' constrained to Bel 'X0/Y14/PIOA'.
+Info: pin 'LED_B$tr_io' constrained to Bel 'X0/Y11/PIOA'.
+Info: pin 'CLK_48$tr_io' constrained to Bel 'X38/Y0/PIOA'.
+Info: Packing constants..
+Info: Packing carries...
+Info: Packing LUTs...
+Info: Packing LUT5-7s...
+Info: Packing FFs...
+Info:     246 FFs paired with LUTs.
+Info: Generating derived timing constraints...
+Info:     Input frequency of PLL 'soc.soc_pll.pll_i' is constrained to 48.0 MHz
+Info:     Derived frequency constraint of 10.3 MHz for net soc.clk
+Info: Promoting globals...
+Info:     promoting clock net soc.clk to global network
+Info:     promoting clock net CLK_48$TRELLIS_IO_IN to global network
+Info: Checksum: 0xf42e727a
+
+Info: Annotating ports with timing budgets for target frequency 12.00 MHz
+Info: Checksum: 0xd77ee64b
+
+Info: Device utilisation:
+Info: 	          TRELLIS_IO:    20/  245     8%
+Info: 	                DCCA:     2/   56     3%
+Info: 	              DP16KD:     8/  108     7%
+Info: 	          MULT18X18D:     4/   72     5%
+Info: 	              ALU54B:     0/   36     0%
+Info: 	             EHXPLLL:     1/    4    25%
+Info: 	             EXTREFB:     0/    2     0%
+Info: 	                DCUA:     0/    2     0%
+Info: 	           PCSCLKDIV:     0/    2     0%
+Info: 	             IOLOGIC:     0/  160     0%
+Info: 	            SIOLOGIC:     0/   85     0%
+Info: 	                 GSR:     0/    1     0%
+Info: 	               JTAGG:     0/    1     0%
+Info: 	                OSCG:     0/    1     0%
+Info: 	               SEDGA:     0/    1     0%
+Info: 	                 DTR:     0/    1     0%
+Info: 	             USRMCLK:     0/    1     0%
+Info: 	             CLKDIVF:     0/    4     0%
+Info: 	           ECLKSYNCB:     0/   10     0%
+Info: 	             DLLDELD:     0/    8     0%
+Info: 	              DDRDLL:     0/    4     0%
+Info: 	             DQSBUFM:     0/   10     0%
+Info: 	     TRELLIS_ECLKBUF:     0/    8     0%
+Info: 	        ECLKBRIDGECS:     0/    2     0%
+Info: 	                DCSC:     0/    2     0%
+Info: 	          TRELLIS_FF:   463/43848     1%
+Info: 	        TRELLIS_COMB:  3390/43848     7%
+Info: 	        TRELLIS_RAMW:    32/ 5481     0%
+
+Info: Placed 21 cells based on constraints.
+Info: Creating initial analytic placement for 1653 cells, random placement wirelen = 162198.
+Info:     at initial placer iter 0, wirelen = 1279
+Info:     at initial placer iter 1, wirelen = 1306
+Info:     at initial placer iter 2, wirelen = 1319
+Info:     at initial placer iter 3, wirelen = 1324
+Info: Running main analytical placer, max placement attempts per cell = 1920800.
+Info:     at iteration #1, type ALL: wirelen solved = 1285, spread = 28791, legal = 31220; time = 0.06s
+Info:     at iteration #2, type ALL: wirelen solved = 2448, spread = 26952, legal = 29156; time = 0.06s
+Info:     at iteration #3, type ALL: wirelen solved = 3511, spread = 25677, legal = 27241; time = 0.06s
+Info:     at iteration #4, type ALL: wirelen solved = 4336, spread = 23204, legal = 23626; time = 0.05s
+Info:     at iteration #5, type ALL: wirelen solved = 5380, spread = 20898, legal = 22624; time = 0.05s
+Info:     at iteration #6, type ALL: wirelen solved = 6040, spread = 20482, legal = 21607; time = 0.05s
+Info:     at iteration #7, type ALL: wirelen solved = 7285, spread = 20069, legal = 21034; time = 0.05s
+Info:     at iteration #8, type ALL: wirelen solved = 7788, spread = 19472, legal = 20596; time = 0.05s
+Info:     at iteration #9, type ALL: wirelen solved = 8516, spread = 18944, legal = 20329; time = 0.05s
+Info:     at iteration #10, type ALL: wirelen solved = 9571, spread = 18592, legal = 19439; time = 0.05s
+Info:     at iteration #11, type ALL: wirelen solved = 9316, spread = 18497, legal = 19784; time = 0.05s
+Info:     at iteration #12, type ALL: wirelen solved = 10283, spread = 18525, legal = 19542; time = 0.05s
+Info:     at iteration #13, type ALL: wirelen solved = 11050, spread = 18350, legal = 19698; time = 0.05s
+Info:     at iteration #14, type ALL: wirelen solved = 11314, spread = 17426, legal = 19081; time = 0.05s
+Info:     at iteration #15, type ALL: wirelen solved = 11505, spread = 17277, legal = 18306; time = 0.05s
+Info:     at iteration #16, type ALL: wirelen solved = 11570, spread = 17367, legal = 18937; time = 0.06s
+Info:     at iteration #17, type ALL: wirelen solved = 11707, spread = 17251, legal = 18914; time = 0.05s
+Info:     at iteration #18, type ALL: wirelen solved = 11881, spread = 17240, legal = 18880; time = 0.05s
+Info:     at iteration #19, type ALL: wirelen solved = 12129, spread = 16843, legal = 18151; time = 0.05s
+Info:     at iteration #20, type ALL: wirelen solved = 12219, spread = 16388, legal = 17916; time = 0.05s
+Info:     at iteration #21, type ALL: wirelen solved = 12070, spread = 17102, legal = 17986; time = 0.05s
+Info:     at iteration #22, type ALL: wirelen solved = 12531, spread = 16621, legal = 18306; time = 0.05s
+Info:     at iteration #23, type ALL: wirelen solved = 12323, spread = 16593, legal = 18597; time = 0.05s
+Info:     at iteration #24, type ALL: wirelen solved = 12450, spread = 16379, legal = 17606; time = 0.05s
+Info:     at iteration #25, type ALL: wirelen solved = 12387, spread = 16403, legal = 18141; time = 0.05s
+Info:     at iteration #26, type ALL: wirelen solved = 12689, spread = 16275, legal = 18003; time = 0.05s
+Info:     at iteration #27, type ALL: wirelen solved = 12903, spread = 16746, legal = 18476; time = 0.05s
+Info:     at iteration #28, type ALL: wirelen solved = 12989, spread = 17125, legal = 19119; time = 0.05s
+Info:     at iteration #29, type ALL: wirelen solved = 13360, spread = 16316, legal = 18157; time = 0.05s
+Info: HeAP Placer Time: 2.37s
+Info:   of which solving equations: 1.26s
+Info:   of which spreading cells: 0.26s
+Info:   of which strict legalisation: 0.09s
+
+Info: Running simulated annealing placer for refinement.
+Info:   at iteration #1: temp = 0.000000, timing cost = 1321, wirelen = 17606
+Info:   at iteration #5: temp = 0.000000, timing cost = 1213, wirelen = 15833
+Info:   at iteration #10: temp = 0.000000, timing cost = 1137, wirelen = 15352
+Info:   at iteration #15: temp = 0.000000, timing cost = 1078, wirelen = 15099
+Info:   at iteration #20: temp = 0.000000, timing cost = 1087, wirelen = 15003
+Info:   at iteration #25: temp = 0.000000, timing cost = 1049, wirelen = 14943
+Info:   at iteration #25: temp = 0.000000, timing cost = 1035, wirelen = 14952 
+Info: SA placement time 7.61s
+
+Info: Max frequency for clock              '$glbnet$soc.clk': 39.04 MHz (PASS at 10.29 MHz)
+Info: Max frequency for clock '$glbnet$CLK_48$TRELLIS_IO_IN': 463.82 MHz (PASS at 48.00 MHz)
+
+Info: Max delay posedge $glbnet$CLK_48$TRELLIS_IO_IN -> <async>                : 3.40 ns
+Info: Max delay posedge $glbnet$CLK_48$TRELLIS_IO_IN -> posedge $glbnet$soc.clk: 7.53 ns
+Info: Max delay posedge $glbnet$soc.clk              -> <async>                : 3.05 ns
+
+Info: Slack histogram:
+Info:  legend: * represents 9 endpoint(s)
+Info:          + represents [1,9) endpoint(s)
+Info: [ 18677,  22567) |**+
+Info: [ 22567,  26457) | 
+Info: [ 26457,  30347) | 
+Info: [ 30347,  34237) | 
+Info: [ 34237,  38127) | 
+Info: [ 38127,  42017) | 
+Info: [ 42017,  45907) | 
+Info: [ 45907,  49797) | 
+Info: [ 49797,  53687) | 
+Info: [ 53687,  57577) | 
+Info: [ 57577,  61467) | 
+Info: [ 61467,  65357) | 
+Info: [ 65357,  69247) | 
+Info: [ 69247,  73137) |*+
+Info: [ 73137,  77027) |************+
+Info: [ 77027,  80917) |*****+
+Info: [ 80917,  84807) |*************+
+Info: [ 84807,  88697) |****************************************************+
+Info: [ 88697,  92587) |*******************************************+
+Info: [ 92587,  96477) |************************************************************ 
+Info: Checksum: 0xdfb0bae3
+Info: Routing globals...
+Info:     routing clock net $glbnet$CLK_48$TRELLIS_IO_IN using global 0
+Info:     routing clock net $glbnet$soc.clk using global 1
+
+Info: Routing..
+Info: Setting up routing queue.
+Info: Routing 12001 arcs.
+Info:            |   (re-)routed arcs  |   delta    | remaining|       time spent     |
+Info:    IterCnt |  w/ripup   wo/ripup |  w/r  wo/r |      arcs| batch(sec) total(sec)|
+Info:       1000 |      281        718 |  281   718 |     11381|       0.31       0.31|
+Info:       2000 |      556       1443 |  275   725 |     10800|       0.19       0.51|
+Info:       3000 |      898       2101 |  342   658 |     10420|       0.21       0.72|
+Info:       4000 |     1172       2827 |  274   726 |      9881|       0.16       0.88|
+Info:       5000 |     1516       3483 |  344   656 |      9449|       0.17       1.04|
+Info:       6000 |     1910       4089 |  394   606 |      9016|       0.21       1.25|
+Info:       7000 |     2378       4621 |  468   532 |      8728|       0.18       1.43|
+Info:       8000 |     2755       5244 |  377   623 |      8307|       0.18       1.61|
+Info:       9000 |     3387       5612 |  632   368 |      8081|       0.23       1.84|
+Info:      10000 |     4045       5954 |  658   342 |      7929|       0.28       2.12|
+Info:      11000 |     4761       6238 |  716   284 |      7755|       0.33       2.45|
+Info:      12000 |     5289       6710 |  528   472 |      7568|       0.22       2.67|
+Info:      13000 |     5691       7308 |  402   598 |      7206|       0.21       2.89|
+Info:      14000 |     6025       7974 |  334   666 |      6816|       0.20       3.09|
+Info:      15000 |     6831       8168 |  806   194 |      6733|       0.39       3.48|
+Info:      16000 |     7704       8295 |  873   127 |      6688|       0.52       4.00|
+Info:      17000 |     8240       8759 |  536   464 |      6512|       0.18       4.18|
+Info:      18000 |     8945       9054 |  705   295 |      6374|       0.19       4.36|
+Info:      19000 |     9403       9596 |  458   542 |      6096|       0.21       4.57|
+Info:      20000 |     9739      10260 |  336   664 |      5670|       0.21       4.79|
+Info:      21000 |    10071      10836 |  332   576 |      5146|       0.16       4.95|
+Info:      22000 |    10397      11479 |  326   643 |      4690|       0.17       5.12|
+Info:      23000 |    10710      12107 |  313   628 |      4214|       0.18       5.30|
+Info:      24000 |    11086      12672 |  376   565 |      3945|       0.20       5.50|
+Info:      25000 |    11356      13258 |  270   586 |      3344|       0.15       5.65|
+Info:      26000 |    11658      13856 |  302   598 |      2861|       0.17       5.83|
+Info:      27000 |    11935      14439 |  277   583 |      2200|       0.15       5.97|
+Info:      28000 |    12205      15070 |  270   631 |      1589|       0.15       6.13|
+Info:      29000 |    12341      15802 |  136   732 |       782|       0.10       6.23|
+Info:      29861 |    12402      16282 |   61   480 |         0|       0.08       6.31|
+Info: Routing complete.
+Info: Router1 time 6.31s
+Info: Checksum: 0x3a78e74d
+
+Info: Critical path report for clock '$glbnet$soc.clk' (posedge -> posedge):
+Info: curr total
+Info:  0.5  0.5  Source soc.processor.instr_TRELLIS_FF_Q_28.Q
+Info:  1.8  2.3    Net soc.processor.funcM_LUT4_D_Z_LUT4_Z_9_D_LUT4_B_D[0] budget 0.000000 ns (13,5) -> (15,15)
+Info:                Sink soc.processor.aluIn2_LUT4_Z_9_D_LUT4_Z_D_PFUMX_Z_ALUT_LUT4_Z.B
+Info:                Defined in:
+Info:                  Top.sv:60.5-64.2
+Info:                  femtorv32_intermissum.v:240.16-240.21
+Info:                  SoC.sv:103.3-114.2
+Info:  0.2  2.6  Source soc.processor.aluIn2_LUT4_Z_9_D_LUT4_Z_D_PFUMX_Z_ALUT_LUT4_Z.F
+Info:  0.0  2.6    Net soc.processor.aluIn2_LUT4_Z_9_D_LUT4_Z_D_PFUMX_Z_ALUT budget 0.000000 ns (15,15) -> (15,15)
+Info:                Sink soc.processor.aluIn2_LUT4_Z_9_D_LUT4_Z_D_PFUMX_Z_BLUT_LUT4_Z.F1
+Info:                Defined in:
+Info:                  /usr/local/bin/../share/yosys/ecp5/cells_map.v:133.22-133.24
+Info:  0.2  2.7  Source soc.processor.aluIn2_LUT4_Z_9_D_LUT4_Z_D_PFUMX_Z_BLUT_LUT4_Z.OFX
+Info:  1.2  3.9    Net soc.processor.aluIn2_LUT4_Z_9_D_LUT4_Z_D[4] budget 0.000000 ns (15,15) -> (17,18)
+Info:                Sink soc.processor.aluIn2_LUT4_Z_12_D_LUT4_Z.D
+Info:                Defined in:
+Info:                  /usr/local/bin/../share/yosys/ecp5/cells_map.v:108.23-108.24
+Info:  0.2  4.2  Source soc.processor.aluIn2_LUT4_Z_12_D_LUT4_Z.F
+Info:  0.6  4.8    Net soc.processor.CSR_write_PFUMX_Z_9_BLUT_LUT4_Z_C_LUT4_A_Z_PFUMX_Z_C0_CCU2C_S0_COUT_CCU2C_COUT_9_S1_PFUMX_C0_Z_PFUMX_Z_C0_L6MUX21_Z_D0_L6MUX21_Z_SD[2] budget 2.537000 ns (17,18) -> (17,18)
+Info:                Sink soc.processor.aluIn2_LUT4_Z_12.D
+Info:                Defined in:
+Info:                  /usr/local/bin/../share/yosys/ecp5/cells_map.v:108.23-108.24
+Info:  0.2  5.0  Source soc.processor.aluIn2_LUT4_Z_12.F
+Info:  1.7  6.7    Net soc.processor.aluIn2[19] budget 3.976000 ns (17,18) -> (9,22)
+Info:                Sink soc.processor.sign2_MULT18X18D_B14.B1
+Info:                Defined in:
+Info:                  Top.sv:60.5-64.2
+Info:                  femtorv32_intermissum.v:161.23-161.30
+Info:                  SoC.sv:103.3-114.2
+Info:  3.9 10.6  Source soc.processor.sign2_MULT18X18D_B14.P5
+Info:  1.3 12.0    Net soc.processor.sign2_MULT18X18D_B14_P0[5] budget 3.976000 ns (9,22) -> (8,21)
+Info:                Sink soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0_2$CCU2_COMB1.B
+Info:                Defined in:
+Info:                  Top.sv:60.5-64.2
+Info:                  femtorv32_intermissum.v:162.34-162.51
+Info:                  SoC.sv:103.3-114.2
+Info:                  /usr/local/bin/../share/yosys/mul2dsp.v:148.7-152.6
+Info:                  /usr/local/bin/../share/yosys/mul2dsp.v:230.32-230.125
+Info:                  /usr/local/bin/../share/yosys/ecp5/arith_map.v:32.22-32.23
+Info:  0.4 12.4  Source soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0_2$CCU2_COMB1.FCO
+Info:  0.0 12.4    Net soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0_COUT[6] budget 0.000000 ns (8,21) -> (9,21)
+Info:                Sink soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0_1$CCU2_COMB0.FCI
+Info:                Defined in:
+Info:                  Top.sv:60.5-64.2
+Info:                  femtorv32_intermissum.v:162.34-162.51
+Info:                  SoC.sv:103.3-114.2
+Info:                  /usr/local/bin/../share/yosys/mul2dsp.v:148.7-152.6
+Info:                  /usr/local/bin/../share/yosys/mul2dsp.v:230.32-230.125
+Info:                  /usr/local/bin/../share/yosys/ecp5/arith_map.v:65.22-65.25
+Info:  0.1 12.5  Source soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0_1$CCU2_COMB0.FCO
+Info:  0.0 12.5    Net soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0_1$CCU2_FCI_INT budget 0.000000 ns (9,21) -> (9,21)
+Info:                Sink soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0_1$CCU2_COMB1.FCI
+Info:  0.0 12.5  Source soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0_1$CCU2_COMB1.FCO
+Info:  0.0 12.5    Net soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0_COUT[8] budget 0.000000 ns (9,21) -> (9,21)
+Info:                Sink soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0$CCU2_COMB0.FCI
+Info:                Defined in:
+Info:                  Top.sv:60.5-64.2
+Info:                  femtorv32_intermissum.v:162.34-162.51
+Info:                  SoC.sv:103.3-114.2
+Info:                  /usr/local/bin/../share/yosys/mul2dsp.v:148.7-152.6
+Info:                  /usr/local/bin/../share/yosys/mul2dsp.v:230.32-230.125
+Info:                  /usr/local/bin/../share/yosys/ecp5/arith_map.v:65.22-65.25
+Info:  0.1 12.6  Source soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0$CCU2_COMB0.FCO
+Info:  0.0 12.6    Net soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0$CCU2_FCI_INT budget 0.000000 ns (9,21) -> (9,21)
+Info:                Sink soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0$CCU2_COMB1.FCI
+Info:  0.0 12.6  Source soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0$CCU2_COMB1.FCO
+Info:  0.0 12.6    Net soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0_COUT[10] budget 0.000000 ns (9,21) -> (9,21)
+Info:                Sink soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0_7$CCU2_COMB0.FCI
+Info:                Defined in:
+Info:                  Top.sv:60.5-64.2
+Info:                  femtorv32_intermissum.v:162.34-162.51
+Info:                  SoC.sv:103.3-114.2
+Info:                  /usr/local/bin/../share/yosys/mul2dsp.v:148.7-152.6
+Info:                  /usr/local/bin/../share/yosys/mul2dsp.v:230.32-230.125
+Info:                  /usr/local/bin/../share/yosys/ecp5/arith_map.v:65.22-65.25
+Info:  0.1 12.7  Source soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0_7$CCU2_COMB0.FCO
+Info:  0.0 12.7    Net soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0_7$CCU2_FCI_INT budget 0.000000 ns (9,21) -> (9,21)
+Info:                Sink soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0_7$CCU2_COMB1.FCI
+Info:  0.0 12.7  Source soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0_7$CCU2_COMB1.FCO
+Info:  0.0 12.7    Net soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0_COUT[12] budget 0.000000 ns (9,21) -> (9,21)
+Info:                Sink soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0_6$CCU2_COMB0.FCI
+Info:                Defined in:
+Info:                  Top.sv:60.5-64.2
+Info:                  femtorv32_intermissum.v:162.34-162.51
+Info:                  SoC.sv:103.3-114.2
+Info:                  /usr/local/bin/../share/yosys/mul2dsp.v:148.7-152.6
+Info:                  /usr/local/bin/../share/yosys/mul2dsp.v:230.32-230.125
+Info:                  /usr/local/bin/../share/yosys/ecp5/arith_map.v:65.22-65.25
+Info:  0.1 12.7  Source soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0_6$CCU2_COMB0.FCO
+Info:  0.0 12.7    Net soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0_6$CCU2_FCI_INT budget 0.000000 ns (9,21) -> (9,21)
+Info:                Sink soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0_6$CCU2_COMB1.FCI
+Info:  0.0 12.7  Source soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0_6$CCU2_COMB1.FCO
+Info:  0.0 12.7    Net soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0_COUT[14] budget 0.000000 ns (9,21) -> (10,21)
+Info:                Sink soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0_5$CCU2_COMB0.FCI
+Info:                Defined in:
+Info:                  Top.sv:60.5-64.2
+Info:                  femtorv32_intermissum.v:162.34-162.51
+Info:                  SoC.sv:103.3-114.2
+Info:                  /usr/local/bin/../share/yosys/mul2dsp.v:148.7-152.6
+Info:                  /usr/local/bin/../share/yosys/mul2dsp.v:230.32-230.125
+Info:                  /usr/local/bin/../share/yosys/ecp5/arith_map.v:65.22-65.25
+Info:  0.1 12.8  Source soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0_5$CCU2_COMB0.FCO
+Info:  0.0 12.8    Net soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0_5$CCU2_FCI_INT budget 0.000000 ns (10,21) -> (10,21)
+Info:                Sink soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0_5$CCU2_COMB1.FCI
+Info:  0.0 12.8  Source soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0_5$CCU2_COMB1.FCO
+Info:  0.0 12.8    Net soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0_COUT[16] budget 0.000000 ns (10,21) -> (10,21)
+Info:                Sink soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0_4$CCU2_COMB0.FCI
+Info:                Defined in:
+Info:                  Top.sv:60.5-64.2
+Info:                  femtorv32_intermissum.v:162.34-162.51
+Info:                  SoC.sv:103.3-114.2
+Info:                  /usr/local/bin/../share/yosys/mul2dsp.v:148.7-152.6
+Info:                  /usr/local/bin/../share/yosys/mul2dsp.v:230.32-230.125
+Info:                  /usr/local/bin/../share/yosys/ecp5/arith_map.v:65.22-65.25
+Info:  0.1 12.9  Source soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0_4$CCU2_COMB0.FCO
+Info:  0.0 12.9    Net soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0_4$CCU2_FCI_INT budget 0.000000 ns (10,21) -> (10,21)
+Info:                Sink soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0_4$CCU2_COMB1.FCI
+Info:  0.0 12.9  Source soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0_4$CCU2_COMB1.FCO
+Info:  0.0 12.9    Net soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0_COUT[18] budget 0.000000 ns (10,21) -> (10,21)
+Info:                Sink soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0_S0_CCU2C_S0_7$CCU2_COMB0.FCI
+Info:                Defined in:
+Info:                  Top.sv:60.5-64.2
+Info:                  femtorv32_intermissum.v:162.34-162.51
+Info:                  SoC.sv:103.3-114.2
+Info:                  /usr/local/bin/../share/yosys/mul2dsp.v:148.7-152.6
+Info:                  /usr/local/bin/../share/yosys/mul2dsp.v:230.32-230.125
+Info:                  /usr/local/bin/../share/yosys/ecp5/arith_map.v:65.22-65.25
+Info:  0.1 12.9  Source soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0_S0_CCU2C_S0_7$CCU2_COMB0.FCO
+Info:  0.0 12.9    Net soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0_S0_CCU2C_S0_7$CCU2_FCI_INT budget 0.000000 ns (10,21) -> (10,21)
+Info:                Sink soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0_S0_CCU2C_S0_7$CCU2_COMB1.FCI
+Info:  0.0 12.9  Source soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0_S0_CCU2C_S0_7$CCU2_COMB1.FCO
+Info:  0.0 12.9    Net soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0_COUT[20] budget 0.000000 ns (10,21) -> (10,21)
+Info:                Sink soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0_S0_CCU2C_S0_6$CCU2_COMB0.FCI
+Info:                Defined in:
+Info:                  Top.sv:60.5-64.2
+Info:                  femtorv32_intermissum.v:162.34-162.51
+Info:                  SoC.sv:103.3-114.2
+Info:                  /usr/local/bin/../share/yosys/mul2dsp.v:148.7-152.6
+Info:                  /usr/local/bin/../share/yosys/mul2dsp.v:230.32-230.125
+Info:                  /usr/local/bin/../share/yosys/ecp5/arith_map.v:65.22-65.25
+Info:  0.1 13.0  Source soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0_S0_CCU2C_S0_6$CCU2_COMB0.FCO
+Info:  0.0 13.0    Net soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0_S0_CCU2C_S0_6$CCU2_FCI_INT budget 0.000000 ns (10,21) -> (10,21)
+Info:                Sink soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0_S0_CCU2C_S0_6$CCU2_COMB1.FCI
+Info:  0.0 13.0  Source soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0_S0_CCU2C_S0_6$CCU2_COMB1.FCO
+Info:  0.0 13.0    Net soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0_COUT[22] budget 0.000000 ns (10,21) -> (11,21)
+Info:                Sink soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0_S0_CCU2C_S0_5$CCU2_COMB0.FCI
+Info:                Defined in:
+Info:                  Top.sv:60.5-64.2
+Info:                  femtorv32_intermissum.v:162.34-162.51
+Info:                  SoC.sv:103.3-114.2
+Info:                  /usr/local/bin/../share/yosys/mul2dsp.v:148.7-152.6
+Info:                  /usr/local/bin/../share/yosys/mul2dsp.v:230.32-230.125
+Info:                  /usr/local/bin/../share/yosys/ecp5/arith_map.v:65.22-65.25
+Info:  0.4 13.5  Source soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0_S0_CCU2C_S0_5$CCU2_COMB0.F
+Info:  1.6 15.1    Net soc.processor.multiply_MULT18X18D_P0_P18_CCU2C_A0_S0[22] budget 3.976000 ns (11,21) -> (12,20)
+Info:                Sink soc.processor.multiply_CCU2C_S0_15$CCU2_COMB0.B
+Info:                Defined in:
+Info:                  Top.sv:60.5-64.2
+Info:                  femtorv32_intermissum.v:162.34-162.51
+Info:                  SoC.sv:103.3-114.2
+Info:                  /usr/local/bin/../share/yosys/mul2dsp.v:148.7-152.6
+Info:                  /usr/local/bin/../share/yosys/mul2dsp.v:230.32-230.125
+Info:                  /usr/local/bin/../share/yosys/ecp5/arith_map.v:34.26-34.27
+Info:  0.4 15.5  Source soc.processor.multiply_CCU2C_S0_15$CCU2_COMB0.FCO
+Info:  0.0 15.5    Net soc.processor.multiply_CCU2C_S0_15$CCU2_FCI_INT budget 0.000000 ns (12,20) -> (12,20)
+Info:                Sink soc.processor.multiply_CCU2C_S0_15$CCU2_COMB1.FCI
+Info:  0.0 15.5  Source soc.processor.multiply_CCU2C_S0_15$CCU2_COMB1.FCO
+Info:  0.0 15.5    Net soc.processor.multiply_CCU2C_S0_3_COUT[23] budget 0.000000 ns (12,20) -> (12,20)
+Info:                Sink soc.processor.multiply_CCU2C_S0_14$CCU2_COMB0.FCI
+Info:                Defined in:
+Info:                  Top.sv:60.5-64.2
+Info:                  femtorv32_intermissum.v:162.34-162.51
+Info:                  SoC.sv:103.3-114.2
+Info:                  /usr/local/bin/../share/yosys/mul2dsp.v:173.32-173.125
+Info:                  /usr/local/bin/../share/yosys/ecp5/arith_map.v:63.22-63.23
+Info:  0.1 15.6  Source soc.processor.multiply_CCU2C_S0_14$CCU2_COMB0.FCO
+Info:  0.0 15.6    Net soc.processor.multiply_CCU2C_S0_14$CCU2_FCI_INT budget 0.000000 ns (12,20) -> (12,20)
+Info:                Sink soc.processor.multiply_CCU2C_S0_14$CCU2_COMB1.FCI
+Info:  0.0 15.6  Source soc.processor.multiply_CCU2C_S0_14$CCU2_COMB1.FCO
+Info:  0.0 15.6    Net soc.processor.multiply_CCU2C_S0_3_COUT[25] budget 0.000000 ns (12,20) -> (12,20)
+Info:                Sink soc.processor.multiply_CCU2C_S0_13$CCU2_COMB0.FCI
+Info:                Defined in:
+Info:                  Top.sv:60.5-64.2
+Info:                  femtorv32_intermissum.v:162.34-162.51
+Info:                  SoC.sv:103.3-114.2
+Info:                  /usr/local/bin/../share/yosys/mul2dsp.v:173.32-173.125
+Info:                  /usr/local/bin/../share/yosys/ecp5/arith_map.v:63.22-63.23
+Info:  0.1 15.7  Source soc.processor.multiply_CCU2C_S0_13$CCU2_COMB0.FCO
+Info:  0.0 15.7    Net soc.processor.multiply_CCU2C_S0_13$CCU2_FCI_INT budget 0.000000 ns (12,20) -> (12,20)
+Info:                Sink soc.processor.multiply_CCU2C_S0_13$CCU2_COMB1.FCI
+Info:  0.0 15.7  Source soc.processor.multiply_CCU2C_S0_13$CCU2_COMB1.FCO
+Info:  0.0 15.7    Net soc.processor.multiply_CCU2C_S0_3_COUT[27] budget 0.000000 ns (12,20) -> (12,20)
+Info:                Sink soc.processor.multiply_CCU2C_S0_12$CCU2_COMB0.FCI
+Info:                Defined in:
+Info:                  Top.sv:60.5-64.2
+Info:                  femtorv32_intermissum.v:162.34-162.51
+Info:                  SoC.sv:103.3-114.2
+Info:                  /usr/local/bin/../share/yosys/mul2dsp.v:173.32-173.125
+Info:                  /usr/local/bin/../share/yosys/ecp5/arith_map.v:63.22-63.23
+Info:  0.1 15.7  Source soc.processor.multiply_CCU2C_S0_12$CCU2_COMB0.FCO
+Info:  0.0 15.7    Net soc.processor.multiply_CCU2C_S0_12$CCU2_FCI_INT budget 0.000000 ns (12,20) -> (12,20)
+Info:                Sink soc.processor.multiply_CCU2C_S0_12$CCU2_COMB1.FCI
+Info:  0.0 15.7  Source soc.processor.multiply_CCU2C_S0_12$CCU2_COMB1.FCO
+Info:  0.0 15.7    Net soc.processor.multiply_CCU2C_S0_3_COUT[29] budget 0.000000 ns (12,20) -> (13,20)
+Info:                Sink soc.processor.multiply_CCU2C_S0_10$CCU2_COMB0.FCI
+Info:                Defined in:
+Info:                  Top.sv:60.5-64.2
+Info:                  femtorv32_intermissum.v:162.34-162.51
+Info:                  SoC.sv:103.3-114.2
+Info:                  /usr/local/bin/../share/yosys/mul2dsp.v:173.32-173.125
+Info:                  /usr/local/bin/../share/yosys/ecp5/arith_map.v:63.22-63.23
+Info:  0.1 15.8  Source soc.processor.multiply_CCU2C_S0_10$CCU2_COMB0.FCO
+Info:  0.0 15.8    Net soc.processor.multiply_CCU2C_S0_10$CCU2_FCI_INT budget 0.000000 ns (13,20) -> (13,20)
+Info:                Sink soc.processor.multiply_CCU2C_S0_10$CCU2_COMB1.FCI
+Info:  0.0 15.8  Source soc.processor.multiply_CCU2C_S0_10$CCU2_COMB1.FCO
+Info:  0.0 15.8    Net soc.processor.multiply_CCU2C_S0_3_COUT[31] budget 0.000000 ns (13,20) -> (13,20)
+Info:                Sink soc.processor.multiply_CCU2C_S0_9$CCU2_COMB0.FCI
+Info:                Defined in:
+Info:                  Top.sv:60.5-64.2
+Info:                  femtorv32_intermissum.v:162.34-162.51
+Info:                  SoC.sv:103.3-114.2
+Info:                  /usr/local/bin/../share/yosys/mul2dsp.v:173.32-173.125
+Info:                  /usr/local/bin/../share/yosys/ecp5/arith_map.v:63.22-63.23
+Info:  0.1 15.9  Source soc.processor.multiply_CCU2C_S0_9$CCU2_COMB0.FCO
+Info:  0.0 15.9    Net soc.processor.multiply_CCU2C_S0_9$CCU2_FCI_INT budget 0.000000 ns (13,20) -> (13,20)
+Info:                Sink soc.processor.multiply_CCU2C_S0_9$CCU2_COMB1.FCI
+Info:  0.0 15.9  Source soc.processor.multiply_CCU2C_S0_9$CCU2_COMB1.FCO
+Info:  0.0 15.9    Net soc.processor.multiply_CCU2C_S0_3_COUT[33] budget 0.000000 ns (13,20) -> (13,20)
+Info:                Sink soc.processor.multiply_CCU2C_S0_8$CCU2_COMB0.FCI
+Info:                Defined in:
+Info:                  Top.sv:60.5-64.2
+Info:                  femtorv32_intermissum.v:162.34-162.51
+Info:                  SoC.sv:103.3-114.2
+Info:                  /usr/local/bin/../share/yosys/mul2dsp.v:173.32-173.125
+Info:                  /usr/local/bin/../share/yosys/ecp5/arith_map.v:63.22-63.23
+Info:  0.1 16.0  Source soc.processor.multiply_CCU2C_S0_8$CCU2_COMB0.FCO
+Info:  0.0 16.0    Net soc.processor.multiply_CCU2C_S0_8$CCU2_FCI_INT budget 0.000000 ns (13,20) -> (13,20)
+Info:                Sink soc.processor.multiply_CCU2C_S0_8$CCU2_COMB1.FCI
+Info:  0.0 16.0  Source soc.processor.multiply_CCU2C_S0_8$CCU2_COMB1.FCO
+Info:  0.0 16.0    Net soc.processor.multiply_CCU2C_S0_3_COUT[35] budget 0.000000 ns (13,20) -> (13,20)
+Info:                Sink soc.processor.multiply_CCU2C_S0_7$CCU2_COMB0.FCI
+Info:                Defined in:
+Info:                  Top.sv:60.5-64.2
+Info:                  femtorv32_intermissum.v:162.34-162.51
+Info:                  SoC.sv:103.3-114.2
+Info:                  /usr/local/bin/../share/yosys/mul2dsp.v:173.32-173.125
+Info:                  /usr/local/bin/../share/yosys/ecp5/arith_map.v:63.22-63.23
+Info:  0.1 16.0  Source soc.processor.multiply_CCU2C_S0_7$CCU2_COMB0.FCO
+Info:  0.0 16.0    Net soc.processor.multiply_CCU2C_S0_7$CCU2_FCI_INT budget 0.000000 ns (13,20) -> (13,20)
+Info:                Sink soc.processor.multiply_CCU2C_S0_7$CCU2_COMB1.FCI
+Info:  0.0 16.0  Source soc.processor.multiply_CCU2C_S0_7$CCU2_COMB1.FCO
+Info:  0.0 16.0    Net soc.processor.multiply_CCU2C_S0_3_COUT[37] budget 0.000000 ns (13,20) -> (14,20)
+Info:                Sink soc.processor.multiply_CCU2C_S0_6$CCU2_COMB0.FCI
+Info:                Defined in:
+Info:                  Top.sv:60.5-64.2
+Info:                  femtorv32_intermissum.v:162.34-162.51
+Info:                  SoC.sv:103.3-114.2
+Info:                  /usr/local/bin/../share/yosys/mul2dsp.v:173.32-173.125
+Info:                  /usr/local/bin/../share/yosys/ecp5/arith_map.v:63.22-63.23
+Info:  0.1 16.1  Source soc.processor.multiply_CCU2C_S0_6$CCU2_COMB0.FCO
+Info:  0.0 16.1    Net soc.processor.multiply_CCU2C_S0_6$CCU2_FCI_INT budget 0.000000 ns (14,20) -> (14,20)
+Info:                Sink soc.processor.multiply_CCU2C_S0_6$CCU2_COMB1.FCI
+Info:  0.0 16.1  Source soc.processor.multiply_CCU2C_S0_6$CCU2_COMB1.FCO
+Info:  0.0 16.1    Net soc.processor.multiply_CCU2C_S0_3_COUT[39] budget 0.000000 ns (14,20) -> (14,20)
+Info:                Sink soc.processor.multiply_CCU2C_S0_5$CCU2_COMB0.FCI
+Info:                Defined in:
+Info:                  Top.sv:60.5-64.2
+Info:                  femtorv32_intermissum.v:162.34-162.51
+Info:                  SoC.sv:103.3-114.2
+Info:                  /usr/local/bin/../share/yosys/mul2dsp.v:173.32-173.125
+Info:                  /usr/local/bin/../share/yosys/ecp5/arith_map.v:63.22-63.23
+Info:  0.1 16.2  Source soc.processor.multiply_CCU2C_S0_5$CCU2_COMB0.FCO
+Info:  0.0 16.2    Net soc.processor.multiply_CCU2C_S0_5$CCU2_FCI_INT budget 0.000000 ns (14,20) -> (14,20)
+Info:                Sink soc.processor.multiply_CCU2C_S0_5$CCU2_COMB1.FCI
+Info:  0.0 16.2  Source soc.processor.multiply_CCU2C_S0_5$CCU2_COMB1.FCO
+Info:  0.0 16.2    Net soc.processor.multiply_CCU2C_S0_3_COUT[41] budget 0.000000 ns (14,20) -> (14,20)
+Info:                Sink soc.processor.multiply_CCU2C_S0_4$CCU2_COMB0.FCI
+Info:                Defined in:
+Info:                  Top.sv:60.5-64.2
+Info:                  femtorv32_intermissum.v:162.34-162.51
+Info:                  SoC.sv:103.3-114.2
+Info:                  /usr/local/bin/../share/yosys/mul2dsp.v:173.32-173.125
+Info:                  /usr/local/bin/../share/yosys/ecp5/arith_map.v:63.22-63.23
+Info:  0.1 16.2  Source soc.processor.multiply_CCU2C_S0_4$CCU2_COMB0.FCO
+Info:  0.0 16.2    Net soc.processor.multiply_CCU2C_S0_4$CCU2_FCI_INT budget 0.000000 ns (14,20) -> (14,20)
+Info:                Sink soc.processor.multiply_CCU2C_S0_4$CCU2_COMB1.FCI
+Info:  0.0 16.2  Source soc.processor.multiply_CCU2C_S0_4$CCU2_COMB1.FCO
+Info:  0.0 16.2    Net soc.processor.multiply_CCU2C_S0_3_COUT[43] budget 0.000000 ns (14,20) -> (14,20)
+Info:                Sink soc.processor.multiply_CCU2C_S0_3$CCU2_COMB0.FCI
+Info:                Defined in:
+Info:                  Top.sv:60.5-64.2
+Info:                  femtorv32_intermissum.v:162.34-162.51
+Info:                  SoC.sv:103.3-114.2
+Info:                  /usr/local/bin/../share/yosys/mul2dsp.v:173.32-173.125
+Info:                  /usr/local/bin/../share/yosys/ecp5/arith_map.v:63.22-63.23
+Info:  0.1 16.3  Source soc.processor.multiply_CCU2C_S0_3$CCU2_COMB0.FCO
+Info:  0.0 16.3    Net soc.processor.multiply_CCU2C_S0_3$CCU2_FCI_INT budget 0.000000 ns (14,20) -> (14,20)
+Info:                Sink soc.processor.multiply_CCU2C_S0_3$CCU2_COMB1.FCI
+Info:  0.4 16.7  Source soc.processor.multiply_CCU2C_S0_3$CCU2_COMB1.F
+Info:  0.8 17.5    Net soc.processor.multiply[63] budget 6.712000 ns (14,20) -> (16,19)
+Info:                Sink soc.processor.mcause_LUT4_D_Z_LUT4_D_Z_LUT4_A_Z_PFUMX_ALUT_Z_PFUMX_Z_C0_LUT4_Z_C_LUT4_Z.D
+Info:                Defined in:
+Info:                  Top.sv:60.5-64.2
+Info:                  femtorv32_intermissum.v:162.23-162.31
+Info:                  SoC.sv:103.3-114.2
+Info:  0.2 17.7  Source soc.processor.mcause_LUT4_D_Z_LUT4_D_Z_LUT4_A_Z_PFUMX_ALUT_Z_PFUMX_Z_C0_LUT4_Z_C_LUT4_Z.F
+Info:  0.6 18.3    Net soc.processor.mcause_LUT4_D_Z_LUT4_D_Z_LUT4_A_Z_PFUMX_ALUT_Z_PFUMX_Z_C0_LUT4_Z_C[2] budget 6.712000 ns (16,19) -> (16,19)
+Info:                Sink soc.processor.mcause_LUT4_D_Z_LUT4_D_Z_LUT4_A_Z_PFUMX_ALUT_Z_PFUMX_Z_C0_LUT4_Z.C
+Info:                Defined in:
+Info:                  /usr/local/bin/../share/yosys/ecp5/cells_map.v:108.23-108.24
+Info:  0.2 18.6  Source soc.processor.mcause_LUT4_D_Z_LUT4_D_Z_LUT4_A_Z_PFUMX_ALUT_Z_PFUMX_Z_C0_LUT4_Z.F
+Info:  0.8 19.3    Net soc.processor.mcause_LUT4_D_Z_LUT4_D_Z_LUT4_A_Z_PFUMX_ALUT_Z_PFUMX_Z_C0[4] budget 6.712000 ns (16,19) -> (16,17)
+Info:                Sink soc.processor.mcause_LUT4_D_Z_LUT4_D_Z_LUT4_A_Z_PFUMX_ALUT_Z_PFUMX_Z_BLUT_LUT4_Z.M
+Info:                Defined in:
+Info:                  /usr/local/bin/../share/yosys/ecp5/cells_map.v:108.23-108.24
+Info:  0.3 19.6  Source soc.processor.mcause_LUT4_D_Z_LUT4_D_Z_LUT4_A_Z_PFUMX_ALUT_Z_PFUMX_Z_BLUT_LUT4_Z.OFX
+Info:  1.2 20.8    Net soc.processor.mcause_LUT4_D_Z_LUT4_D_Z_LUT4_A_Z_PFUMX_ALUT_Z[1] budget 6.712000 ns (16,17) -> (18,13)
+Info:                Sink soc.processor.writeBackData_PFUMX_Z_BLUT_LUT4_Z.B
+Info:                Defined in:
+Info:                  /usr/local/bin/../share/yosys/ecp5/cells_map.v:108.23-108.24
+Info:  0.4 21.2  Source soc.processor.writeBackData_PFUMX_Z_BLUT_LUT4_Z.OFX
+Info:  1.1 22.3    Net soc.processor.writeBackData[31] budget 6.712000 ns (18,13) -> (18,11)
+Info:                Sink soc.processor.registerFile.0.15$RAMW_SLICE.B1
+Info:                Defined in:
+Info:                  Top.sv:60.5-64.2
+Info:                  femtorv32_intermissum.v:336.16-336.29
+Info:                  SoC.sv:103.3-114.2
+Info:  0.0 22.3  Source soc.processor.registerFile.0.15$RAMW_SLICE.WDO3
+Info:  0.1 22.4    Net soc.processor.registerFile.0.15$RAMW_SLICE$conn$WDO3 budget 6.712000 ns (18,11) -> (18,11)
+Info:                Sink soc.processor.registerFile.0.15$DPRAM_COMB3.WD
+Info:  0.0 22.4  Setup soc.processor.registerFile.0.15$DPRAM_COMB3.WD
+Info: 9.5 ns logic, 12.9 ns routing
+
+Info: Critical path report for clock '$glbnet$CLK_48$TRELLIS_IO_IN' (posedge -> posedge):
+Info: curr total
+Info:  0.5  0.5  Source counter_TRELLIS_FF_Q_23.Q
+Info:  0.8  1.4    Net counter[0] budget 9.339000 ns (2,14) -> (2,14)
+Info:                Sink counter_CCU2C_B0_11$CCU2_COMB0.B
+Info:                Defined in:
+Info:                  Top.sv:54.13-54.24
+Info:                  /usr/local/bin/../share/yosys/ecp5/arith_map.v:63.22-63.23
+Info:  0.4  1.8  Source counter_CCU2C_B0_11$CCU2_COMB0.FCO
+Info:  0.0  1.8    Net counter_CCU2C_B0_11$CCU2_FCI_INT budget 0.000000 ns (2,14) -> (2,14)
+Info:                Sink counter_CCU2C_B0_11$CCU2_COMB1.FCI
+Info:  0.0  1.8  Source counter_CCU2C_B0_11$CCU2_COMB1.FCO
+Info:  0.0  1.8    Net counter_CCU2C_B0_COUT[2] budget 0.000000 ns (2,14) -> (2,14)
+Info:                Sink counter_CCU2C_B0_3$CCU2_COMB0.FCI
+Info:                Defined in:
+Info:                  Top.sv:54.13-54.24
+Info:                  /usr/local/bin/../share/yosys/ecp5/arith_map.v:63.22-63.23
+Info:  0.1  1.9  Source counter_CCU2C_B0_3$CCU2_COMB0.FCO
+Info:  0.0  1.9    Net counter_CCU2C_B0_3$CCU2_FCI_INT budget 0.000000 ns (2,14) -> (2,14)
+Info:                Sink counter_CCU2C_B0_3$CCU2_COMB1.FCI
+Info:  0.0  1.9  Source counter_CCU2C_B0_3$CCU2_COMB1.FCO
+Info:  0.0  1.9    Net counter_CCU2C_B0_COUT[4] budget 0.000000 ns (2,14) -> (2,14)
+Info:                Sink counter_CCU2C_B0_2$CCU2_COMB0.FCI
+Info:                Defined in:
+Info:                  Top.sv:54.13-54.24
+Info:                  /usr/local/bin/../share/yosys/ecp5/arith_map.v:63.22-63.23
+Info:  0.1  1.9  Source counter_CCU2C_B0_2$CCU2_COMB0.FCO
+Info:  0.0  1.9    Net counter_CCU2C_B0_2$CCU2_FCI_INT budget 0.000000 ns (2,14) -> (2,14)
+Info:                Sink counter_CCU2C_B0_2$CCU2_COMB1.FCI
+Info:  0.0  1.9  Source counter_CCU2C_B0_2$CCU2_COMB1.FCO
+Info:  0.0  1.9    Net counter_CCU2C_B0_COUT[6] budget 0.000000 ns (2,14) -> (3,14)
+Info:                Sink counter_CCU2C_B0_1$CCU2_COMB0.FCI
+Info:                Defined in:
+Info:                  Top.sv:54.13-54.24
+Info:                  /usr/local/bin/../share/yosys/ecp5/arith_map.v:63.22-63.23
+Info:  0.1  2.0  Source counter_CCU2C_B0_1$CCU2_COMB0.FCO
+Info:  0.0  2.0    Net counter_CCU2C_B0_1$CCU2_FCI_INT budget 0.000000 ns (3,14) -> (3,14)
+Info:                Sink counter_CCU2C_B0_1$CCU2_COMB1.FCI
+Info:  0.0  2.0  Source counter_CCU2C_B0_1$CCU2_COMB1.FCO
+Info:  0.0  2.0    Net counter_CCU2C_B0_COUT[8] budget 0.000000 ns (3,14) -> (3,14)
+Info:                Sink counter_CCU2C_B0$CCU2_COMB0.FCI
+Info:                Defined in:
+Info:                  Top.sv:54.13-54.24
+Info:                  /usr/local/bin/../share/yosys/ecp5/arith_map.v:63.22-63.23
+Info:  0.1  2.1  Source counter_CCU2C_B0$CCU2_COMB0.FCO
+Info:  0.0  2.1    Net counter_CCU2C_B0$CCU2_FCI_INT budget 0.000000 ns (3,14) -> (3,14)
+Info:                Sink counter_CCU2C_B0$CCU2_COMB1.FCI
+Info:  0.0  2.1  Source counter_CCU2C_B0$CCU2_COMB1.FCO
+Info:  0.0  2.1    Net counter_CCU2C_B0_COUT[10] budget 0.000000 ns (3,14) -> (3,14)
+Info:                Sink counter_CCU2C_B0_10$CCU2_COMB0.FCI
+Info:                Defined in:
+Info:                  Top.sv:54.13-54.24
+Info:                  /usr/local/bin/../share/yosys/ecp5/arith_map.v:63.22-63.23
+Info:  0.1  2.2  Source counter_CCU2C_B0_10$CCU2_COMB0.FCO
+Info:  0.0  2.2    Net counter_CCU2C_B0_10$CCU2_FCI_INT budget 0.000000 ns (3,14) -> (3,14)
+Info:                Sink counter_CCU2C_B0_10$CCU2_COMB1.FCI
+Info:  0.0  2.2  Source counter_CCU2C_B0_10$CCU2_COMB1.FCO
+Info:  0.0  2.2    Net counter_CCU2C_B0_COUT[12] budget 0.000000 ns (3,14) -> (3,14)
+Info:                Sink counter_CCU2C_B0_9$CCU2_COMB0.FCI
+Info:                Defined in:
+Info:                  Top.sv:54.13-54.24
+Info:                  /usr/local/bin/../share/yosys/ecp5/arith_map.v:63.22-63.23
+Info:  0.1  2.2  Source counter_CCU2C_B0_9$CCU2_COMB0.FCO
+Info:  0.0  2.2    Net counter_CCU2C_B0_9$CCU2_FCI_INT budget 0.000000 ns (3,14) -> (3,14)
+Info:                Sink counter_CCU2C_B0_9$CCU2_COMB1.FCI
+Info:  0.0  2.2  Source counter_CCU2C_B0_9$CCU2_COMB1.FCO
+Info:  0.0  2.2    Net counter_CCU2C_B0_COUT[14] budget 0.000000 ns (3,14) -> (4,14)
+Info:                Sink counter_CCU2C_B0_8$CCU2_COMB0.FCI
+Info:                Defined in:
+Info:                  Top.sv:54.13-54.24
+Info:                  /usr/local/bin/../share/yosys/ecp5/arith_map.v:63.22-63.23
+Info:  0.1  2.3  Source counter_CCU2C_B0_8$CCU2_COMB0.FCO
+Info:  0.0  2.3    Net counter_CCU2C_B0_8$CCU2_FCI_INT budget 0.000000 ns (4,14) -> (4,14)
+Info:                Sink counter_CCU2C_B0_8$CCU2_COMB1.FCI
+Info:  0.0  2.3  Source counter_CCU2C_B0_8$CCU2_COMB1.FCO
+Info:  0.0  2.3    Net counter_CCU2C_B0_COUT[16] budget 0.000000 ns (4,14) -> (4,14)
+Info:                Sink counter_CCU2C_B0_7$CCU2_COMB0.FCI
+Info:                Defined in:
+Info:                  Top.sv:54.13-54.24
+Info:                  /usr/local/bin/../share/yosys/ecp5/arith_map.v:63.22-63.23
+Info:  0.1  2.4  Source counter_CCU2C_B0_7$CCU2_COMB0.FCO
+Info:  0.0  2.4    Net counter_CCU2C_B0_7$CCU2_FCI_INT budget 0.000000 ns (4,14) -> (4,14)
+Info:                Sink counter_CCU2C_B0_7$CCU2_COMB1.FCI
+Info:  0.0  2.4  Source counter_CCU2C_B0_7$CCU2_COMB1.FCO
+Info:  0.0  2.4    Net counter_CCU2C_B0_COUT[18] budget 0.000000 ns (4,14) -> (4,14)
+Info:                Sink counter_CCU2C_B0_6$CCU2_COMB0.FCI
+Info:                Defined in:
+Info:                  Top.sv:54.13-54.24
+Info:                  /usr/local/bin/../share/yosys/ecp5/arith_map.v:63.22-63.23
+Info:  0.1  2.4  Source counter_CCU2C_B0_6$CCU2_COMB0.FCO
+Info:  0.0  2.4    Net counter_CCU2C_B0_6$CCU2_FCI_INT budget 0.000000 ns (4,14) -> (4,14)
+Info:                Sink counter_CCU2C_B0_6$CCU2_COMB1.FCI
+Info:  0.0  2.4  Source counter_CCU2C_B0_6$CCU2_COMB1.FCO
+Info:  0.0  2.4    Net counter_CCU2C_B0_COUT[20] budget 0.000000 ns (4,14) -> (4,14)
+Info:                Sink counter_CCU2C_B0_5$CCU2_COMB0.FCI
+Info:                Defined in:
+Info:                  Top.sv:54.13-54.24
+Info:                  /usr/local/bin/../share/yosys/ecp5/arith_map.v:63.22-63.23
+Info:  0.1  2.5  Source counter_CCU2C_B0_5$CCU2_COMB0.FCO
+Info:  0.0  2.5    Net counter_CCU2C_B0_5$CCU2_FCI_INT budget 0.000000 ns (4,14) -> (4,14)
+Info:                Sink counter_CCU2C_B0_5$CCU2_COMB1.FCI
+Info:  0.0  2.5  Source counter_CCU2C_B0_5$CCU2_COMB1.FCO
+Info:  0.0  2.5    Net counter_CCU2C_B0_COUT[22] budget 0.000000 ns (4,14) -> (5,14)
+Info:                Sink counter_CCU2C_B0_4$CCU2_COMB0.FCI
+Info:                Defined in:
+Info:                  Top.sv:54.13-54.24
+Info:                  /usr/local/bin/../share/yosys/ecp5/arith_map.v:63.22-63.23
+Info:  0.1  2.6  Source counter_CCU2C_B0_4$CCU2_COMB0.FCO
+Info:  0.0  2.6    Net counter_CCU2C_B0_4$CCU2_FCI_INT budget 0.000000 ns (5,14) -> (5,14)
+Info:                Sink counter_CCU2C_B0_4$CCU2_COMB1.FCI
+Info:  0.4  3.0  Source counter_CCU2C_B0_4$CCU2_COMB1.F
+Info:  0.1  3.1    Net counter_TRELLIS_FF_Q_DI[23] budget 9.338000 ns (5,14) -> (5,14)
+Info:                Sink counter_TRELLIS_FF_Q.DI
+Info:                Defined in:
+Info:                  Top.sv:54.13-54.24
+Info:                  /usr/local/bin/../share/yosys/ecp5/arith_map.v:34.26-34.27
+Info:  0.0  3.1  Setup counter_TRELLIS_FF_Q.DI
+Info: 2.2 ns logic, 1.0 ns routing
+
+Info: Critical path report for cross-domain path 'posedge $glbnet$CLK_48$TRELLIS_IO_IN' -> '<async>':
+Info: curr total
+Info:  0.5  0.5  Source counter_TRELLIS_FF_Q.Q
+Info:  1.2  1.7    Net counter[23] budget 41.285999 ns (5,14) -> (2,16)
+Info:                Sink LED_R_LUT4_Z.D
+Info:                Defined in:
+Info:                  Top.sv:29.14-29.21
+Info:  0.2  2.0  Source LED_R_LUT4_Z.F
+Info:  1.0  2.9    Net LED_R$TRELLIS_IO_OUT budget 41.285999 ns (2,16) -> (0,17)
+Info:                Sink LED_R$tr_io.I
+Info:                Defined in:
+Info:                  Top.sv:7.15-7.20
+Info: 0.8 ns logic, 2.2 ns routing
+
+Info: Critical path report for cross-domain path 'posedge $glbnet$CLK_48$TRELLIS_IO_IN' -> 'posedge $glbnet$soc.clk':
+Info: curr total
+Info:  0.5  0.5  Source soc.reset_TRELLIS_FF_Q.Q
+Info:  1.3  1.8    Net soc.reset budget 32.098000 ns (10,6) -> (15,7)
+Info:                Sink soc.processor.mtvec_TRELLIS_FF_Q_CE_PFUMX_Z_ALUT_LUT4_Z.D
+Info:                Defined in:
+Info:                  Top.sv:60.5-64.2
+Info:                  SoC.sv:130.7-130.12
+Info:  0.2  2.0  Source soc.processor.mtvec_TRELLIS_FF_Q_CE_PFUMX_Z_ALUT_LUT4_Z.F
+Info:  0.0  2.0    Net soc.processor.mtvec_TRELLIS_FF_Q_CE_PFUMX_Z_ALUT budget 19.164000 ns (15,7) -> (15,7)
+Info:                Sink soc.processor.mtvec_TRELLIS_FF_Q_CE_PFUMX_Z_BLUT_LUT4_Z.F1
+Info:                Defined in:
+Info:                  /usr/local/bin/../share/yosys/ecp5/cells_map.v:133.22-133.24
+Info:  0.2  2.2  Source soc.processor.mtvec_TRELLIS_FF_Q_CE_PFUMX_Z_BLUT_LUT4_Z.OFX
+Info:  2.0  4.2    Net soc.processor.mtvec_TRELLIS_FF_Q_CE budget 19.164000 ns (15,7) -> (22,24)
+Info:                Sink soc.processor.mtvec_TRELLIS_FF_Q_5.CE
+Info:  0.0  4.2  Setup soc.processor.mtvec_TRELLIS_FF_Q_5.CE
+Info: 0.9 ns logic, 3.3 ns routing
+
+Info: Critical path report for cross-domain path 'posedge $glbnet$soc.clk' -> '<async>':
+Info: curr total
+Info:  0.5  0.5  Source PMOD_A7_TRELLIS_FF_Q.Q
+Info:  1.6  2.1    Net PMOD_A7$TRELLIS_IO_OUT budget 82.807999 ns (8,5) -> (4,0)
+Info:                Sink PMOD_A7$tr_io.I
+Info:                Defined in:
+Info:                  Top.sv:60.5-64.2
+Info:                  SoC.sv:12.21-12.27
+Info: 0.5 ns logic, 1.6 ns routing
+
+Info: Max frequency for clock              '$glbnet$soc.clk': 44.62 MHz (PASS at 10.29 MHz)
+Info: Max frequency for clock '$glbnet$CLK_48$TRELLIS_IO_IN': 320.51 MHz (PASS at 48.00 MHz)
+
+Info: Max delay posedge $glbnet$CLK_48$TRELLIS_IO_IN -> <async>                : 2.94 ns
+Info: Max delay posedge $glbnet$CLK_48$TRELLIS_IO_IN -> posedge $glbnet$soc.clk: 4.18 ns
+Info: Max delay posedge $glbnet$soc.clk              -> <async>                : 2.08 ns
+
+Info: Slack histogram:
+Info:  legend: * represents 15 endpoint(s)
+Info:          + represents [1,15) endpoint(s)
+Info: [ 17713,  21642) |*+
+Info: [ 21642,  25571) | 
+Info: [ 25571,  29500) | 
+Info: [ 29500,  33429) | 
+Info: [ 33429,  37358) | 
+Info: [ 37358,  41287) | 
+Info: [ 41287,  45216) | 
+Info: [ 45216,  49145) | 
+Info: [ 49145,  53074) | 
+Info: [ 53074,  57003) | 
+Info: [ 57003,  60932) | 
+Info: [ 60932,  64861) | 
+Info: [ 64861,  68790) | 
+Info: [ 68790,  72719) | 
+Info: [ 72719,  76648) |****+
+Info: [ 76648,  80577) |***+
+Info: [ 80577,  84506) |***+
+Info: [ 84506,  88435) |********+
+Info: [ 88435,  92364) |*********************************+
+Info: [ 92364,  96293) |************************************************************ 
+
+Info: Program finished normally.

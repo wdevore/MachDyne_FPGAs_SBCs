@@ -1,4 +1,5 @@
-TOP_FILE = Top.sv
+TOP = Top
+TOP_FILE = ${TOP}.sv
 COMMON = ../../../../common
 
 SUB_MODULES_FILES = \
@@ -23,6 +24,9 @@ BUILD_BIN = /media/RAMDisk
 
 ICESTORM_TOOLCHAIN = /usr/local
 
+# Verilator is used for it linting prior to synth
+SIMULATION_TOOLCHAIN = /usr/local/bin/verilator
+
 # -blif ${BUILD_BIN}/chip.blif
 # -noflatten
 YOSYS_COMMAND = "synth_ecp5 -json ${BUILD_BIN}/hardware.json -top Top"
@@ -35,6 +39,11 @@ all: build route pack tigard
 
 compile: build route
 
+lint:
+	@echo "############### Linting via Verilator ##################"
+	${SIMULATION_TOOLCHAIN} --lint-only -Wall ${MODULES_FILES} \
+	--top-module ${TOP}
+
 build: ${MODULES_FILES} ${PINS_CONSTRAINTS}
 	@echo "##### Building..."
 	${ICESTORM_TOOLCHAIN}/bin/yosys -p ${YOSYS_COMMAND} \
@@ -44,7 +53,7 @@ build: ${MODULES_FILES} ${PINS_CONSTRAINTS}
 	-DPRELOAD_MEMORY \
 	${MODULES_FILES}
 
-# 	-v OR -q
+# 	-v
 route: ${BUILD_BIN}/hardware.json
 	@echo "##### Routing..."
 	${ICESTORM_TOOLCHAIN}/bin/nextpnr-ecp5 \

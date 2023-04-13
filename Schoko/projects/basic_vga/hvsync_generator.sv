@@ -23,8 +23,8 @@ localparam  v_pixel_sync_amount        = 2;
 localparam  v_pixel_back_porch_amount  = 33;
 
 // Pixel counters
-reg [9:0] h_counter = 0;
-reg [9:0] v_counter = 0;
+logic [9:0] h_counter = 0;
+logic [9:0] v_counter = 0;
 
 always_ff @(posedge clk) begin
   if (reset) begin
