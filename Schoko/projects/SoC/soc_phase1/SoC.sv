@@ -82,7 +82,7 @@ end
 
 initial begin
 	`ifdef PRELOAD_MEMORY
-	$readmemh("binaries/firmware.hex",RAM);
+	$readmemh("../binaries/firmware.hex",RAM);
 	`endif
 end
 

@@ -93,7 +93,7 @@ assign mem_rdata = mem_address_is_io ? io_rdata : ram_rdata;
 initial begin
 	`ifdef PRELOAD_MEMORY
 	$display("Preloading memory");
-	$readmemh("../binaries/firmware.hex",RAM);
+	$readmemh("../../binaries/firmware.hex",RAM);
 	`endif
 
 	`ifdef SHOW_MEMORY

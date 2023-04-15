@@ -12,7 +12,7 @@
 module UART_Component
 (
     input  logic clock,             // System clock
-    input  logic reset,             // Reset
+    input  logic reset,             // Reset (active low)
     input  logic cs,                // Chip select (active low)
     /* verilator lint_off UNUSED */
     input  logic rd,                // Active Low
