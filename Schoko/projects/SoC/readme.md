@@ -3,6 +3,20 @@ A port of Femto-intermissum from Verilog to SystemVerilog and Modulerized.
 
 # Links
 - https://github.com/Ravenslofty/yosys-cookbook/blob/master/ecp5.md
+- https://projectf.io/posts/fpga-graphics/
+- http://tinyvga.com/vga-timing/640x480@73Hz
+- https://zipcpu.com/blog/2017/06/02/generating-timing.html 
+- https://www.youtube.com/watch?v=5xY3-Er72VU uses the upduino 3.0
+- https://imuguruza.github.io/blog/vga
+- https://www.youtube.com/watch?v=ZNunxg7o8l0  Great scott
+- https://www.fpga4fun.com/PongGame.html  pong
+- https://ktln2.org/2018/01/23/implementing-vga-in-verilog/
+- https://vanhunteradams.com/DE1/VGA_Driver/Driver.html
+- https://www.instructables.com/Video-Interfacing-With-FPGA-Using-VGA/
+- https://www.instructables.com/Design-of-a-Simple-VGA-Controller-in-VHDL/
+- https://blog.waynejohnson.net/doku.php/generating_vga_with_an_fpga
+- https://nandland.com/project-9-vga-introduction-driving-test-patterns-to-vga-monitor/ 
+ 
 
 
 # Description
@@ -14,10 +28,18 @@ A port of Femto-intermissum from Verilog to SystemVerilog and Modulerized.
 # Tasks
 - **done** Pull fresh versions of Yosys, Nextpnr and ecp5 tools.
 - **done** Synth Femto and drive 8 LEDs on PMOD
-- Update UART component to set byte arrived bit
-- Create hex files using assembler
+- **done** Simplify UART component
+- **done** Create hex files using assembler
 - Connect UART and send to Client a boot message
+  - Write assembly
+  - start Minicom on ttyACM0
 
+# Minicom client (aka trasnmitter)
+Turn off "flow control" [Ctrl-a x o]
+
+```$ minicom -b 115200 -o -D /dev/ttyUSB0```
+Or
+```$ minicom -b 115200 -o -D /dev/ttyACM0```
 
 
 # PLL
@@ -52,13 +74,12 @@ VCO frequency: 553.846
 We need to create basic binaries (aka hex files) for testing femto functionality.
 
 # Assembler
-Clone the basic assembler from the [RISC-V-Assemblers](https://github.com/wdevore/RISC-V-Assemblers) github repo:
+- Clone the basic assembler from the [RISC-V-Assemblers](https://github.com/wdevore/RISC-V-Assemblers) github repo.
 
 ## Usage
-- First create and/or modify *\<filename\>.json* file to adjust the input and output.
+- Navigate to the *basic* folder.
+- Modify or Copy the **basic.json** file to match you requirements by adjusting the input and output.
 - Run assembler: ```$ go run . *<filename>.json*```
-- Then copy the *.hex* file to your *binaries* folder, for example:
-  - */path-to-parent/Schoko/projects/femto/simulation/binaries*
 
 
 Create an **.s** file, for example,

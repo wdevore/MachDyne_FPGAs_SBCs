@@ -39,7 +39,7 @@ logic wr_active = cs | wr; // = inverted inputs Nand gate = ~(~cs & ~wr) (Active
 logic rd_active = cs | rd;
 
 // ------------------------------------------------------------------
-// Control N-bits (combined at Addres 0x00)
+// Control registers N-bits
 // ------------------------------------------------------------------
 localparam CONTROL_SIZE = 8;
 logic [CONTROL_SIZE-1:0] control;  // Address 0x00
@@ -48,9 +48,8 @@ logic control_wr = (wr_active | ~(addr[2:0] == 3'b000)); // Active low
 // ------------------------------------------------------------------------
 // Tx/Rx buffers
 // ------------------------------------------------------------------------
-localparam BUFFER_SIZE = 8;
-logic [BUFFER_SIZE-1:0] rx_buffer;  // Address 0x01
-logic [BUFFER_SIZE-1:0] tx_buffer;  // Address 0x02
+logic [CONTROL_SIZE-1:0] rx_buffer;  // Address 0x01
+logic [CONTROL_SIZE-1:0] tx_buffer;  // Address 0x02
 logic tx_buff_wr = (wr_active | ~(addr[2:0] == 3'b010)); // Active low
 
 // ------------------------------------------------------------------------
@@ -118,23 +117,27 @@ UARTRx uart_rx (
 // ------------------------------------------------------------------------
 // State machine controlling device
 // ------------------------------------------------------------------------
-UARTTxState state = UAReset0;
-UARTTxState next_state;
+UARTState state = UAReset0;
+UARTState next_state;
 
-UARTTxState tx_state = UATxIdle;
-UARTTxState tx_next_state;
+// Upper 4 bits indicate signal type
+logic [3:0] signal = rx_buffer[7:4];
 
-UARTRxState rx_state = UARxIdle;
-UARTRxState rx_next_state;
-
+// #__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__
+// ------------
+// ------------
+// ------------
+// ------------
+// #__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__
 always_comb begin
     next_state = UAReset0;
-    tx_next_state = UATxIdle;
-    rx_next_state = UARxIdle;
     tx_en = 1;          // Disable
     irq = 0;            // Deactivate
 
     case (state)
+        // --------------------------------
+        // Reset
+        // --------------------------------
         UAReset0: begin
             next_state = UAResetComplete;
         end
@@ -143,81 +146,62 @@ always_comb begin
             next_state = UADeviceIdle;
         end
 
+        // #### __---__---__---__---__---__---__---__---__---__---__--- ####
+        // Main process
+        // #### __---__---__---__---__---__---__---__---__---__---__--- ####
         UADeviceIdle: begin
             next_state = UADeviceIdle;
-        end
 
-        UAIRQComplete: begin
-            irq = 0;
-            next_state = UADeviceIdle;
-        end
+            if (rx_complete) begin
+                next_state = UARxComplete;
 
-        default: ;
-    endcase
+                if (control[CTL_IRQ_ENAB]) begin
+                    irq = 1;   // Trigger interrupt
+                    next_state = UAIRQComplete;
+                end
+            end
 
-    case (tx_state)
-        UATxIdle: begin
             if (~tx_buff_wr) begin
-                tx_next_state = UATxTransmit;
+                next_state = UATxTransmit;
             end
         end
 
         UATxTransmit: begin
             tx_en = 0; // Enable transmission
-            tx_next_state = UATxTransmitComplete;
+            next_state = UATxTransmitComplete;
         end
 
         UATxTransmitComplete: begin
-            tx_next_state = UATxTransmitComplete;
-			if (tx_complete) begin
-				tx_next_state = UATxIdle;
-			end
-        end
-        default: ;
-    endcase
-
-    case (rx_state)
-        UARxIdle: begin
-            if (rx_complete) begin
-                // Byte arrived
-                rx_next_state = UARxComplete;
-
-                if (control[CTL_IRQ_ENAB]) begin
-                    irq = 1;   // Trigger interrupt
-                    rx_next_state = UAIRQComplete;
-                end
-            end
+            // tx_en = 0; // Maintain
+            next_state = UATxTransmitComplete;//UADeviceIdle;
         end
 
         UARxComplete: begin
             // Set CTL_RX_AVAL
-            rx_next_state = UARxIdle;
+            next_state = UADeviceIdle;
         end
 
         UAIRQComplete: begin
-            // Set CTL_RX_AVAL
-            rx_next_state = UARxIdle;
+            irq = 1;
+            next_state = UADeviceIdle;
         end
 
-        default: ;
-    endcase    
+        // -------------------------------------
+        // Unknown State
+        // -------------------------------------
+        default: begin
+            `ifdef SIMULATE
+                $display("********* UNKNOWN STATE ***********");
+            `endif
+        end
+
+    endcase
 end
 
 // #__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__
 // -----------
 // #__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__
 always_ff @(posedge clock) begin
-    // #### __---__---__---__---__---__---__---__---__---__---__--- ####
-    // Device/Component
-    // #### __---__---__---__---__---__---__---__---__---__---__--- ####
-    if (~control_wr)
-        control <= control_in;
-
-    // Clear byte-available flag when the System reads the rx_buffer
-    if (~rd_active & out_select) begin
-        control[CTL_RX_AVAL] <= 0;
-    end
-
     case (state)
         // --------------------------------
         // Reset
@@ -230,10 +214,70 @@ always_ff @(posedge clock) begin
         end
 
         UAResetComplete: begin
-            // Move to UADeviceIdle
+            // $display("UAResetComplete");
         end
 
+        // #### __---__---__---__---__---__---__---__---__---__---__--- ####
+        // Main process
+        // #### __---__---__---__---__---__---__---__---__---__---__--- ####
         UADeviceIdle: begin
+            if (~control_wr)
+                control <= control_in;
+
+            // --------------------------------
+            // System events
+            // --------------------------------
+            // The System should check the CTL_TX_BUSY flag first before
+            // writing to the buffer
+                debug[0] <= in_select;
+                debug[1] <= wr_active;
+                debug[2] <= tx_buff_wr;
+                debug[3] <= control[CTL_TX_BUSY];
+
+            if (~tx_buff_wr) begin
+                tx_buffer <= byte_in;
+                control[CTL_TX_BUSY] <= 1;
+                // Move to UATxTransmit
+            end
+
+            if (tx_complete) begin
+                control[CTL_TX_BUSY] <= 0;
+            end
+
+            // Clear byte-available flag when the System reads the rx_buffer
+            if (~rd_active & out_select)
+                control[CTL_RX_AVAL] <= 0;
+
+            // --------------------------------
+            // Client events
+            // --------------------------------
+            if (rx_complete) begin
+                // Capture byte
+                rx_buffer <= rx_byte;
+
+                if (control[CTL_IRQ_ENAB]) begin
+                    // irq <= 1;   // Trigger interrupt
+                    // Move to UAIRQComplete
+                end
+                // else
+                // Move to UARxComplete
+            end
+        end
+
+        UATxTransmit: begin
+                debug[4] <= 1;
+                debug[5] <= tx_en;
+                
+                // debug <= control[3:0];
+        end
+
+        UATxTransmitComplete: begin
+            debug[7] <= 1;
+        end
+
+        UARxComplete: begin
+            // Signal a byte has arrived
+            control[CTL_RX_AVAL] <= 1;
             // Move to UADeviceIdle
         end
 
@@ -241,73 +285,21 @@ always_ff @(posedge clock) begin
             // Move to UADeviceIdle
         end
 
-        default: ;
-    endcase
-
-    // #### __---__---__---__---__---__---__---__---__---__---__--- ####
-    // Transmit
-    // #### __---__---__---__---__---__---__---__---__---__---__--- ####
-    case (tx_state)
-        UATxIdle: begin
-            // debug[0] <= in_select;
-            // debug[1] <= wr_active;
-            // debug[2] <= tx_buff_wr;
-            // debug[3] <= control[CTL_TX_BUSY];
-
-            // The System should check the CTL_TX_BUSY flag first before
-            // writing to the buffer
-            if (~tx_buff_wr) begin
-                tx_buffer <= byte_in;
-                control[CTL_TX_BUSY] <= 1;
-                // Move to UATxTransmit
-            end
+        // -------------------------------------
+        // Unknown State
+        // -------------------------------------
+        default: begin
+            `ifdef SIMULATE
+                $display("********* UNKNOWN STATE ***********");
+            `endif
         end
 
-        UATxTransmit: begin
-            // debug[4] <= 1;
-            // debug[5] <= tx_en;
-            
-            // debug <= control[3:0];
-        end
-
-        UATxTransmitComplete: begin
-            if (tx_complete) begin
-                control[CTL_TX_BUSY] <= 0;
-            end
-            // debug[7] <= 1;
-        end
-        default: ;
-    endcase
-
-    // #### __---__---__---__---__---__---__---__---__---__---__--- ####
-    // Receive
-    // #### __---__---__---__---__---__---__---__---__---__---__--- ####
-    case (rx_state)
-        UARxIdle: begin
-            if (rx_complete) begin
-                // Capture byte
-                rx_buffer <= rx_byte;
-                // Move to UARxComplete
-            end
-        end
-
-
-        UARxComplete: begin
-            // Signal a byte has arrived
-            control[CTL_RX_AVAL] <= 1;
-            // Move to UARxIdle
-        end
-
-        default: ;
     endcase
 
     if (~reset)
         state <= UAReset0;
-    else begin
+    else
         state <= next_state;
-        tx_state <= tx_next_state;
-        rx_state <= rx_next_state;
-    end
 end
 
 endmodule

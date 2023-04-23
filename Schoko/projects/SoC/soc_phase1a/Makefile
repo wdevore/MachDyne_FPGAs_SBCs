@@ -14,7 +14,7 @@ SUB_MODULES_FILES = \
 	../components/uart/UART_Enums.sv \
 	../components/uart/UART_Component.sv \
 	SynEnums.sv \
-	femtorv32_intermissum.v \
+	../components/femtorv32_intermissum.v \
 	pll.v \
 	SoC.sv
 

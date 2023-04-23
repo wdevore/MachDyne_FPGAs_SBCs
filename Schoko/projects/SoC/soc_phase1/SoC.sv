@@ -9,8 +9,7 @@
 module SoC
 (
 	input  logic clk_48mhz,
-	output logic [7:0] port_a,
-	output logic [7:0] port_b
+	output logic [7:0] port_a
 );
 
 // The memory bus.
@@ -47,7 +46,7 @@ logic [31:0] io_rdata;
 // ------------------------------------------------------------------
 `define NRV_RAM 16384
 
-logic mem_address_is_io  =  mem_address[22];
+logic mem_address_is_io  =  mem_address[22];  // Mapped to 0x00400000
 logic mem_address_is_ram = !mem_address[22];
 logic [19:0] ram_word_address = mem_address[21:2];
 
@@ -68,6 +67,10 @@ always @(posedge clk) begin
 		if (mem_wmask[3]) RAM[ram_word_address][31:24] <= mem_wdata[31:24];	 
 	end
 
+	ram_rdata <= RAM[ram_word_address];
+end
+
+always @(posedge clk) begin
 	if (mem_address_is_io) begin
 		case (io_word_address)
 			8'b00000000: begin
@@ -76,8 +79,6 @@ always @(posedge clk) begin
 			end
 		endcase
 	end
-
-	ram_rdata <= RAM[ram_word_address];
 end
 
 initial begin
@@ -113,15 +114,6 @@ FemtoRV32 #(
 	.reset(reset)				// (in) Active Low
 );
 
-// assign port_a[0] = 1;
-// assign port_a[1] = 1;
-// assign port_a[2] = 1;
-// assign port_a[3] = 1;
-// assign port_a[4] = 1;
-// assign port_a[5] = 1;
-// assign port_a[6] = 1;
-// assign port_a[7] = clk;
-
 // ------------------------------------------------------------------
 // SoC FSM
 // ------------------------------------------------------------------
@@ -130,27 +122,22 @@ SynState next_state;
 logic reset;
 
 always_ff @(posedge clk_48mhz) begin
-	// port_a[3] <= 0;
 
     case (state)
         SoCReset: begin
             // Hold CPU in reset while Top module starts up.
             reset <= 1'b0;
-			// port_a[0] <= 1;
         end
 
 		SoCResetting: begin
             reset <= 1'b0;
-			// port_a[1] <= 1;
 		end
 
         SoCResetComplete: begin
             reset <= 1'b1;
-			// port_a[2] <= 1;
         end
 
         SoCIdle: begin
-			// port_a[3] <= 1;
         end
 
         default: begin
@@ -165,36 +152,22 @@ end
 always_comb begin
 	next_state = SoCReset;
 
-	// port_a[0] = 0;
-	// port_a[1] = 0;
-	// port_a[2] = 0;
-	// port_a[3] = 0;
-	// port_a[4] = 0;
-	// port_a[5] = 0;
-	// port_a[6] = 0;
-	// port_a[7] = 0;
-
     case (state)
         SoCReset: begin
-			// port_a[0] = 1;
             next_state = SoCResetting;
         end
 
 		SoCResetting: begin
 			next_state = SoCResetComplete;
-			// port_a[1] = 1;
 		end
 
         SoCResetComplete: begin
 			next_state = SoCResetComplete;
-			// port_a[2] = 1;
 			if (locked)
 				next_state = SoCIdle;
         end
 
         SoCIdle: begin
-			// port_a[3] = 1;
-
 			next_state = SoCIdle;
         end
 

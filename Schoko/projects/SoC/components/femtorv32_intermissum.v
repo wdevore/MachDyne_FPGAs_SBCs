@@ -14,15 +14,13 @@
 //
 // Bruno Levy, Matthias Koch, 2020-2021
 /*******************************************************************/
+/* verilator lint_off DECLFILENAME */
 
 // Firmware generation flags for this processor
 `define NRV_ARCH     "rv32im"
 `define NRV_ABI      "ilp32"
 `define NRV_OPTIMIZE "-O3"
 `define NRV_INTERRUPTS
-
-
-/* verilator lint_off DECLFILENAME */
 
 module FemtoRV32(
    input          clk,
@@ -37,7 +35,10 @@ module FemtoRV32(
 
    input         interrupt_request,
 
-   input         reset      // set to 0 to reset the processor
+   input         reset,     // set to 0 to reset the processor
+
+   // --------- DEBUG -------------------
+   output        halt       // Active high
 );
 
    parameter RESET_ADDR       = 32'h00000000;
@@ -59,6 +60,8 @@ module FemtoRV32(
    (* onehot *)
    wire [7:0] funct3Is = 8'b00000001 << instr[14:12];
 
+   wire [2:0] funct3 = instr[14:12];
+
    // The five imm formats, see RiscV reference (link above), Fig. 2.4 p. 12
    wire [31:0] Uimm={    instr[31],   instr[30:12], {12{1'b0}}};
    wire [31:0] Iimm={{21{instr[31]}}, instr[30:20]};
@@ -79,6 +82,7 @@ module FemtoRV32(
    wire isJALR    =  (instr[6:2] == 5'b11001); // rd <- PC+4; PC<-rs1+Iimm
    wire isJAL     =  (instr[6:2] == 5'b11011); // rd <- PC+4; PC<-PC+Jimm
    wire isSYSTEM  =  (instr[6:2] == 5'b11100); // rd <- CSR <- rs1/uimm5
+   wire isEBREAK  = isSYSTEM & funct3Is[0];    // ebreak
 
    wire isALU = isALUimm | isALUreg;
 
@@ -283,7 +287,7 @@ module FemtoRV32(
    end
 
    // Decoder for mret opcode
-   wire interrupt_return = isSYSTEM & funct3Is[0]; // & (instr[31:20]==12'h302);
+   wire interrupt_return = isSYSTEM & funct3Is[0] & (instr[31:20]==12'h302);
 
    // CSRs:
    reg  [ADDR_WIDTH-1:0] mepc;    // The saved program counter.
@@ -408,12 +412,14 @@ module FemtoRV32(
    localparam WAIT_INSTR_bit      = 1;
    localparam EXECUTE_bit         = 2;
    localparam WAIT_ALU_OR_MEM_bit = 3;
-   localparam NB_STATES           = 4;
+   localparam SYSTEM_EBREAK_bit   = 4;
+   localparam NB_STATES           = 5;
 
    localparam FETCH_INSTR     = 1 << FETCH_INSTR_bit;
    localparam WAIT_INSTR      = 1 << WAIT_INSTR_bit;
    localparam EXECUTE         = 1 << EXECUTE_bit;
    localparam WAIT_ALU_OR_MEM = 1 << WAIT_ALU_OR_MEM_bit;
+   localparam SYSTEM_EBREAK   = 1 << SYSTEM_EBREAK_bit;
 
    (* onehot *)
    reg [NB_STATES-1:0] state;
@@ -444,6 +450,8 @@ module FemtoRV32(
                          interrupt_return ? mepc :
                          PCplus4;
 
+   assign halt = state == SYSTEM_EBREAK;
+
    always @(posedge clk) begin
       if(!reset) begin
          state      <= WAIT_ALU_OR_MEM; // Just waiting for !mem_wbusy
@@ -473,11 +481,19 @@ module FemtoRV32(
               PC <= PC_new;
               if (interrupt_return) mcause <= 0;
            end
-           state <= needToWait ? WAIT_ALU_OR_MEM : FETCH_INSTR;
+           if (isEBREAK)
+              state <= SYSTEM_EBREAK;
+           else
+              state <= needToWait ? WAIT_ALU_OR_MEM : FETCH_INSTR;
         end
 
         state[WAIT_ALU_OR_MEM_bit]: begin
            if(!aluBusy & !mem_rbusy & !mem_wbusy) state <= FETCH_INSTR;
+        end
+
+        state[SYSTEM_EBREAK_bit]: begin
+           // Effectively halts the Processor
+           state <= SYSTEM_EBREAK;
         end
 
         default: begin // FETCH_INSTR

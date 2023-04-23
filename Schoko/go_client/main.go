@@ -39,6 +39,17 @@ func main() {
 	}
 	defer port.Close()
 
+	fmt.Println("Reading buf")
+	buf := fetchByte(port)
+	fmt.Println("buf1: ", buf)
+	buf = fetchByte(port)
+	fmt.Println("buf2: ", buf)
+	buf = fetchByte(port)
+	fmt.Println("buf3: ", buf)
+	buf = fetchByte(port)
+	fmt.Println("buf4: ", buf)
+	os.Exit(1)
+
 	// ---------------------------------------------------------
 	// Co-routines
 	// ---------------------------------------------------------

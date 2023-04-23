@@ -36,9 +36,9 @@ logic [26:0] counter = 0;
 // assign LED_R = ~counter[23];
 // assign LED_G = 1'b1;
 // assign LED_B = 1'b1;
-assign LED_R = port_lr;
-assign LED_G = port_lg;
-assign LED_B = port_lb;
+assign LED_R = ~port_lr;	// Invert for Positive logic
+assign LED_G = ~port_lg;
+assign LED_B = ~port_lb;
 
 // If connected to LED bar then a 1 = ON
 assign PMOD_A1  =  port_a[7];

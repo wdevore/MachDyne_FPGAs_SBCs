@@ -2,13 +2,12 @@
 // 0x99 = 1001_1001
 
 RVector: @0
-    @: Main
 
 Main: @
     lbu x1, @Data(x0)       // Load x1 = 0x99
     lw x2, @Data+1(x0)      // Load IO base
     sb x1, 0x0(x2)          // Write to IO port. Causes io wr to assert
-    lw x2, @Data+2(x0)      // Load mem location
+    lw x2, @Data+2(x0)      // Load a mem location
     sb x1, 0x0(x2)          // Write 0x99 to Memory
     ebreak                  // Stop
 

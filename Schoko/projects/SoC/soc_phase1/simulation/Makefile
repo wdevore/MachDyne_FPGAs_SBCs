@@ -14,7 +14,7 @@ GTKWAVE_SETTINGS = waveform
 # HDL modules
 MODULES_FILES =  \
 	SimEnums.sv \
-	../femtorv32_intermissum.v \
+	../../components/femtorv32_intermissum.v \
 	SoC.sv \
 	Top.sv
 	
@@ -65,7 +65,7 @@ view:
 	--rcvar 'disable_mouseover off'
 	
 
-go: compile run view
+sim: compile run view
 	@echo "################## Simulated via Verilator ##################"
 
 clean:

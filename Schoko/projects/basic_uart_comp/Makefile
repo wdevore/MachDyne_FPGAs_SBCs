@@ -1,10 +1,16 @@
 TOP_FILE = Top.sv
+COMMON = ../../../common
 
 SUB_MODULES_FILES = \
-	SynEnums.sv \
-	../../SoC/components/femtorv32_intermissum.v \
-	pll.v \
-	SoC.sv
+	${COMMON}/DeMux2.sv \
+	${COMMON}/Mux2.sv \
+	${COMMON}/UART_Defines.sv \
+	${COMMON}/UART_Enums.sv \
+	${COMMON}/CDCSynchron.sv \
+	${COMMON}/UARTRx.sv \
+	${COMMON}/UARTTx.sv \
+	../SoC/components/uart/UART_Comp_Enums.sv \
+	../SoC/components/uart/UART_Component.sv
 
 MODULES_FILES = ${SUB_MODULES_FILES} ${TOP_FILE}
 
@@ -12,17 +18,15 @@ BUILD_BIN = /media/RAMDisk
 
 ICESTORM_TOOLCHAIN = /usr/local
 
-# -blif ${BUILD_BIN}/chip.blif
-# -noflatten
-YOSYS_COMMAND = "synth_ecp5 -json ${BUILD_BIN}/hardware.json -top Top"
+YOSYS_COMMAND = "synth_ecp5 -blif ${BUILD_BIN}/chip.blif -json ${BUILD_BIN}/hardware.json -top Top"
 
-PINS_CONSTRAINTS = ../../schoko_v1.lpf
+PINS_CONSTRAINTS = ../schoko_v1.lpf
 
 .PHONY: all
 
 all: build route pack tigard
 
-compile: build route
+compile: build route pack
 
 build: ${MODULES_FILES} ${PINS_CONSTRAINTS}
 	@echo "##### Building..."
@@ -30,15 +34,13 @@ build: ${MODULES_FILES} ${PINS_CONSTRAINTS}
 	-l ${BUILD_BIN}/yo.log \
 	-q \
 	-defer \
-	-DPRELOAD_MEMORY \
 	${MODULES_FILES}
 
-# 	-v
 route: ${BUILD_BIN}/hardware.json
 	@echo "##### Routing..."
 	${ICESTORM_TOOLCHAIN}/bin/nextpnr-ecp5 \
-	-l ${BUILD_BIN}/next.log \
 	-q \
+	-l ${BUILD_BIN}/next.log \
 	--45k \
 	--package CABGA256 \
 	--lpf ${PINS_CONSTRAINTS} \

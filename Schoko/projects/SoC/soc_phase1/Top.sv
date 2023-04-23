@@ -15,15 +15,7 @@ module Top
 	output logic PMOD_A7,
 	output logic PMOD_A8,
 	output logic PMOD_A9,
-	output logic PMOD_A10,
-	output logic PMOD_B1,
-	output logic PMOD_B2,
-	output logic PMOD_B3,
-	output logic PMOD_B4,
-	output logic PMOD_B7,
-	output logic PMOD_B8,
-	output logic PMOD_B9,
-	output logic PMOD_B10
+	output logic PMOD_A10
 );
 
 logic [26:0] counter = 0;
@@ -41,26 +33,15 @@ assign PMOD_A8  =  port_a[2];
 assign PMOD_A9  =  port_a[1];
 assign PMOD_A10 =  port_a[0];
 
-assign PMOD_B1  =  port_b[7];
-assign PMOD_B2  =  port_b[6];
-assign PMOD_B3  =  port_b[5];
-assign PMOD_B4  =  port_b[4];
-assign PMOD_B7  =  port_b[3];
-assign PMOD_B8  =  port_b[2];
-assign PMOD_B9  =  port_b[1];
-assign PMOD_B10 =  port_b[0];
-
 always @(posedge CLK_48) begin
 	counter <= counter + 1;
 end
 
 logic [7:0] port_a;
-logic [7:0] port_b;
 
 SoC soc(
 	.clk_48mhz(CLK_48),
-	.port_a(port_a),
-	.port_b(port_b)
+	.port_a(port_a)
 );
 
 endmodule

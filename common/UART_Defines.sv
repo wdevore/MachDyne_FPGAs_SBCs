@@ -4,23 +4,23 @@
 
 // Note: the ACCUM_INC value is calculated using a handy Google spreadsheet I created:
 // https://docs.google.com/spreadsheets/d/1_KMcRoW-iLCykuhmWQBCuXCK_7CK0AshxNRroGTbkPg/edit?usp=sharing
-// Just select you system frequency (Clock cell), Baud and select Divider = 1.
+// Just select your system frequency (Clock cell), Baud and select Divider = 1.
 // Then pick a "Clk count" value that is Green or with a higher Width size.
 // 
 
 // ---------- Settings for a 48MHz system clock ----------------
-// `define BAUD 115200
+`define BAUD 115200
 // Bit size of accumulator
-// `define ACCUMULATOR_WIDTH 20
-// The number added to the accumulator on every clock tick.
-// `define ACCUM_INC 2517
-
-// ---------- Settings for a 48MHz system clock ----------------
-`define BAUD 921600
-// Bit size of accumulator
-`define ACCUMULATOR_WIDTH 17
+`define ACCUMULATOR_WIDTH 20
 // The number added to the accumulator on every clock tick.
 `define ACCUM_INC 2517
+
+// ---------- Settings for a 48MHz system clock ----------------
+// `define BAUD 921600
+// Bit size of accumulator
+// `define ACCUMULATOR_WIDTH 17
+// The number added to the accumulator on every clock tick.
+// `define ACCUM_INC 2517
 
 
 // ---------- Settings for a 25MHz system clock ----------------

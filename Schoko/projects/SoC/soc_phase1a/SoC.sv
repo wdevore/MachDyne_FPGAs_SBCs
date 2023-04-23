@@ -92,7 +92,7 @@ logic [3:0] io_device = io_address[7:4];
 // Port A
 // -----------------------------------------------------------
 logic port_a_wr = mem_address_is_io & (io_device == IO_PORT_A);
-assign port_lr = pllDelay[20];
+// assign port_lr = pllDelay[20];
 
 always @(posedge clk) begin
 	if (port_a_wr) begin
@@ -165,6 +165,7 @@ logic        interrupt_request = 0; // Active high
 assign mem_wbusy = 0;
 assign mem_rbusy = 0;
 assign io_rdata = 0;
+logic halt;
 
 FemtoRV32 #(
 	.ADDR_WIDTH(`NRV_ADDR_WIDTH),
@@ -179,7 +180,8 @@ FemtoRV32 #(
 	.mem_rbusy(mem_rbusy),		// in
 	.mem_wbusy(mem_wbusy),		// in
 	.interrupt_request(interrupt_request),	// in
-	.reset(~reset)				// (in) Active Low
+	.reset(~reset),				// (in) Active Low
+	.halt(halt)
 );
 
 // ------------------------------------------------------------------
@@ -195,11 +197,17 @@ logic reset;
 logic [26:0] resetDelay;
 logic [26:0] pllDelay;
 logic pllLocked = 0;
-logic x = 0;
 
 always_comb begin
 	next_state = SoCReset;
 	reset = 1'b0;			// Reset disabled
+	port_lr = 0;
+	port_lb = 0;
+
+	if (halt) 
+		port_lr = 1;
+	else
+		port_lb = 1;
 
     case (state)
         SoCReset: begin
@@ -227,7 +235,6 @@ always_comb begin
 
         SoCResetComplete: begin
 			// The PLL needs ~16ms to lock so we wait.
-			// next_state = SoCResetComplete;
 			// The default Sticky state of the PLL is "unsticky"
 			// which means the signal may simply pulse high.
 			if (pllLocked) begin

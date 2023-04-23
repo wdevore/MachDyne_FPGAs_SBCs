@@ -10,6 +10,7 @@ module UARTTx
 (
     input  logic sourceClk,         // Source clock
     input  logic reset,             // Reset
+    input  logic cs,                // Active high
     input  logic tx_en,             // Enable transmission of bits (active low)
     input  logic [7:0] tx_byte,     // Byte to send
     output logic tx_out,            // output (1 bit at a time)
@@ -52,7 +53,7 @@ always_ff @(posedge sourceClk) begin
             // UART line idles high
             tx_out <= 1;
 
-            if (~tx_en) begin
+            if (~tx_en & cs) begin
                 state <= TxStartBit;
                 // Begin sending Start bit
                 tx_out <= 0;

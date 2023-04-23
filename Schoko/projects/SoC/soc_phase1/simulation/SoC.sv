@@ -42,7 +42,7 @@ logic [31:0] io_rdata;
 // ------------------------------------------------------------------
 `define NRV_RAM 65536
 
-logic mem_address_is_io  =  mem_address[22];
+logic mem_address_is_io  =  mem_address[22];	// Mapped to 0x00400000
 logic mem_address_is_ram = !mem_address[22];
 logic [19:0] ram_word_address = mem_address[21:2];
 // 256 IO addresses
@@ -57,6 +57,18 @@ logic [31:0] ram_rdata;
 // masked writes, amazing ...)
 /* verilator lint_off WIDTH */
 always_ff @(posedge clk) begin
+	if (mem_address_is_io) begin
+		case (io_word_address)
+			LEDs: begin
+				// $display("Writing to IO: %h", mem_wdata);
+				port_a <= mem_wdata[7:0];
+			end
+		endcase
+	end
+end
+
+// Dual port RAM
+always_ff @(posedge clk) begin
 	if (mem_address_is_ram) begin
 		// if (mem_wmask != 0) begin
 		// 	read_mem <= 1;
@@ -66,20 +78,6 @@ always_ff @(posedge clk) begin
 		if (mem_wmask[1]) RAM[ram_word_address][15:8 ] <= mem_wdata[15:8 ];
 		if (mem_wmask[2]) RAM[ram_word_address][23:16] <= mem_wdata[23:16];
 		if (mem_wmask[3]) RAM[ram_word_address][31:24] <= mem_wdata[31:24];	 
-	end
-
-	// if (read_mem) begin
-	// 	read_mem <= 0;
-	// 	$display("RAM at 0x%h = 0x%h", ram_word_address, RAM[ram_word_address]);
-	// end
-
-	if (mem_address_is_io) begin
-		case (io_word_address)
-			LEDs: begin
-				// $display("Writing to IO: %h", mem_wdata);
-				port_a <= mem_wdata[7:0];
-			end
-		endcase
 	end
 
 	ram_rdata <= RAM[ram_word_address];
@@ -97,13 +95,15 @@ initial begin
 	`endif
 
 	`ifdef SHOW_MEMORY
-	for (int i=0; i<10; i++) $display("0x%h", RAM[i]);
+	for (int i=0; i<20; i++) $display("%h: 0x%h",i*4, RAM[i]);
 	`endif
 end
 
 // ------------------------------------------------------------------
 // CPU
 // ------------------------------------------------------------------
+logic halt;
+
 FemtoRV32 #(
 	.ADDR_WIDTH(`NRV_ADDR_WIDTH),
 	.RESET_ADDR(`NRV_RESET_ADDR)	      
@@ -117,7 +117,8 @@ FemtoRV32 #(
 	.mem_rbusy(mem_rbusy),		// in
 	.mem_wbusy(mem_wbusy),		// in
 	.interrupt_request(interrupt_request),	// in
-	.reset(reset)				// (in) Active Low
+	.reset(reset),				// (in) Active Low
+	.halt(halt)
 );
 
 // ------------------------------------------------------------------
