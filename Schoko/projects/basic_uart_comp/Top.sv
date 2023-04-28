@@ -8,6 +8,8 @@ typedef enum logic [7:0] {
 	TopWriteByte2, 		// 100
 	TopWriteByte3,		// 101
 	TopWriteByte4,		// 110
+	TopWriteByte5,		// 110
+	TopWriteByte6,		// 110
     TopIdle             // 111
 } TopState; 
 
@@ -40,9 +42,9 @@ logic reset = 1;
 
 logic [26:0] counter = 0;
 
-assign LED_G = ~counter[25];
-assign LED_B = ~counter[24];
-assign LED_R = ~counter[23];
+assign LED_R = ~counter[25];
+assign LED_G = ~counter[24];
+assign LED_B = ~counter[23];
 
 logic uart_cs;
 logic uart_rd = 1;
@@ -69,17 +71,18 @@ logic [7:0] uart_in_data;
 // assign PMOD_A9  =  state[1];
 // assign PMOD_A10 =  state[0];
 
-assign PMOD_A1  =  debug[7];
-assign PMOD_A2  =  debug[6];
-assign PMOD_A3  =  debug[5];
-assign PMOD_A4  =  debug[4];
-assign PMOD_A7  =  debug[3];
-assign PMOD_A8  =  debug[2];
-assign PMOD_A9  =  debug[1];
-assign PMOD_A10 =  debug[0];
+assign PMOD_A1  =  debugT[7];
+assign PMOD_A2  =  debugT[6];
+assign PMOD_A3  =  debugT[5];
+assign PMOD_A4  =  debugT[4];
+assign PMOD_A7  =  debugT[3];
+assign PMOD_A8  =  debugT[2];
+assign PMOD_A9  =  debugT[1];
+assign PMOD_A10 =  debugT[0];
 
 // Debug ---------------
 logic [7:0] debug;
+logic [7:0] debugT;
 
 UART_Component uart_comp (
     .clock(CLK_48),
@@ -99,11 +102,12 @@ UART_Component uart_comp (
 
 TopState state = TopReset;
 TopState next_state;
+logic transmit = PMOD_B1;
+logic transmitting;
 
 always_comb begin
 	next_state = TopReset;
 	reset = 1'b1;			// Reset disabled
-	uart_cs = 1;
 	uart_wr = 1;
 
     case (state)
@@ -114,27 +118,44 @@ always_comb begin
 
 		TopResetting: begin
 			reset = 1'b0;
-			next_state = TopWriteByte1;
+			next_state = TopResetComplete;
 		end
+
+        TopResetComplete: begin
+			next_state = TopIdle;
+        end
 
 		// ------------------------------------------
         TopWriteByte1: begin
 			// Load byte
-			uart_cs = 0;
 			next_state = TopWriteByte2;
         end
 
         TopWriteByte2: begin
-			uart_cs = 0;
-			uart_wr = 0;	// Write to buf
 			next_state = TopWriteByte3;
         end
 
         TopWriteByte3: begin
-			// Read control register
-			// uart_cs = 0;
+			uart_wr = 0;	// Write to tx_buf
+			// TODO Read control register
 			next_state = TopIdle;
         end
+
+		// ------------------------------------------
+        // TopWriteByte4: begin
+		// 	// Load byte
+		// 	next_state = TopWriteByte5;
+        // end
+
+        // TopWriteByte5: begin
+		// 	next_state = TopWriteByte6;
+        // end
+
+        // TopWriteByte6: begin
+		// 	uart_wr = 0;	// Write to tx_buf
+		// 	// TODO Read control register
+		// 	next_state = TopIdle;
+        // end
 
         TopIdle: begin
 			next_state = TopIdle;
@@ -146,32 +167,67 @@ always_comb begin
 end
 
 always @(posedge CLK_48) begin
+	debugT[0] <= uart_cs;
+	debugT[1] <= uart_wr;
+
     case (state)
-        // TopReset: begin
-        // end
+        TopReset: begin
+			debugT <= 0;
+			transmitting <= 0;
+			uart_cs <= 1; // Disable
+        end
 
-		// TopResetting: begin
-		// end
+		TopResetting: begin
+		end
 
-        // TopResetComplete: begin
-        // end
+        TopResetComplete: begin
+        end
 
+		// ------------------------------------------
         TopWriteByte1: begin
+			uart_cs <= 0; // Chip Enable
 			uart_in_data <= 8'h4F;  // Ascii "O"
 			uart_addr <= 3'b010;	// Select Tx buf
         end
 
-        // TopWriteByte: begin
-        // end
-
-        // TopIdle: begin
-        // end
-
-        default: begin
+        TopWriteByte2: begin
         end
+
+        TopWriteByte3: begin
+			transmitting <= 0;
+			// TODO Read control register
+			uart_cs <= 1; // Disable
+        end
+
+		// ------------------------------------------
+        // TopWriteByte4: begin
+		// 	uart_cs <= 0; // Chip Enable
+		// 	uart_in_data <= 8'h6F;  // Ascii "k"
+		// 	uart_addr <= 3'b010;	// Select Tx buf
+        // end
+
+        // TopWriteByte5: begin
+        // end
+
+        // TopWriteByte6: begin
+		// 	transmitting <= 0;
+		// 	// TODO Read control register
+		// 	uart_cs <= 1; // Disable
+        // end
+
+        TopIdle: begin
+			debugT[7] <= 1;
+        end
+        default: ;
     endcase
 
-	state <= next_state;
+	if (~transmit & ~transmitting) begin
+		debugT[7] <= 0;
+		transmitting <= 1;
+		state <= TopWriteByte1;
+	end
+	else
+		state <= next_state;
 end
 
 always @(posedge CLK_48) begin

@@ -13,7 +13,7 @@ module UARTRx
     input  logic reset,             // Reset
     input  logic rx_in,             // Incoming bits
     output logic [7:0] rx_byte,     // Byte received
-    output logic rx_start,          // Signal a byte has just arrived
+    output logic rx_start,          // Signal data bit is arriving (active high)
     output logic rx_complete        // Signal a byte was received (active high) for 1 cycle.
 );
 

@@ -1,5 +1,5 @@
 TOP_FILE = Top.sv
-COMMON = ../../../common
+COMMON = ../../../../../common
 
 SUB_MODULES_FILES = \
 	${COMMON}/DeMux2.sv \

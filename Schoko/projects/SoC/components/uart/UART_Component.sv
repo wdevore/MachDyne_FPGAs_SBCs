@@ -30,20 +30,22 @@ module UART_Component
 localparam Component_ID = 3'b000;
 
 localparam DATA_WIDTH = 8;
-localparam ZERO = 0;
 
 // ------------------------------------------------------------------
 // Internal signals
 // ------------------------------------------------------------------
-logic wr_active = cs | wr; // = inverted inputs Nand gate = ~(~cs & ~wr) (Active low)
-logic rd_active = cs | rd;
+logic wr_active;
+logic rd_active;
+assign wr_active = cs | wr; // = inverted inputs Nand gate = ~(~cs & ~wr) (Active low)
+assign rd_active = cs | rd;
 
 // ------------------------------------------------------------------
 // Control N-bits (combined at Addres 0x00)
 // ------------------------------------------------------------------
 localparam CONTROL_SIZE = 8;
 logic [CONTROL_SIZE-1:0] control;  // Address 0x00
-logic control_wr = (wr_active | ~(addr[2:0] == 3'b000)); // Active low
+logic is_Ctrl_address = ~(addr[2:0] == 3'b000);
+logic control_wr = wr_active | is_Ctrl_address; // Active low
 
 // ------------------------------------------------------------------------
 // Tx/Rx buffers
@@ -51,12 +53,17 @@ logic control_wr = (wr_active | ~(addr[2:0] == 3'b000)); // Active low
 localparam BUFFER_SIZE = 8;
 logic [BUFFER_SIZE-1:0] rx_buffer;  // Address 0x01
 logic [BUFFER_SIZE-1:0] tx_buffer;  // Address 0x02
-logic tx_buff_wr = (wr_active | ~(addr[2:0] == 3'b010)); // Active low
+
+logic is_Tx_address;
+assign is_Tx_address = ~(addr[2:0] == 3'b010);
+logic tx_buff_wr;
+assign tx_buff_wr = wr_active | is_Tx_address; // Active low
 
 // ------------------------------------------------------------------------
 // Data Ports
 // ------------------------------------------------------------------------
-logic in_select = addr[2:0] != 3'b000; 
+logic in_select;
+assign in_select = addr[2:0] != 3'b000; 
 
 logic [DATA_WIDTH-1:0] byte_in;
 logic [DATA_WIDTH-1:0] control_in;
@@ -72,14 +79,15 @@ DeMux2 #(
 );
 
 // Outgoing interface data to System
-logic out_select = addr[2:0] == 3'b000;
+logic out_select;
+assign out_select = addr[2:0] == 3'b000;
 
 Mux2 #(
     .DATA_WIDTH(DATA_WIDTH)
 ) out_mux(
     .select_i(out_select),
-    .data0_i(control),
-    .data1_i(rx_buffer),
+    .data0_i(rx_buffer),
+    .data1_i(control),
     .data_o(out_data)
 );
 
@@ -94,7 +102,7 @@ logic tx_complete;
 UARTTx uart_tx (
     .sourceClk(clock),
     .reset(reset),
-	.cs(cs),
+	.cs(~cs),
     .tx_en(tx_en),
     .tx_byte(tx_buffer),
     .tx_out(tx_out),
@@ -104,7 +112,7 @@ UARTTx uart_tx (
 // UART Receiver writes to the Rx buffer
 logic [DATA_WIDTH-1:0] rx_byte;
 logic rx_complete;
-logic rx_start;
+logic rx_start; // Active high
 
 UARTRx uart_rx (
     .sourceClk(clock),
@@ -118,14 +126,14 @@ UARTRx uart_rx (
 // ------------------------------------------------------------------------
 // State machine controlling device
 // ------------------------------------------------------------------------
-UARTTxState state = UAReset0;
-UARTTxState next_state;
+UARTState state = UAReset0;
+UARTState next_state;
 
-UARTTxState tx_state = UATxIdle;
-UARTTxState tx_next_state;
+UARTState tx_state = UATxIdle;
+UARTState tx_next_state;
 
-UARTRxState rx_state = UARxIdle;
-UARTRxState rx_next_state;
+UARTState rx_state = UARxIdle;
+UARTState rx_next_state;
 
 always_comb begin
     next_state = UAReset0;
@@ -147,14 +155,12 @@ always_comb begin
             next_state = UADeviceIdle;
         end
 
-        UAIRQComplete: begin
-            irq = 0;
-            next_state = UADeviceIdle;
-        end
-
         default: ;
     endcase
 
+    // #### __---__---__---__---__---__---__---__---__---__---__--- ####
+    // Transmit
+    // #### __---__---__---__---__---__---__---__---__---__---__--- ####
     case (tx_state)
         UATxIdle: begin
             if (~tx_buff_wr) begin
@@ -176,8 +182,14 @@ always_comb begin
         default: ;
     endcase
 
+    // #### __---__---__---__---__---__---__---__---__---__---__--- ####
+    // Receive
+    // #### __---__---__---__---__---__---__---__---__---__---__--- ####
     case (rx_state)
         UARxIdle: begin
+            // if (rx_start) begin
+            // end
+
             if (rx_complete) begin
                 // Byte arrived
                 rx_next_state = UARxComplete;
@@ -214,7 +226,7 @@ always_ff @(posedge clock) begin
         control <= control_in;
 
     // Clear byte-available flag when the System reads the rx_buffer
-    if (~rd_active & out_select) begin
+    if (~rd_active & ~out_select) begin
         control[CTL_RX_AVAL] <= 0;
     end
 
@@ -237,10 +249,6 @@ always_ff @(posedge clock) begin
             // Move to UADeviceIdle
         end
 
-        UAIRQComplete: begin
-            // Move to UADeviceIdle
-        end
-
         default: ;
     endcase
 
@@ -249,11 +257,6 @@ always_ff @(posedge clock) begin
     // #### __---__---__---__---__---__---__---__---__---__---__--- ####
     case (tx_state)
         UATxIdle: begin
-            // debug[0] <= in_select;
-            // debug[1] <= wr_active;
-            // debug[2] <= tx_buff_wr;
-            // debug[3] <= control[CTL_TX_BUSY];
-
             // The System should check the CTL_TX_BUSY flag first before
             // writing to the buffer
             if (~tx_buff_wr) begin
@@ -264,17 +267,12 @@ always_ff @(posedge clock) begin
         end
 
         UATxTransmit: begin
-            // debug[4] <= 1;
-            // debug[5] <= tx_en;
-            
-            // debug <= control[3:0];
         end
 
         UATxTransmitComplete: begin
             if (tx_complete) begin
                 control[CTL_TX_BUSY] <= 0;
             end
-            // debug[7] <= 1;
         end
         default: ;
     endcase
@@ -285,7 +283,7 @@ always_ff @(posedge clock) begin
     case (rx_state)
         UARxIdle: begin
             if (rx_complete) begin
-                // Capture byte
+                // A byte just arrived. Capture it.
                 rx_buffer <= rx_byte;
                 // Move to UARxComplete
             end
@@ -301,8 +299,11 @@ always_ff @(posedge clock) begin
         default: ;
     endcase
 
-    if (~reset)
+    if (~reset) begin
         state <= UAReset0;
+        tx_state <= UATxIdle;
+        rx_state <= UARxIdle;
+    end
     else begin
         state <= next_state;
         tx_state <= tx_next_state;

@@ -9,8 +9,9 @@
 module SoC
 (
 	input  logic clk_48mhz,
-	input  logic uart_rx_in,		// From client
-	output logic uart_tx_out,		// To Client
+	input  logic reset,			// Active high
+	input  logic uart_rx_in,	// From client
+	output logic uart_tx_out,	// To Client
 	output logic [7:0] port_a,
 	output logic port_lr,
 	output logic port_lg,
@@ -25,7 +26,7 @@ logic locked; // (Active high = locked)
 // ------------------------------------------------------------------
 pll soc_pll (
     .clkin(clk_48mhz),
-	.reset(reset),		// Expects Active High
+	.reset(~systemReset),		// Expects Active High
     .clkout0(clk),		// ~10MHz
     .locked(locked)		// Active High
 );
@@ -72,7 +73,9 @@ end
 
 initial begin
 	`ifdef PRELOAD_MEMORY
-	$readmemh("../binaries/firmware.hex",RAM);
+		$display("Using firmware: %s", `FIRMWARE);
+		// $readmemh("../binaries/firmware.hex", RAM);
+		$readmemh(`FIRMWARE, RAM);
 	`endif
 end
 
@@ -97,17 +100,17 @@ logic port_a_wr = mem_address_is_io & (io_device == IO_PORT_A);
 always @(posedge clk) begin
 	if (port_a_wr) begin
 		// Write lower 8 bits to port A
-		// port_a <= mem_wdata[7:0];
+		port_a <= mem_wdata[7:0];
 
 		// port_a <= {{reset, locked}, {state[1:0]}, mem_wdata[3:0]};
-		port_a[7] <= pllLocked;
-		port_a[6] <= state[2];
-		port_a[5] <= state[1];
-		port_a[4] <= state[0];
-		port_a[3] <= mem_wdata[3];
-		port_a[2] <= mem_wdata[2];
-		port_a[1] <= mem_wdata[1];
-		port_a[0] <= mem_wdata[0];
+		// port_a[7] <= pllLocked;
+		// port_a[6] <= state[2];
+		// port_a[5] <= state[1];
+		// port_a[4] <= state[0];
+		// port_a[3] <= mem_wdata[3];
+		// port_a[2] <= mem_wdata[2];
+		// port_a[1] <= mem_wdata[1];
+		// port_a[0] <= mem_wdata[0];
 	end
 end
 
@@ -129,10 +132,11 @@ logic [7:0] uart_out_data;
 logic [7:0] uart_in_data;
 logic uart_irq;
 logic [2:0] uart_irq_id;
+logic [7:0] debug;
 
 UART_Component uart_comp (
     .clock(clk),
-    .reset(~reset),				// Active low
+    .reset(systemReset),		// Active low
     .cs(~uart_cs),				// Active low
     .rd(~uart_rd),				// Active low
     .wr(~uart_wr),				// Active low
@@ -142,7 +146,8 @@ UART_Component uart_comp (
     .out_data(uart_out_data),	// Byte received
     .in_data(uart_in_data),		// Byte to transmit
     .irq(uart_irq),
-    .irq_id(uart_irq_id)
+    .irq_id(uart_irq_id),
+	.debug(debug)
 );
 
 // ----------- Reading -------------------
@@ -180,7 +185,7 @@ FemtoRV32 #(
 	.mem_rbusy(mem_rbusy),		// in
 	.mem_wbusy(mem_wbusy),		// in
 	.interrupt_request(interrupt_request),	// in
-	.reset(~reset),				// (in) Active Low
+	.reset(systemReset),					// (in) Active Low
 	.halt(halt)
 );
 
@@ -189,21 +194,22 @@ FemtoRV32 #(
 // ------------------------------------------------------------------
 SynState state = SoCReset;
 SynState next_state;
+
+// systemReset starts active and deactivates when PLL lock has occurred.
+logic systemReset = 0;		// Active Low
+
 // PLL is active high
 // CPU is active low
 // UART is active low
-// SoC reset is active high
-logic reset;
 logic [26:0] resetDelay;
 logic [26:0] pllDelay;
 logic pllLocked = 0;
 
 always_comb begin
 	next_state = SoCReset;
-	reset = 1'b0;			// Reset disabled
 	port_lr = 0;
 	port_lb = 0;
-
+	
 	if (halt) 
 		port_lr = 1;
 	else
@@ -211,16 +217,14 @@ always_comb begin
 
     case (state)
         SoCReset: begin
-			reset = 1'b1;	// Start reset
             next_state = SoCResetting;
         end
 
 		SoCResetting: begin
 			next_state = SoCResetting;
-			reset = 1'b1;
-
 			// Hold reset for >(~1ms)
-			if (resetDelay[15]) begin
+			// if (resetDelay[15]) begin
+			if (resetDelay[2]) begin
 				next_state = SoCDelayReset;
 			end
 		end
@@ -238,10 +242,14 @@ always_comb begin
 			// The default Sticky state of the PLL is "unsticky"
 			// which means the signal may simply pulse high.
 			if (pllLocked) begin
-				next_state = SoCIdle;
+				next_state = SoCSystemResetComplete;
 			end
 			else
 				next_state = SoCDelayCnt;
+        end
+
+        SoCSystemResetComplete: begin
+			next_state = SoCIdle;
         end
 
         SoCIdle: begin
@@ -275,9 +283,14 @@ always_ff @(posedge clk_48mhz) begin
 		end
 
         SoCResetComplete: begin
-			if (pllDelay[20]) begin
+			// if (pllDelay[20]) begin
+			if (pllDelay[3]) begin
 				pllLocked <= 1;
 			end
+        end
+
+        SoCSystemResetComplete: begin
+			systemReset <= 1;
         end
 
         SoCIdle: begin
@@ -287,7 +300,10 @@ always_ff @(posedge clk_48mhz) begin
         end
     endcase
 
-	state <= next_state;
+	if (reset)
+		state <= SoCReset;
+	else
+		state <= next_state;
 end
 
 endmodule

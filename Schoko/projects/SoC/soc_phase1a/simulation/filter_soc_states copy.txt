@@ -1,0 +1,8 @@
+0 Rst
+1 Rsting
+2 DelyRst
+3 RstCmp
+4 DelyCnt
+5 SysRstComp
+6 Idle
+

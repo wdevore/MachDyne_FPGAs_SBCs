@@ -1,20 +1,14 @@
 typedef enum logic [5:0] {
-    UAReset0,                       // 0
-    UAResetComplete,                // 1
-    UADeviceIdle                    // 2
-} UARTState; 
-
-typedef enum logic [3:0] {
+    UAReset0,
+    UAResetComplete,
+    UADeviceIdle,
     UATxIdle,
     UATxTransmit,
-    UATxTransmitComplete
-} UARTTxState; 
-
-typedef enum logic [3:0] {
+    UATxTransmitComplete,
     UARxIdle,
     UARxComplete,
     UAIRQComplete
-} UARTRxState; 
+} UARTState;
 
 typedef enum logic [2:0] {
     // A byte has been loaded and is ready to transmit
@@ -25,7 +19,7 @@ typedef enum logic [2:0] {
     CTL_RX_AVAL,
     // Enable/Disable interrupts
     CTL_IRQ_ENAB
-} UARTControlBits; 
+} UARTControlBits;
 
 // ------------------------------------------------------------------
 // Signals
@@ -45,10 +39,10 @@ typedef enum logic [3:0] {
     REJ_Signal = 4'b0110,    // Reject Control request
     ACK_Signal = 4'b0111,    // Acknowledge a data byte
     KEY_Signal = 4'b1000     // Key code
-} UARTSignals; 
+} UARTSignals;
 
 typedef enum logic {
     EnableBuffWrite,
     DisableBuffWrite
-} UARTWriteState; 
+} UARTWriteState;
 
