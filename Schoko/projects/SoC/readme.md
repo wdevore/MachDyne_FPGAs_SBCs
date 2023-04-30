@@ -79,7 +79,8 @@ We need to create basic binaries (aka hex files) for testing femto functionality
 ## Usage
 - Navigate to the *basic* folder.
 - Modify or Copy the **basic.json** file to match you requirements by adjusting the input and output.
-- Run assembler: ```$ go run . *<filename>.json*```
+  - For Schoko I created a *config.json* in the *sources* folder.
+- Run assembler: ```$ go run . */path/to-schoko/Hardware/MachDyne_FPGAs_SBCs/Schoko/projects/SoC/sources/config.json*```
 
 
 Create an **.s** file, for example,
@@ -111,23 +112,12 @@ You will get gas along with gcc (which default uses gas for assembling on the ba
 For a 'tutorial' about using gas, you probably want to read [Programming From the Ground Up](http://download.savannah.gnu.org/releases/pgubook/), which uses it.
 
 
+### Online assembler/disassembler
+- [Assembler](https://riscvasm.lucasteske.dev/#)
+- [Disassembler](https://luplab.gitlab.io/rvcodecjs/#q=00110123&abi=false&isa=AUTO)
+
+
 # SoC
-```
-//  --------------
-//  |            |  0x00000000
-//  |            |  
-//  |            |  RAM
-//  |            | 
-//  |            |  0x003FFFFF
-//  --------------
-//  |            |  0x00400000   LEDs
-//  |            |  
-//  |            |  IO
-//  |            | 
-//  |            |  ...
-//  --------------
-// 00000000_01000000_00000000_00000000 = 0x00400000
-```
 
 ---
 # Tasks
@@ -135,7 +125,7 @@ For a 'tutorial' about using gas, you probably want to read [Programming From th
 |:---:| ---|
 | &#9745; | Pull fresh versions of Yosys, Nextpnr and ecp5 tools. |
 | &#9745; | Phase 1: Synth Femto and drive 8 LEDs on PMOD |
-| &#9744; | Write Go client to interface to SoC UART port |
+| &#9745; | Write Go client to interface to SoC UART port |
 | &#9744; | Phase 2: Connect UART and send to Client a boot message |
 
 # Go Client

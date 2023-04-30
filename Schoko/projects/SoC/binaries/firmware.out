@@ -1,10 +1,7 @@
-@00000000 02804083 lbu x1, 00000028(x0)
-@00000001 02C02103 lw x2, 0000002C(x0)
-@00000002 00110023 sb x1, 0x0(x2)          // Write to IO port. Causes io wr to assert
-@00000003 03002103 lw x2, 00000030(x0)
-@00000004 00110023 sb x1, 0x0(x2)          // Write 0x99 to Memory
-@00000005 00100073 ebreak                  // Stop
-@0000000A 00000099 d: 00000099         // data to load
-@0000000B 00400000 d: 00400000         // Base address of IO
-@0000000C 0000000F d: 0000000F         // Memory address
-@0000000D 00000028 @: Data             // Base address of data section
+@00000000 08002103 lw x2, 00000080(x0)
+@00000001 08404083 lbu x1, 00000084(x0)
+@00000002 00110123 sb x1, 0x2(x2)          // Write to UART Tx port.
+@00000003 00100073 ebreak                  // Stop
+@00000020 00400100 d: 00400100         // Base address of UART IO
+@00000021 0000004F d: 0000004F         // "O"
+@00000022 00000080 @: Data             // Base address of data section

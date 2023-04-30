@@ -19,7 +19,7 @@ Main: @
     // Wait for byte to send by polling CTL_TX_BUSY bit
 TxWait: @
     lbu x1, 0x0(x2)         // Load UART Control reg
-    andi x1, x1, 2          // Mask = 00000010
+    andi x1, x1, 0x02          // Mask = 00000010
     bne x0, x1, @TxWait
 
     lbu x1, @Data+2(x0)     // Load 2nd char

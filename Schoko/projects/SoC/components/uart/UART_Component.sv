@@ -44,8 +44,10 @@ assign rd_active = cs | rd;
 // ------------------------------------------------------------------
 localparam CONTROL_SIZE = 8;
 logic [CONTROL_SIZE-1:0] control;  // Address 0x00
-logic is_Ctrl_address = ~(addr[2:0] == 3'b000);
-logic control_wr = wr_active | is_Ctrl_address; // Active low
+logic is_Ctrl_address;
+assign is_Ctrl_address = ~(addr[2:0] == 3'b000);
+logic control_wr; // Active low
+assign control_wr = wr_active | is_Ctrl_address; // Active low
 
 // ------------------------------------------------------------------------
 // Tx/Rx buffers

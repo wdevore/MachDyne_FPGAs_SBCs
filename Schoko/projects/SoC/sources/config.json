@@ -1,0 +1,9 @@
+{
+    "InFile": "write_to_uart_simple.s",
+    "InPath": "/media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Schoko/projects/SoC/sources/",
+    "WriteOutFile": "Yes",
+    "OutFile": "firmware.out",
+    "OutHexFile": "firmware.hex",
+    "OutPath": "/media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Schoko/projects/SoC/binaries/",
+    "VerboseEnabled": "No"
+}

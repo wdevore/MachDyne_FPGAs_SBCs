@@ -3,7 +3,7 @@
 `endif
 
 `ifndef NRV_ADDR_WIDTH
- `define NRV_ADDR_WIDTH 24
+ `define NRV_ADDR_WIDTH 32
 `endif
 
 module SoC
@@ -40,19 +40,22 @@ localparam WORD = 4;
 localparam NRV_RAM = 2**14 * WORD;
 localparam BIT_WIDTH = $clog2(NRV_RAM);
 
-logic mem_address_is_io  =  mem_address[22];
-logic mem_address_is_ram = !mem_address[22];
-
 // $clog2(`NRV_RAM)-1
 // logic [19:0] ram_word_address = mem_address[21:2];
 // logic [BIT_WIDTH-1:0] ram_word_address = mem_address[BIT_WIDTH+1:2];
-logic [13:0] ram_word_address = mem_address[15:2];
+logic [13:0] ram_word_address;
+assign ram_word_address = mem_address[15:2];
 
-// 256 IO addresses
-logic [7:0] io_word_address = mem_address[7:0];
-// 16 devices each with 16 address = 256
-// The upper 4 bits selects the device.
-logic [7:0] io_address = mem_address[7:0];
+
+// ----------- 0x00400000 ----------------
+// 0000_0000_0100_0000_0000_0000_0000_0000
+//            |                          |
+//            \--- Bit 22                 \--- Bit 0
+//
+logic mem_address_is_io;
+assign mem_address_is_io =  mem_address[22] & data_access;
+logic mem_address_is_ram;
+assign mem_address_is_ram = !mem_address[22] & !data_access;
 
 (* no_rw_check *)
 logic [31:0] RAM[0:(NRV_RAM/4)-1];
@@ -60,7 +63,7 @@ logic [31:0] ram_rdata;
 
 // The power of YOSYS: it infers BRAM primitives automatically ! (and recognizes
 // masked writes, amazing ...)
-always @(posedge clk) begin
+always_ff @(posedge clk) begin
 	if (mem_address_is_ram) begin
 		if (mem_wmask[0]) RAM[ram_word_address][ 7:0 ] <= mem_wdata[ 7:0 ];
 		if (mem_wmask[1]) RAM[ram_word_address][15:8 ] <= mem_wdata[15:8 ];
@@ -84,20 +87,35 @@ end
 // IO
 // ------------------------------------------------------------------
 // Devices
-localparam IO_PORT_A = 4'b0000;
-localparam IO_UART = 4'b0001;
-
+localparam IO_PORT_A = 8'h00;
+localparam IO_UART = 8'h01;
 localparam LEDs = 0;
+
 logic [31:0] io_rdata;
-logic [3:0] io_device = io_address[7:4];
+
+// +++++++++++++++++++++++++++++++
+// 256 devices each with 16 address = 4K locations
+// +++++++++++++++++++++++++++++++
+// 0000_0000_0100_0000_0000_0000_0000_0000
+//                     ---------
+//                       device
+logic [7:0] io_device;
+assign io_device = mem_address[15:8];
+
+// 0000_0000_0100_0000_0000_0000_0000_0000
+//                               ---------
+//                                address
+logic [7:0] io_address;
+assign io_address = mem_address[7:0];
+
 
 // -----------------------------------------------------------
 // Port A
 // -----------------------------------------------------------
-logic port_a_wr = mem_address_is_io & (io_device == IO_PORT_A);
-// assign port_lr = pllDelay[20];
+logic port_a_wr;
+assign port_a_wr = mem_address_is_io & (io_device == IO_PORT_A);
 
-always @(posedge clk) begin
+always_ff @(posedge clk) begin
 	if (port_a_wr) begin
 		// Write lower 8 bits to port A
 		port_a <= mem_wdata[7:0];
@@ -117,17 +135,23 @@ end
 // -----------------------------------------------------------
 // UART Module
 // -----------------------------------------------------------
-logic uart_cs = mem_address_is_io & io_device == IO_UART;
+logic uart_cs;
+assign uart_cs = mem_address_is_io & (io_device == IO_UART);
 
 // Address  |  Description
 // --------- ---------------------------------
 //   0      |  Control 1 register
 //   1      |  Rx buffer (byte, read only)
 //   2      |  Tx buffer (byte, write only)
-logic [2:0] uart_addr = io_address[2:0]; // Only the lower 3 bits are needed
+logic [2:0] uart_addr; // Only the lower 3 bits are needed
+assign uart_addr = io_address[2:0];
 
-logic uart_wr = mem_wmask != 0 & mem_address_is_io;
-logic uart_rd = mem_address_is_io;
+
+logic uart_wr;
+assign uart_wr = mem_address_is_io & (io_device == IO_UART) & ~mem_rstrb;
+
+logic uart_rd;
+assign uart_rd = mem_address_is_io & (io_device == IO_UART) & mem_rstrb;
 logic [7:0] uart_out_data;
 logic [7:0] uart_in_data;
 logic uart_irq;
@@ -135,7 +159,7 @@ logic [2:0] uart_irq_id;
 logic [7:0] debug;
 
 UART_Component uart_comp (
-    .clock(clk),
+    .clock(clk_48mhz),
     .reset(systemReset),		// Active low
     .cs(~uart_cs),				// Active low
     .rd(~uart_rd),				// Active low
@@ -149,6 +173,22 @@ UART_Component uart_comp (
     .irq_id(uart_irq_id),
 	.debug(debug)
 );
+
+always_comb begin
+	uart_in_data = 0;
+
+	if (uart_wr) begin
+		// Select the appropriate byte wdata Word.
+		if (mem_wmask[0])
+			uart_in_data = mem_wdata[7:0];
+		else if (mem_wmask[1])
+			uart_in_data = mem_wdata[15:8];
+		else if (mem_wmask[2])
+			uart_in_data = mem_wdata[23:16];
+		else
+			uart_in_data = mem_wdata[31:24];
+	end
+end
 
 // ----------- Reading -------------------
 // Either reading from IO or Ram.
@@ -166,6 +206,7 @@ logic        mem_rstrb;   // mem read strobe. Goes high to initiate memory write
 logic        mem_rbusy;   // processor <- (mem and peripherals). Stays high until a read transfer is finished.
 logic        mem_wbusy;   // processor <- (mem and peripherals). Stays high until a write transfer is finished.
 logic        interrupt_request = 0; // Active high
+logic        data_access;
 
 assign mem_wbusy = 0;
 assign mem_rbusy = 0;
@@ -184,6 +225,7 @@ FemtoRV32 #(
 	.mem_rstrb(mem_rstrb),		// out
 	.mem_rbusy(mem_rbusy),		// in
 	.mem_wbusy(mem_wbusy),		// in
+	.data_access(data_access),	// out (active high)
 	.interrupt_request(interrupt_request),	// in
 	.reset(systemReset),					// (in) Active Low
 	.halt(halt)

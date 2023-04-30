@@ -6,7 +6,12 @@ module pll
 	output logic locked
 );
 
-assign clkout0 = clkin; // mirror
+logic ff;
+assign clkout0 = ff; // mirror
 assign locked = 1;
+
+always_ff @(posedge clkin) begin
+	ff <= ~ff;
+end
 
 endmodule
