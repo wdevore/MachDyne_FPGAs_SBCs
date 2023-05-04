@@ -26,14 +26,14 @@ TxWait: @
     sb x1, 0x2(x2)          // Write to UART Tx port.
 
 //TxWait2: @
-//    lbu x1, 0x0(x2)         // Load UART Control reg
-//    andi x1, x1, 2          // Mask = 00000010
-//    bne x0, x1, @TxWait2
+ //   lbu x1, 0x0(x2)         // Load UART Control reg
+  //  andi x1, x1, 2          // Mask = 00000010
+   // bne x0, x1, @TxWait2
 
     ebreak                  // Stop
 
 Data: @020
-    d: 00400001         // Base address of UART IO
+    d: 00400100         // Base address of UART IO
     d: 0000004F         // "O"
     d: 0000006F         // "k"
     @: Data             // Base address of data section

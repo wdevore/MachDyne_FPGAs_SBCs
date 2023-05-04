@@ -148,10 +148,10 @@ assign uart_addr = io_address[2:0];
 
 
 logic uart_wr;
-assign uart_wr = mem_address_is_io & (io_device == IO_UART) & ~mem_rstrb;
+assign uart_wr = mem_address_is_io & (io_device == IO_UART) & (mem_wmask != 0);
 
-logic uart_rd;
-assign uart_rd = mem_address_is_io & (io_device == IO_UART) & mem_rstrb;
+// logic uart_rd;
+// assign uart_rd = mem_address_is_io & (io_device == IO_UART);
 logic [7:0] uart_out_data;
 logic [7:0] uart_in_data;
 logic uart_irq;
@@ -162,7 +162,8 @@ UART_Component uart_comp (
     .clock(clk_48mhz),
     .reset(systemReset),		// Active low
     .cs(~uart_cs),				// Active low
-    .rd(~uart_rd),				// Active low
+    .rd_busy(mem_rbusy),		// Active High
+	.rd_strobe(mem_rstrb),		// Pulse High
     .wr(~uart_wr),				// Active low
     .rx_in(uart_rx_in),         // From Client (bit)
     .tx_out(uart_tx_out),       // To Client (bit)
@@ -209,8 +210,8 @@ logic        interrupt_request = 0; // Active high
 logic        data_access;
 
 assign mem_wbusy = 0;
-assign mem_rbusy = 0;
-assign io_rdata = 0;
+// assign mem_rbusy = 0;
+assign io_rdata = {{24{1'b0}}, uart_out_data};
 logic halt;
 
 FemtoRV32 #(

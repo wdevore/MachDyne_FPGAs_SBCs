@@ -1,7 +1,11 @@
 @00000000 08002103 lw x2, 00000080(x0)
 @00000001 08404083 lbu x1, 00000084(x0)
 @00000002 00110123 sb x1, 0x2(x2)          // Write to UART Tx port.
-@00000003 00100073 ebreak                  // Stop
+@00000003 00014083 lbu x1, 0x0(x2)         // Load UART Control reg
+@00000004 0020F093 andi x1, x1, 0x02          // Mask = 00000010
+@00000005 FE101CE3 bne x0, x1, @TxWait
+@00000006 00100073 ebreak                  // Stop
 @00000020 00400100 d: 00400100         // Base address of UART IO
 @00000021 0000004F d: 0000004F         // "O"
-@00000022 00000080 @: Data             // Base address of data section
+@00000022 0000006F d: 0000006F         // "k"
+@00000023 00000080 @: Data             // Base address of data section

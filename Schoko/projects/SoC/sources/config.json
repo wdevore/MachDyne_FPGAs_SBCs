@@ -1,5 +1,5 @@
 {
-    "InFile": "write_to_uart_simple.s",
+    "InFile": "write_to_uart_a.s",
     "InPath": "/media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Schoko/projects/SoC/sources/",
     "WriteOutFile": "Yes",
     "OutFile": "firmware.out",

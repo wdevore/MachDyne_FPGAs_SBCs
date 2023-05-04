@@ -14,7 +14,8 @@ module UART_Component
     input  logic clock,             // System clock
     input  logic reset,             // Reset (active low)
     input  logic cs,                // Chip select (active low)
-    input  logic rd,                // Active Low
+    input  logic rd_strobe,         // Pulses at the start of a Read
+    output logic rd_busy,           // Active High while UART is busy accessing.
     input  logic wr,                // Active Low
     input  logic rx_in,             // Incoming bits
     output logic tx_out,            // Outgoing bits
@@ -35,9 +36,9 @@ localparam DATA_WIDTH = 8;
 // Internal signals
 // ------------------------------------------------------------------
 logic wr_active;
-logic rd_active;
 assign wr_active = cs | wr; // = inverted inputs Nand gate = ~(~cs & ~wr) (Active low)
-assign rd_active = cs | rd;
+// logic rd_active;
+// assign rd_active = cs | rd;
 
 // ------------------------------------------------------------------
 // Control N-bits (combined at Addres 0x00)
@@ -80,16 +81,17 @@ DeMux2 #(
     .data1_o(byte_in)
 );
 
-// Outgoing interface data to System
+// Outgoing interface data to System. You either read Control
+// or rx_buffer.
 logic out_select;
-assign out_select = addr[2:0] == 3'b000;
+assign out_select = addr[2:0] == 3'b010; // Reading Rx buffer?
 
 Mux2 #(
     .DATA_WIDTH(DATA_WIDTH)
 ) out_mux(
     .select_i(out_select),
-    .data0_i(rx_buffer),
-    .data1_i(control),
+    .data0_i(control),
+    .data1_i(rx_buffer),
     .data_o(out_data)
 );
 
@@ -228,9 +230,17 @@ always_ff @(posedge clock) begin
         control <= control_in;
 
     // Clear byte-available flag when the System reads the rx_buffer
-    if (~rd_active & ~out_select) begin
+    if (rd_busy & ~out_select) begin
         control[CTL_RX_AVAL] <= 0;
     end
+
+    // Immediately signal deactivation because we don't
+    // have a busy state.
+    if (rd_strobe)
+        rd_busy <= 1;     // Activate
+
+    if (rd_busy)
+        rd_busy <= 0;
 
     case (state)
         // --------------------------------
