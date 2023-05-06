@@ -20,7 +20,7 @@ module Top
 	output logic PMOD_A9,
 	output logic PMOD_A10,
 	// ------------ PMOD B ---------------------
-	// output logic PMOD_B1,
+	input  logic PMOD_B1,		// Manual reset (active low)
 	// output logic PMOD_B2,
 	output logic PMOD_B3,		// Tx  (from client)
 	output logic PMOD_B4 		// Rx  (to client)
@@ -70,6 +70,7 @@ logic port_lb;
 
 SoC soc(
 	.clk_48mhz(CLK_48),
+	.reset(PMOD_B1),
 	.uart_rx_in(PMOD_B3),			// Cross Tx with Rx
 	.uart_tx_out(PMOD_B4),
 	.port_a(port_a),

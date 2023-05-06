@@ -234,11 +234,11 @@ always_ff @(posedge clock) begin
         control[CTL_RX_AVAL] <= 0;
     end
 
-    // Immediately signal deactivation because we don't
-    // have a busy state.
     if (rd_strobe)
-        rd_busy <= 1;     // Activate
+        rd_busy <= 1;     // Signal busy accessing
 
+    // Almost immediately (on the next clock) signal not-busy
+    // because we don't technically have a busy state.
     if (rd_busy)
         rd_busy <= 0;
 

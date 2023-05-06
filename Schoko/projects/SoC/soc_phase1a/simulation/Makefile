@@ -15,7 +15,7 @@ GTKWAVE_SETTINGS = waveform
 
 # HDL modules
 MODULES_FILES =  \
-	defines.sv \
+	../defines.sv \
 	SimEnums.sv \
 	${COMMON}/DeMux2.sv \
 	${COMMON}/Mux2.sv \

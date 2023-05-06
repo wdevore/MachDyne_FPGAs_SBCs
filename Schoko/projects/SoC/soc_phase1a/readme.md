@@ -4,6 +4,6 @@
 The simulation tests the merging of UART component and Femto. Port A has already been tested.
 
 # Tasks
-- Write firmware to send "Ok" string and poll for busy flag between each character
-- Build simulation
-- Build synth
+- [x] Write firmware to send "Ok" string and poll for busy flag between each character
+- [x] Build simulation
+- [x] Build synth

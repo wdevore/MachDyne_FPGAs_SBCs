@@ -9,7 +9,7 @@
 module SoC
 (
 	input  logic clk_48mhz,
-	input  logic reset,			// Active high
+	input  logic manualReset,	// Active Low
 	input  logic uart_rx_in,	// From client
 	output logic uart_tx_out,	// To Client
 	output logic [7:0] port_a,
@@ -68,7 +68,7 @@ always_ff @(posedge clk) begin
 		if (mem_wmask[0]) RAM[ram_word_address][ 7:0 ] <= mem_wdata[ 7:0 ];
 		if (mem_wmask[1]) RAM[ram_word_address][15:8 ] <= mem_wdata[15:8 ];
 		if (mem_wmask[2]) RAM[ram_word_address][23:16] <= mem_wdata[23:16];
-		if (mem_wmask[3]) RAM[ram_word_address][31:24] <= mem_wdata[31:24];	 
+		if (mem_wmask[3]) RAM[ram_word_address][31:24] <= mem_wdata[31:24];
 	end
 
 	ram_rdata <= RAM[ram_word_address];
@@ -76,6 +76,7 @@ end
 
 initial begin
 	`ifdef PRELOAD_MEMORY
+		// FIRMWARE is defined in defines.sv
 		$display("Using firmware: %s", `FIRMWARE);
 		// $readmemh("../binaries/firmware.hex", RAM);
 		$readmemh(`FIRMWARE, RAM);
@@ -121,7 +122,7 @@ always_ff @(posedge clk) begin
 		port_a <= mem_wdata[7:0];
 
 		// port_a <= {{reset, locked}, {state[1:0]}, mem_wdata[3:0]};
-		// port_a[7] <= pllLocked;
+		// port_a[7] <= ;
 		// port_a[6] <= state[2];
 		// port_a[5] <= state[1];
 		// port_a[4] <= state[0];
@@ -148,10 +149,8 @@ assign uart_addr = io_address[2:0];
 
 
 logic uart_wr;
-assign uart_wr = mem_address_is_io & (io_device == IO_UART) & (mem_wmask != 0);
+assign uart_wr = uart_cs & (mem_wmask != 0);
 
-// logic uart_rd;
-// assign uart_rd = mem_address_is_io & (io_device == IO_UART);
 logic [7:0] uart_out_data;
 logic [7:0] uart_in_data;
 logic uart_irq;
@@ -177,6 +176,7 @@ UART_Component uart_comp (
 
 always_comb begin
 	uart_in_data = 0;
+	io_rdata = 0;
 
 	if (uart_wr) begin
 		// Select the appropriate byte wdata Word.
@@ -188,6 +188,10 @@ always_comb begin
 			uart_in_data = mem_wdata[23:16];
 		else
 			uart_in_data = mem_wdata[31:24];
+	end
+
+	if (uart_cs) begin
+		io_rdata = {{24{1'b0}}, uart_out_data};
 	end
 end
 
@@ -210,8 +214,6 @@ logic        interrupt_request = 0; // Active high
 logic        data_access;
 
 assign mem_wbusy = 0;
-// assign mem_rbusy = 0;
-assign io_rdata = {{24{1'b0}}, uart_out_data};
 logic halt;
 
 FemtoRV32 #(
@@ -238,15 +240,14 @@ FemtoRV32 #(
 SynState state = SoCReset;
 SynState next_state;
 
-// systemReset starts active and deactivates when PLL lock has occurred.
+// systemReset starts active (low) and deactivates when PLL lock has occurred.
 logic systemReset = 0;		// Active Low
 
 // PLL is active high
 // CPU is active low
 // UART is active low
-logic [26:0] resetDelay;
-logic [26:0] pllDelay;
-logic pllLocked = 0;
+
+logic [26:0] powerUpDelay;
 
 always_comb begin
 	next_state = SoCReset;
@@ -265,30 +266,14 @@ always_comb begin
 
 		SoCResetting: begin
 			next_state = SoCResetting;
-			// Hold reset for >(~1ms)
-			// if (resetDelay[15]) begin
-			if (resetDelay[2]) begin
-				next_state = SoCDelayReset;
+			// Hold reset for >(~50ms)
+			if (powerUpDelay[24]) begin
+				next_state = SoCResetComplete;
 			end
-		end
-
-		SoCDelayReset: begin
-			next_state = SoCDelayCnt;
-		end
-
-		SoCDelayCnt: begin
-			next_state = SoCResetComplete;
 		end
 
         SoCResetComplete: begin
-			// The PLL needs ~16ms to lock so we wait.
-			// The default Sticky state of the PLL is "unsticky"
-			// which means the signal may simply pulse high.
-			if (pllLocked) begin
-				next_state = SoCSystemResetComplete;
-			end
-			else
-				next_state = SoCDelayCnt;
+			next_state = SoCSystemResetComplete;
         end
 
         SoCSystemResetComplete: begin
@@ -305,31 +290,15 @@ always_comb begin
 end
 
 always_ff @(posedge clk_48mhz) begin
-	resetDelay <= resetDelay + 1;
-	pllDelay <= pllDelay + 1;
+	powerUpDelay <= powerUpDelay + 1;
 
     case (state)
         SoCReset: begin
-			resetDelay <= 0;
-			pllDelay <= 0;
+			powerUpDelay <= 0;
+			systemReset <= 0;
         end
 
-		// SoCResetting: begin
-		// end
-
-		SoCDelayReset: begin
-			pllDelay <= 0;
-		end
-
-		SoCDelayCnt: begin
-			pllDelay <= pllDelay + 1;
-		end
-
         SoCResetComplete: begin
-			// if (pllDelay[20]) begin
-			if (pllDelay[3]) begin
-				pllLocked <= 1;
-			end
         end
 
         SoCSystemResetComplete: begin

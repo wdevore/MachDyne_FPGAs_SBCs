@@ -3,6 +3,7 @@ TOP_FILE = ${TOP}.sv
 COMMON = ../../../../common
 
 SUB_MODULES_FILES = \
+	defines.sv \
 	${COMMON}/DeMux2.sv \
 	${COMMON}/Mux4.sv \
 	${COMMON}/Mux2.sv \

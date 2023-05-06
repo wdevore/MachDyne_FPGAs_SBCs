@@ -25,10 +25,10 @@ TxWait: @
     lbu x1, @Data+2(x0)     // Load 2nd char
     sb x1, 0x2(x2)          // Write to UART Tx port.
 
-//TxWait2: @
- //   lbu x1, 0x0(x2)         // Load UART Control reg
-  //  andi x1, x1, 2          // Mask = 00000010
-   // bne x0, x1, @TxWait2
+TxWait2: @
+    lbu x1, 0x0(x2)         // Load UART Control reg
+    andi x1, x1, 2          // Mask = 00000010
+    bne x0, x1, @TxWait2
 
     ebreak                  // Stop
 
