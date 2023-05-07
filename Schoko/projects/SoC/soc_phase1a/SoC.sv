@@ -22,7 +22,7 @@ logic clk;
 logic locked; // (Active high = locked)
 
 // ------------------------------------------------------------------
-// Clock
+// Clock. For testing
 // ------------------------------------------------------------------
 pll soc_pll (
     .clkin(clk_48mhz),
