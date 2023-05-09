@@ -71,6 +71,7 @@ logic port_lb;
 SoC soc(
 	.clk_48mhz(CLK_48),
 	.reset(PMOD_B1),
+	.manualReset(1),
 	.uart_rx_in(PMOD_B3),			// Cross Tx with Rx
 	.uart_tx_out(PMOD_B4),
 	.port_a(port_a),

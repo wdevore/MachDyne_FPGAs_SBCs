@@ -3,6 +3,7 @@
 module Top
 (
 	input logic sysClock
+    // Reset button is Active Low
 );
 
 // --------------- IO -------------------
@@ -15,7 +16,7 @@ logic port_lb;
 
 SoC soc(
     .clk_48mhz(sysClock),
-    .reset(reset),
+	.manualReset(~reset),        // Active high
     // ------------------------------------------------
     // IO interface to external devices
     // ------------------------------------------------
@@ -33,20 +34,21 @@ SoC soc(
 // ------------------------------------------------------------------------
 SimState state = SMReset;
 SimState next_state;
-logic reset = 0;
+logic reset;
 
 always_comb begin
 	next_state = SMReset;
-	reset = 1'b0;	// Default to disabled
+	reset = 1'b1;	// Default to disabled
 
     case (state)
         SMReset: begin
-			reset = 1'b1;	// Start reset
+            // Simulate pushing button
+			reset = 1'b0;	// Start reset
             next_state = SimResetting;
         end
 
 		SimResetting: begin
-			reset = 1'b1;
+			reset = 1'b0;
 			next_state = SMIdle;
 		end
 

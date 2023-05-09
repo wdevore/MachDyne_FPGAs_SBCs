@@ -56,7 +56,8 @@ compile:
 	--top-module ${TOP} \
 	--exe --build ${TEST_BENCH} ${MODULES_FILES} \
 	-DPRELOAD_MEMORY \
-	-DSHOW_MEMORY
+	-DSHOW_MEMORY \
+	-DSIMULATION
 
 run:
 	@echo "################## Simulating ##################"

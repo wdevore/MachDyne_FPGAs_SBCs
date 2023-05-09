@@ -9,7 +9,7 @@
 module SoC
 (
 	input  logic clk_48mhz,
-	input  logic manualReset,	// Active Low
+	input  logic manualReset,	// Active high
 	input  logic uart_rx_in,	// From client
 	output logic uart_tx_out,	// To Client
 	output logic [7:0] port_a,
@@ -267,7 +267,11 @@ always_comb begin
 		SoCResetting: begin
 			next_state = SoCResetting;
 			// Hold reset for >(~50ms)
+`ifdef SIMULATION
+			if (powerUpDelay[3]) begin
+`else
 			if (powerUpDelay[24]) begin
+`endif
 				next_state = SoCResetComplete;
 			end
 		end
@@ -312,7 +316,7 @@ always_ff @(posedge clk_48mhz) begin
         end
     endcase
 
-	if (reset)
+	if (manualReset)
 		state <= SoCReset;
 	else
 		state <= next_state;

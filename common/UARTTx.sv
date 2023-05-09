@@ -19,7 +19,7 @@ module UARTTx
 
 /*verilator public_module*/
 
-TxState state = 0;  // Default to TxReset.
+TxState state = TxReset;  // Default to TxReset.
 
 `ifdef ONE_STOP_BIT
 localparam STOP_BITS = 1;
@@ -118,7 +118,7 @@ always_ff @(posedge sourceClk) begin
     endcase
 
     if (~reset)
-        state <= RxReset;
+        state <= TxReset;
 end
 
 endmodule
