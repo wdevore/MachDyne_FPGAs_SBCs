@@ -20,10 +20,14 @@ module Top
 	output logic PMOD_A9,
 	output logic PMOD_A10,
 	// ------------ PMOD B ---------------------
+	// B1 is connected to a switch that idle at High
+	// Pushing the button pulls it Low
 	input  logic PMOD_B1,		// Manual reset (active low)
 	// output logic PMOD_B2,
-	output logic PMOD_B3,		// Tx  (from client)
-	output logic PMOD_B4 		// Rx  (to client)
+	// B3 sends to the Client which is the USB/UART's Rx (brown)
+	output logic PMOD_B3,
+	// B4 receive from the Client which is the USB/UART's Tx (orange)
+	input  logic PMOD_B4
 	// B5 = GRD, B6 = VSS
 	// output logic PMOD_B7,
 	// output logic PMOD_B8,
@@ -70,10 +74,9 @@ logic port_lb;
 
 SoC soc(
 	.clk_48mhz(CLK_48),
-	.reset(PMOD_B1),
-	.manualReset(1),
-	.uart_rx_in(PMOD_B3),			// Cross Tx with Rx
-	.uart_tx_out(PMOD_B4),
+	.manualReset(~PMOD_B1),	// Invert because button is Active Low
+	.uart_rx_in(PMOD_B4),  // From client
+	.uart_tx_out(PMOD_B3), // To client
 	.port_a(port_a),
 	.port_lr(port_lr),
 	.port_lg(port_lg),

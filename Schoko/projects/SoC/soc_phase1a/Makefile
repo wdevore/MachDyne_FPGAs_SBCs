@@ -12,7 +12,7 @@ SUB_MODULES_FILES = \
 	${COMMON}/CDCSynchron.sv \
 	${COMMON}/UARTRx.sv \
 	${COMMON}/UARTTx.sv \
-	../components/uart/UART_Enums.sv \
+	../components/uart/UART_Comp_Enums.sv \
 	../components/uart/UART_Component.sv \
 	SynEnums.sv \
 	../components/femtorv32_intermissum.v \

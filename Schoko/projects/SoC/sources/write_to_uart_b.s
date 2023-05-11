@@ -35,7 +35,7 @@ TxWait2: @
 Data: @020
     d: 00400100         // Base address of UART IO
     d: 0000004F         // "O"
-    d: 0000006F         // "k"
+    d: 0000006B         // "k"
     @: Data             // Base address of data section
 
 

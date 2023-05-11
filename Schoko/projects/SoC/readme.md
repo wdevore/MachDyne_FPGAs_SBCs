@@ -37,10 +37,13 @@ A port of Femto-intermissum from Verilog to SystemVerilog and Modulerized.
 # Minicom client (aka trasnmitter)
 Turn off "flow control" [Ctrl-a x o]
 
+Tigard's UART port is on the first listed USB port. Note: if you have already plugged in some other UART device prior then the Tigard's port will be higher, for example, **ttyUSB1**.
 ```$ minicom -b 115200 -o -D /dev/ttyUSB0```
 Or
 ```$ minicom -b 115200 -o -D /dev/ttyACM0```
 
+# Screen
+```screen /dev/ttyUSB1 115200```  "Ctrl-a \" to exit
 
 # PLL
 An example of a 10MHz clock for the CPU

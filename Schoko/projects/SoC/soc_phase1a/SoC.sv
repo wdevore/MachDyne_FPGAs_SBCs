@@ -116,10 +116,20 @@ assign io_address = mem_address[7:0];
 logic port_a_wr;
 assign port_a_wr = mem_address_is_io & (io_device == IO_PORT_A);
 
+// ------- Debug ------------
+assign port_a[0] = powerUpDelay[22];
+assign port_a[1] = 0;
+assign port_a[2] = 0;
+assign port_a[3] = 0;
+assign port_a[4] = 0;
+assign port_a[5] = 0;
+assign port_a[6] = 0;
+assign port_a[7] = 0;
+
 always_ff @(posedge clk) begin
 	if (port_a_wr) begin
 		// Write lower 8 bits to port A
-		port_a <= mem_wdata[7:0];
+		// port_a <= mem_wdata[7:0];
 
 		// port_a <= {{reset, locked}, {state[1:0]}, mem_wdata[3:0]};
 		// port_a[7] <= ;
@@ -240,14 +250,13 @@ FemtoRV32 #(
 SynState state = SoCReset;
 SynState next_state;
 
-// systemReset starts active (low) and deactivates when PLL lock has occurred.
+// systemReset starts active (low) and deactivates after a few milliseconds delay
 logic systemReset = 0;		// Active Low
+logic [26:0] powerUpDelay;
 
 // PLL is active high
 // CPU is active low
 // UART is active low
-
-logic [26:0] powerUpDelay;
 
 always_comb begin
 	next_state = SoCReset;
@@ -266,11 +275,10 @@ always_comb begin
 
 		SoCResetting: begin
 			next_state = SoCResetting;
-			// Hold reset for >(~50ms)
 `ifdef SIMULATION
 			if (powerUpDelay[3]) begin
 `else
-			if (powerUpDelay[24]) begin
+			if (powerUpDelay[20]) begin // Hold reset for >(~250ms)
 `endif
 				next_state = SoCResetComplete;
 			end
