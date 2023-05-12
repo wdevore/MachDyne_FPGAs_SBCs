@@ -1,7 +1,9 @@
 module pll
 (
 	input  logic clkin,
+	/* verilator lint_off UNUSEDSIGNAL */
 	input  logic reset,			// Active high
+	/* verilator lint_on UNUSEDSIGNAL */
 	output logic clkout0,
 	output logic locked
 );

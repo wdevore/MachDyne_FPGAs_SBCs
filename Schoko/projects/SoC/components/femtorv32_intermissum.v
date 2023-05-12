@@ -61,7 +61,7 @@ module FemtoRV32(
    (* onehot *)
    wire [7:0] funct3Is = 8'b00000001 << instr[14:12];
 
-   wire [2:0] funct3 = instr[14:12];
+   // wire [2:0] funct3 = instr[14:12];
 
    // The five imm formats, see RiscV reference (link above), Fig. 2.4 p. 12
    wire [31:0] Uimm={    instr[31],   instr[30:12], {12{1'b0}}};

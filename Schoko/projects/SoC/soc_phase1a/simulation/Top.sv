@@ -7,16 +7,21 @@ module Top
 );
 
 // --------------- IO -------------------
-logic uart_rx_in;
+logic uart_rx_in = 0;
+/* verilator lint_off UNUSEDSIGNAL */
 logic uart_tx_out;
 logic [7:0] port_a;
 logic port_lr;
 logic port_lg;
 logic port_lb;
+/* verilator lint_on UNUSEDSIGNAL */
+
+logic halt;
 
 SoC soc(
     .clk_48mhz(sysClock),
 	.manualReset(~reset),        // Active high
+    .halt(halt),                 // Active high
     // ------------------------------------------------
     // IO interface to external devices
     // ------------------------------------------------
@@ -53,7 +58,10 @@ always_comb begin
 		end
 
         SMIdle: begin
-			next_state = SMIdle;
+            if (halt)
+			    next_state = SMReset;
+            else
+                next_state = SMIdle;
         end
 
         default: ;

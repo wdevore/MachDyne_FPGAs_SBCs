@@ -10,6 +10,7 @@ module SoC
 (
 	input  logic clk_48mhz,
 	input  logic manualReset,	// Active high
+	output logic halt,			// Active high
 	input  logic uart_rx_in,	// From client
 	output logic uart_tx_out,	// To Client
 	output logic [7:0] port_a,
@@ -19,14 +20,16 @@ module SoC
 );
 
 logic clk;
+/* verilator lint_off UNUSEDSIGNAL */
 logic locked; // (Active high = locked)
+/* verilator lint_on UNUSEDSIGNAL */
 
 // ------------------------------------------------------------------
 // Clock. For testing
 // ------------------------------------------------------------------
 pll soc_pll (
     .clkin(clk_48mhz),
-	.reset(~systemReset),		// Expects Active High
+	.reset(0),		// It is not proper to reset the PLL after power up
     .clkout0(clk),		// ~10MHz
     .locked(locked)		// Active High
 );
@@ -38,7 +41,7 @@ pll soc_pll (
 // 16384 requires only 14 bits to address
 localparam WORD = 4;
 localparam NRV_RAM = 2**14 * WORD;
-localparam BIT_WIDTH = $clog2(NRV_RAM);
+// localparam BIT_WIDTH = $clog2(NRV_RAM);
 
 // $clog2(`NRV_RAM)-1
 // logic [19:0] ram_word_address = mem_address[21:2];
@@ -90,7 +93,6 @@ end
 // Devices
 localparam IO_PORT_A = 8'h00;
 localparam IO_UART = 8'h01;
-localparam LEDs = 0;
 
 logic [31:0] io_rdata;
 
@@ -104,10 +106,10 @@ logic [7:0] io_device;
 assign io_device = mem_address[15:8];
 
 // 0000_0000_0100_0000_0000_0000_0000_0000
-//                               ---------
+//                               ------+++
 //                                address
-logic [7:0] io_address;
-assign io_address = mem_address[7:0];
+logic [2:0] io_address;
+assign io_address = mem_address[2:0];
 
 
 // -----------------------------------------------------------
@@ -117,8 +119,8 @@ logic port_a_wr;
 assign port_a_wr = mem_address_is_io & (io_device == IO_PORT_A);
 
 // ------- Debug ------------
-assign port_a[0] = powerUpDelay[22];
-assign port_a[1] = 0;
+assign port_a[0] = powerUpDelay[25];
+assign port_a[1] = systemReset;
 assign port_a[2] = 0;
 assign port_a[3] = 0;
 assign port_a[4] = 0;
@@ -163,15 +165,17 @@ assign uart_wr = uart_cs & (mem_wmask != 0);
 
 logic [7:0] uart_out_data;
 logic [7:0] uart_in_data;
+/* verilator lint_off UNUSEDSIGNAL */
 logic uart_irq;
 logic [2:0] uart_irq_id;
 logic [7:0] debug;
+/* verilator lint_on UNUSEDSIGNAL */
 
 UART_Component uart_comp (
     .clock(clk_48mhz),
     .reset(systemReset),		// Active low
     .cs(~uart_cs),				// Active low
-    .rd_busy(mem_rbusy),		// Active High
+    .rd_busy(mem_rbusy),		// (out) Active High
 	.rd_strobe(mem_rstrb),		// Pulse High
     .wr(~uart_wr),				// Active low
     .rx_in(uart_rx_in),         // From Client (bit)
@@ -213,7 +217,9 @@ assign mem_rdata = mem_address_is_io ? io_rdata : ram_rdata;
 // CPU
 // ------------------------------------------------------------------
 // The memory bus.
+/* verilator lint_off UNUSEDSIGNAL */
 logic [31:0] mem_address; // 24 bits are used internally. The two LSBs are ignored (using word addresses)
+/* verilator lint_on UNUSEDSIGNAL */
 logic  [3:0] mem_wmask;   // mem write mask and strobe /write Legal values are 000,0001,0010,0100,1000,0011,1100,1111
 logic [31:0] mem_rdata;   // processor <- (mem and peripherals) 
 logic [31:0] mem_wdata;   // processor -> (mem and peripherals)
@@ -224,7 +230,7 @@ logic        interrupt_request = 0; // Active high
 logic        data_access;
 
 assign mem_wbusy = 0;
-logic halt;
+// logic halt;
 
 FemtoRV32 #(
 	.ADDR_WIDTH(`NRV_ADDR_WIDTH),
@@ -251,7 +257,7 @@ SynState state = SoCReset;
 SynState next_state;
 
 // systemReset starts active (low) and deactivates after a few milliseconds delay
-logic systemReset = 0;		// Active Low
+logic systemReset = 1;		// Default to non-active
 logic [26:0] powerUpDelay;
 
 // PLL is active high
@@ -261,12 +267,13 @@ logic [26:0] powerUpDelay;
 always_comb begin
 	next_state = SoCReset;
 	port_lr = 0;
+	port_lg = 0;
 	port_lb = 0;
 	
 	if (halt) 
 		port_lr = 1;
 	else
-		port_lb = 1;
+		port_lg = 1;
 
     case (state)
         SoCReset: begin
@@ -274,11 +281,12 @@ always_comb begin
         end
 
 		SoCResetting: begin
+			port_lb = 1;
 			next_state = SoCResetting;
 `ifdef SIMULATION
 			if (powerUpDelay[3]) begin
 `else
-			if (powerUpDelay[20]) begin // Hold reset for >(~250ms)
+			if (powerUpDelay[25]) begin // Hold reset for >(~250ms)
 `endif
 				next_state = SoCResetComplete;
 			end

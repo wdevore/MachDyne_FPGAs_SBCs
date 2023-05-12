@@ -116,7 +116,9 @@ UARTTx uart_tx (
 // UART Receiver writes to the Rx buffer
 logic [DATA_WIDTH-1:0] rx_byte;
 logic rx_complete;
+/* verilator lint_off UNUSEDSIGNAL */
 logic rx_start; // Active high
+/* verilator lint_on UNUSEDSIGNAL */
 
 UARTRx uart_rx (
     .sourceClk(clock),

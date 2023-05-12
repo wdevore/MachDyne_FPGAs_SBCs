@@ -20,7 +20,7 @@ module Top
 	output logic PMOD_A9,
 	output logic PMOD_A10,
 	// ------------ PMOD B ---------------------
-	// B1 is connected to a switch that idle at High
+	// B1 is connected to a switch that idles High
 	// Pushing the button pulls it Low
 	input  logic PMOD_B1,		// Manual reset (active low)
 	// output logic PMOD_B2,
@@ -72,9 +72,12 @@ logic port_lr;
 logic port_lg;
 logic port_lb;
 
+logic halt;
+
 SoC soc(
 	.clk_48mhz(CLK_48),
-	.manualReset(~PMOD_B1),	// Invert because button is Active Low
+	.manualReset(~PMOD_B1),	// Invert because button is Active Low but manual is Active High
+    .halt(halt),                 // Active high
 	.uart_rx_in(PMOD_B4),  // From client
 	.uart_tx_out(PMOD_B3), // To client
 	.port_a(port_a),

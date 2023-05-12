@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
     timeStep = step(timeStep, tb, top);
 
     // Run enough clocks for module to do its thing.
-    duration = 1000000 + timeStep;
+    duration = 1500000 + timeStep;
     while (timeStep < duration)
     {
         // std::cout << "t: " << timeStep << std::endl;

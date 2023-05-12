@@ -6,7 +6,8 @@ module Top
 
 logic reset;
 logic uart_cs;
-logic uart_rd;
+logic mem_rbusy; // (to cpu) active to initiate memory read (used by IO)
+logic mem_rstrb; // (from cpu) asserted if memory is busy reading value
 logic uart_wr;
 logic [2:0] uart_addr;
 /* verilator lint_off UNUSED */
@@ -23,7 +24,8 @@ UART_Component uart_comp (
     .clock(sysClock),
     .reset(reset),				// Active low
     .cs(uart_cs),				// Active low
-    .rd(uart_rd),				// Active low
+    .rd_busy(mem_rbusy),		// (out) Active High
+	.rd_strobe(mem_rstrb),		// Pulse High
     .wr(uart_wr),				// Active low
     .rx_in(rx_in),         	// From Client (bit)
     .tx_out(tx_out),       	// To Client (bit)
@@ -46,10 +48,10 @@ always_comb begin
 	next_state = SMReset;
 	reset = 1'b1;		// Reset disabled
 	uart_wr = 1;
-	uart_rd = 1;
 	rx_in = 1;			// Hold line high
 	uart_cs = 1; 		// Disable
 	uart_addr = 3'b000;	// Default to Control reg
+    mem_rstrb = 1; // Deassert strobe
 
     case (state)
         SMReset: begin
@@ -89,7 +91,7 @@ always_comb begin
         // Poll the busy bit in Control register
         SMState3: begin
 			uart_cs = 0; // Chip Enable
-            uart_rd = 0; // Enable Read
+            mem_rstrb = 0; // Assert strobe
 			// Control reg address = default
 			next_state = SMState4;
             if (~uart_out_data[1]) begin
@@ -100,7 +102,7 @@ always_comb begin
         SMState4: begin
 			next_state = SMState3;
 			uart_cs = 0; // Chip Enable
-            uart_rd = 1; // Disable Read
+            mem_rstrb = 1; // Deassert strobe
         end
 
         SMIdle: begin

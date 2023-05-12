@@ -59,6 +59,7 @@ route: ${BUILD_BIN}/hardware.json
 	@echo "##### Routing..."
 	${ICESTORM_TOOLCHAIN}/bin/nextpnr-ecp5 \
 	-l ${BUILD_BIN}/next.log \
+	--threads 16 \
 	-q \
 	--45k \
 	--package CABGA256 \
