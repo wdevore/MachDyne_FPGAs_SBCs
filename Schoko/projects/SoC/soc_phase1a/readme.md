@@ -1,5 +1,5 @@
 # Description
-*Phase 1a* is about merging that basics of Port A and UART component, and sending a "Ok" string to the Go client.
+*Phase 1a* is about sending a "Ok" string to a client (minicom in this instance). Eventually the later phases will communicate with a **Go** client.
 
 The simulation tests the merging of UART component and Femto. Port A has already been tested.
 

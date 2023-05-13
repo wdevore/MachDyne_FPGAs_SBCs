@@ -1,7 +1,9 @@
-TOP_FILE = Top.sv
+TOP = Top
+TOP_FILE = ${TOP}.sv
 COMMON = ../../../../common
 
 SUB_MODULES_FILES = \
+	defines.sv \
 	${COMMON}/DeMux2.sv \
 	${COMMON}/Mux4.sv \
 	${COMMON}/Mux2.sv \
@@ -10,10 +12,10 @@ SUB_MODULES_FILES = \
 	${COMMON}/CDCSynchron.sv \
 	${COMMON}/UARTRx.sv \
 	${COMMON}/UARTTx.sv \
-	../components/uart/UART_Enums.sv \
+	../components/uart/UART_Comp_Enums.sv \
 	../components/uart/UART_Component.sv \
 	SynEnums.sv \
-	femtorv32_intermissum.v \
+	../components/femtorv32_intermissum.v \
 	pll.v \
 	SoC.sv
 
@@ -22,6 +24,9 @@ MODULES_FILES = ${SUB_MODULES_FILES} ${TOP_FILE}
 BUILD_BIN = /media/RAMDisk
 
 ICESTORM_TOOLCHAIN = /usr/local
+
+# Verilator is used for it linting prior to synth
+SIMULATION_TOOLCHAIN = /usr/local/bin/verilator
 
 # -blif ${BUILD_BIN}/chip.blif
 # -noflatten
@@ -35,6 +40,11 @@ all: build route pack tigard
 
 compile: build route
 
+lint:
+	@echo "############### Linting via Verilator ##################"
+	${SIMULATION_TOOLCHAIN} --lint-only -Wall ${MODULES_FILES} \
+	--top-module ${TOP}
+
 build: ${MODULES_FILES} ${PINS_CONSTRAINTS}
 	@echo "##### Building..."
 	${ICESTORM_TOOLCHAIN}/bin/yosys -p ${YOSYS_COMMAND} \
@@ -44,11 +54,12 @@ build: ${MODULES_FILES} ${PINS_CONSTRAINTS}
 	-DPRELOAD_MEMORY \
 	${MODULES_FILES}
 
-# 	-v OR -q
+# 	-v
 route: ${BUILD_BIN}/hardware.json
 	@echo "##### Routing..."
 	${ICESTORM_TOOLCHAIN}/bin/nextpnr-ecp5 \
 	-l ${BUILD_BIN}/next.log \
+	--threads 16 \
 	-q \
 	--45k \
 	--package CABGA256 \

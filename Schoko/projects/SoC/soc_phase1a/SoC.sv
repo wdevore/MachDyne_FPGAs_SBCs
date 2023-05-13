@@ -119,29 +119,19 @@ logic port_a_wr;
 assign port_a_wr = mem_address_is_io & (io_device == IO_PORT_A);
 
 // ------- Debug ------------
-assign port_a[0] = powerUpDelay[25];
-assign port_a[1] = systemReset;
-assign port_a[2] = 0;
-assign port_a[3] = 0;
-assign port_a[4] = 0;
-assign port_a[5] = 0;
-assign port_a[6] = 0;
-assign port_a[7] = 0;
+// assign port_a[0] = powerUpDelay[25];
+// assign port_a[1] = systemReset;
+// assign port_a[2] = 0;
+// assign port_a[3] = 0;
+// assign port_a[4] = 0;
+// assign port_a[5] = 0;
+// assign port_a[6] = 0;
+// assign port_a[7] = 0;
 
 always_ff @(posedge clk) begin
 	if (port_a_wr) begin
 		// Write lower 8 bits to port A
-		// port_a <= mem_wdata[7:0];
-
-		// port_a <= {{reset, locked}, {state[1:0]}, mem_wdata[3:0]};
-		// port_a[7] <= ;
-		// port_a[6] <= state[2];
-		// port_a[5] <= state[1];
-		// port_a[4] <= state[0];
-		// port_a[3] <= mem_wdata[3];
-		// port_a[2] <= mem_wdata[2];
-		// port_a[1] <= mem_wdata[1];
-		// port_a[0] <= mem_wdata[0];
+		port_a <= mem_wdata[7:0];
 	end
 end
 

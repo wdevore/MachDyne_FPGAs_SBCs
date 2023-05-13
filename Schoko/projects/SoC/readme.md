@@ -137,3 +137,49 @@ There are several ways to approach the client.
 - Build a basic turn based io (the simplest)
 - C++ ncurses with [Serialib](https://github.com/imabot2/serialib)
 - or [Termui](https://github.com/gizak/termui) (Go)
+
+
+@00000000 0C002183 lw x3, 000000C0(x0)
+@00000001 0C402103 lw x2, 000000C4(x0)
+@00000002 03200213 addi x4, x0, @String_OK    // Set pointer to String
+@00000003 00024083 lbu x1, 0x0(x4)
+@00000004 00118023 sb x1, 0x0(x3)          // Store to port A
+@00000005 00110123 sb x1, 0x2(x2)          // Send 'O'. Write to UART Tx port.
+@00000006 00014083 lbu x1, 0x0(x2)         // Load UART Control reg
+@00000007 0020F093 andi x1, x1, 0x02          // Mask = 00000010
+@00000008 FE101CE3 bne x0, x1, @TxWait
+@00000009 00100073 ebreak                  // Should not reach this
+@00000030 00400000 d: 00400000    // Base address of Port A
+@00000031 00400100 d: 00400100    // Base address of UART IO
+@00000032 0A0D6B4F d: 0A0D6B4F    // "Ok\r\n" Note:
+@00000033 0D656E4F d: 0D656E4F    // "One\r"
+@00000034 6E77540A d: 6E77540A    // "\nTwo"
+@00000035 00000A0D d: 00000A0D    // "\r\n"
+
+write_io.s
+@00000000 0C004083 lbu x1, 000000C0(x0)
+@00000001 0C402103 lw x2, 000000C4(x0)
+@00000002 00110023 sb x1, 0x0(x2)          // Write to IO port. 
+@00000003 0C802103 lw x2, 000000C8(x0)
+@00000004 00110023 sb x1, 0x0(x2)          // Write 0x99 to Memory
+@00000005 00100073 ebreak                  // Stop
+@00000030 0000004F d: 0000004F         // data to load
+@00000031 00400000 d: 00400000         // Base address of IO
+@00000032 0000000F d: 0000000F         // Memory address
+@00000033 000000C0 @: Data             // Base address of data section
+
+write_io_b.s
+@00000000 03000093 addi x1, x0, @Data     // Load x1 = 0x4F
+@00000001 0C402103 lw x2, 000000C4(x0)
+@00000002 00110023 sb x1, 0x0(x2)          // Write to IO port.
+@00000003 00100073 ebreak                  // Stop
+@00000030 0000004F d: 0000004F         // data to load
+@00000031 00400000 d: 00400000         // Base address of Port A
+
+@00000000 03000093 addi x1, x0, @Data      // x1 = pointer to 0x4F
+@00000001 0C402103 lw x2, 000000C4(x0)
+@00000002 0000C183 lbu x3, 0x0(x1)         // x3 = what x1 points to
+@00000003 00310023 sb x3, 0x0(x2)          // Write to IO port.
+@00000004 00100073 ebreak                  // Stop
+@00000030 0000004F d: 0000004F         // data to load
+@00000031 00400000 d: 00400000         // Base address of Port A

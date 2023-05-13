@@ -1,3 +1,4 @@
+/* verilator lint_off PINCONNECTEMPTY */
 // diamond 3.7 accepts this PLL
 // diamond 3.8-3.9 is untested
 // diamond 3.10 or higher is likely to abort with error about unable to use feedback signal
@@ -45,3 +46,4 @@ EHXPLLL #(
         .LOCK(locked)
 	);
 endmodule
+

@@ -11,8 +11,8 @@ Main: @
     sb x1, 0x0(x2)          // Write 0x99 to Memory
     ebreak                  // Stop
 
-Data: @00A
-    d: 00000099         // data to load
+Data: @030
+    d: 0000004F         // data to load
     d: 00400000         // Base address of IO
     d: 0000000F         // Memory address
     @: Data             // Base address of data section
