@@ -56,9 +56,9 @@ assign ram_word_address = mem_address[15:2];
 //            \--- Bit 22                 \--- Bit 0
 //
 logic mem_address_is_io;
-assign mem_address_is_io =  mem_address[22] & data_access;
+assign mem_address_is_io =  mem_address[22] & mem_access;
 logic mem_address_is_ram;
-assign mem_address_is_ram = !mem_address[22] & !data_access;
+assign mem_address_is_ram = !mem_address[22] & !mem_access;
 
 (* no_rw_check *)
 logic [31:0] RAM[0:(NRV_RAM/4)-1];
@@ -217,7 +217,7 @@ logic        mem_rstrb;   // mem read strobe. Goes high to initiate memory write
 logic        mem_rbusy;   // processor <- (mem and peripherals). Stays high until a read transfer is finished.
 logic        mem_wbusy;   // processor <- (mem and peripherals). Stays high until a write transfer is finished.
 logic        interrupt_request = 0; // Active high
-logic        data_access;
+logic        mem_access;
 
 assign mem_wbusy = 0;
 // logic halt;
@@ -234,7 +234,7 @@ FemtoRV32 #(
 	.mem_rstrb(mem_rstrb),		// out
 	.mem_rbusy(mem_rbusy),		// in
 	.mem_wbusy(mem_wbusy),		// in
-	.data_access(data_access),	// out (active high)
+	.mem_access(mem_access),	// out (active high)
 	.interrupt_request(interrupt_request),	// in
 	.reset(systemReset),					// (in) Active Low
 	.halt(halt)

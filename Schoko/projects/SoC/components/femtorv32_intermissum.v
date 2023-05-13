@@ -32,7 +32,7 @@ module FemtoRV32(
    output        mem_rstrb,   // active to initiate memory read (used by IO)
    input         mem_rbusy,   // asserted if memory is busy reading value
    input         mem_wbusy,   // asserted if memory is busy writing value
-   output        data_access, // active (high) for memory data access
+   output        mem_access,  // active (high) for memory data access
 
    input         interrupt_request,
 
@@ -87,7 +87,7 @@ module FemtoRV32(
 
    wire isALU = isALUimm | isALUreg;
 
-   assign data_access = isLoad | isStore | state[FETCH_INSTR_bit];         // Is memory data access
+   assign mem_access = isLoad | isStore | state[FETCH_INSTR_bit];         // Is memory data access
 
    /***************************************************************************/
    // The register file.

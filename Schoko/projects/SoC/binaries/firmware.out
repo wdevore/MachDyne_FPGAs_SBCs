@@ -1,29 +1,26 @@
 @00000000 0C002183 lw x3, 000000C0(x0)
 @00000001 0C402103 lw x2, 000000C4(x0)
 @00000002 0C800213 addi x4, x0, @String_OK    // Set pointer to String
-@00000003 00024083 lbu x1, 0x0(x4)         // Load x1 to what x4 is pointing at
-@00000004 00110123 sb x1, 0x2(x2)          // Send 'O'. Write to UART Tx port.
-@00000005 038002EF jal x5, @PollTxBusy     // Poll CTL_TX_BUSY bit
-@00000006 00120213 addi x4, x4, 1          // Move to next char
-@00000007 00024083 lbu x1, 0x0(x4)
-@00000008 00110123 sb x1, 0x2(x2)          // Send 'k'
-@00000009 028002EF jal x5, @PollTxBusy
-@0000000A 00120213 addi x4, x4, 1
-@0000000B 00024083 lbu x1, 0x0(x4)         // Send '\r'
-@0000000C 00110123 sb x1, 0x2(x2)
-@0000000D 018002EF jal x5, @PollTxBusy
-@0000000E 00120213 addi x4, x4, 1
-@0000000F 00024083 lbu x1, 0x0(x4)         // Send '\n'
-@00000010 00110123 sb x1, 0x2(x2)
-@00000011 008002EF jal x5, @PollTxBusy
-@00000012 00100073 ebreak                  // Should not reach this
-@00000013 00014083 lbu x1, 0x0(x2)         // Load UART Control reg
-@00000014 0020F093 andi x1, x1, 0x02       // Mask = 00000010
-@00000015 FE101CE3 bne x0, x1, @PollTxBusy
-@00000016 00028067 jalr x0, 0x0(x5)         // return
+@00000003 010002EF jal x5, @PrintString
+@00000004 0D000213 addi x4, x0, @String_One    // Set pointer to String
+@00000005 008002EF jal x5, @PrintString
+@00000006 00100073 ebreak                  // Should not reach this
+@00000007 00024083 lbu x1, 0x0(x4)         // Load x1 to what x4 is pointing at
+@00000008 00008A63 beq x1, x0, @PSExit     // Is x1 a Null char
+@00000009 00110123 sb x1, 0x2(x2)          // Send
+@0000000A 0100036F jal x6, @PollTxBusy
+@0000000B 00120213 addi x4, x4, 1          // Next char
+@0000000C FEDFF06F jal x0, @PrintString
+@0000000D 00028067 jalr x0, 0x0(x5)        // return
+@0000000E 00014083 lbu x1, 0x0(x2)         // Load UART Control reg
+@0000000F 0020F093 andi x1, x1, 0x02       // Mask = 00000010
+@00000010 FE101CE3 bne x0, x1, @PollTxBusy
+@00000011 00030067 jalr x0, 0x0(x6)        // return
 @00000030 00400000 d: 00400000    // Base address of Port A
 @00000031 00400100 d: 00400100    // Base address of UART IO
-@00000032 0A0D6B4F d: 0A0D6B4F    // "Ok\r\n" Note:
-@00000033 0D656E4F d: 0D656E4F    // "One\r"
-@00000034 6E77540A d: 6E77540A    // "\nTwo"
-@00000035 00000A0D d: 00000A0D    // "\r\n"
+@00000032 0A0D6B4F d: 0A0D6B4F    // "Ok\r\n" + null
+@00000033 00000000 d: 00000000    //
+@00000034 0D656E4F d: 0D656E4F    // "One\r"
+@00000035 0000000A d: 0000000A    // "\n" + null
+@00000036 0D6E7754 d: 0D6E7754    // "Two\r"
+@00000037 0000000A d: 0000000A    // "\n" + null
