@@ -9,7 +9,7 @@
 module UARTTx
 (
     input  logic sourceClk,         // Source clock
-    input  logic reset,             // Reset
+    input  logic reset,             // Reset (Active low)
     input  logic cs,                // Active high
     input  logic tx_en,             // Enable transmission of bits (active low)
     input  logic [7:0] tx_byte,     // Byte to send

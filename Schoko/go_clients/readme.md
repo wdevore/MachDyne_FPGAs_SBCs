@@ -1,5 +1,5 @@
 # Description
-Send bytes to fpga via UART.
+- Basic is a simple read/write test during the earlier stages of the monitor.
 
 # Links
 - https://pkg.go.dev/go.bug.st/serial

@@ -38,7 +38,7 @@ Main: @
     sb x1, 0x2(x2)
     jal x5, @PollTxBusy
 
-    ebreak                  // Should not reach this
+    ebreak
 
 PollTxBusy: @
     lbu x1, 0x0(x2)         // Load UART Control reg

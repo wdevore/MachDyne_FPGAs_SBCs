@@ -10,7 +10,7 @@
 module UARTRx
 (
     input  logic sourceClk,         // Source clock
-    input  logic reset,             // Reset
+    input  logic reset,             // Reset (Active low)
     input  logic rx_in,             // Incoming bits
     output logic [7:0] rx_byte,     // Byte received
     output logic rx_start,          // Signal data bit is arriving (active high)

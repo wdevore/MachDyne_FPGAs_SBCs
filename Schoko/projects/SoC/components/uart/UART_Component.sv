@@ -84,7 +84,7 @@ DeMux2 #(
 // Outgoing interface data to System. You either read Control
 // or rx_buffer.
 logic out_select;
-assign out_select = addr[2:0] == 3'b010; // Reading Rx buffer?
+assign out_select = addr[2:0] == 3'b001; // Reading Rx buffer?
 
 Mux2 #(
     .DATA_WIDTH(DATA_WIDTH)
@@ -140,6 +140,9 @@ UARTState tx_next_state;
 
 UARTState rx_state = UARxIdle;
 UARTState rx_next_state;
+
+logic read_strobe;
+logic read_strobe_clr;
 
 always_comb begin
     next_state = UAReset0;
@@ -221,6 +224,13 @@ always_comb begin
     endcase    
 end
 
+always_ff @(posedge clock, posedge rd_strobe) begin
+    if (rd_strobe & ~read_strobe_clr)
+        read_strobe <= 1;
+    else if (read_strobe_clr)
+        read_strobe <= 0;
+end
+
 // #__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__
 // -----------
 // #__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__
@@ -232,12 +242,16 @@ always_ff @(posedge clock) begin
         control <= control_in;
 
     // Clear byte-available flag when the System reads the rx_buffer
-    if (rd_busy & ~out_select) begin
+    if (read_strobe & ~out_select) begin
         control[CTL_RX_AVAL] <= 0;
+        read_strobe_clr <= 1;
     end
+    else
+        read_strobe_clr <= 0;
 
-    if (rd_strobe)
+    if (rd_strobe) begin
         rd_busy <= 1;     // Signal busy accessing
+    end
 
     // Almost immediately (on the next clock) signal not-busy
     // because we don't technically have a busy state.

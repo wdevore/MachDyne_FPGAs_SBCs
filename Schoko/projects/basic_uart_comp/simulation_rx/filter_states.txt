@@ -1,0 +1,9 @@
+0 Rst0
+1 RstCmp
+2 DevIdle
+3 TxIdle
+4 TxTrans
+5 TxTranComp
+6 RxIdle
+7 RxComp
+8 IRQComp

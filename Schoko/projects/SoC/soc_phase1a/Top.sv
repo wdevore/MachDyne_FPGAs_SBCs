@@ -45,7 +45,7 @@ assign LED_G = ~port_lg;
 assign LED_B = ~port_lb;
 
 // If connected to LED bar then a 1 = ON
-assign PMOD_A1  =  port_a[7];
+assign PMOD_A1  =  PMOD_B4;//port_a[7];
 assign PMOD_A2  =  port_a[6];
 assign PMOD_A3  =  port_a[5];
 assign PMOD_A4  =  port_a[4];

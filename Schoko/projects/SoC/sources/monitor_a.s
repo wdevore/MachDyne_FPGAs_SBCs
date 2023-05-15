@@ -23,7 +23,7 @@ TxWait: @
     andi x1, x1, 0x02          // Mask = 00000010
     bne x0, x1, @TxWait
 
-    ebreak                  // Should not reach this
+    ebreak
 
 // Note Memory is little endian.
 // The least significant byte of the data is placed at the byte with the lowest address.

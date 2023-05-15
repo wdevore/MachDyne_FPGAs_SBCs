@@ -32,7 +32,7 @@ func main() {
 	mode := &serial.Mode{
 		BaudRate: 115200,
 	}
-	port, err := serial.Open("/dev/ttyUSB0", mode)
+	port, err := serial.Open("/dev/ttyUSB2", mode)
 	if err != nil {
 		fmt.Println("Difficulty opening serial port")
 		log.Fatal(err)
@@ -48,7 +48,7 @@ func main() {
 	fmt.Println("buf3: ", buf)
 	buf = fetchByte(port)
 	fmt.Println("buf4: ", buf)
-	os.Exit(1)
+	// os.Exit(1)
 
 	// ---------------------------------------------------------
 	// Co-routines
