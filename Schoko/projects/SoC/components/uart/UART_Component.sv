@@ -86,14 +86,18 @@ DeMux2 #(
 logic out_select;
 assign out_select = addr[2:0] == 3'b001; // Reading Rx buffer?
 
-Mux2 #(
-    .DATA_WIDTH(DATA_WIDTH)
-) out_mux(
-    .select_i(out_select),
-    .data0_i(control),
-    .data1_i(rx_buffer),
-    .data_o(out_data)
-);
+// Mux2 #(
+//     .DATA_WIDTH(DATA_WIDTH)
+// ) out_mux(
+//     .select_i(out_select),
+//     .data0_i(control),
+//     .data1_i(rx_buffer),
+//     .data_o(out_data)
+// );
+
+// ##### ------------ DEBUG -----------------------
+assign debug = xbug;
+logic [7:0] xbug;
 
 // ------------------------------------------------------------------------
 // UART IO channels
@@ -160,8 +164,26 @@ always_comb begin
             next_state = UADeviceIdle;
         end
 
+        // #### __---__---__---__---__---__---__---__---__---__---__--- ####
+        // Read
+        // #### __---__---__---__---__---__---__---__---__---__---__--- ####
+        UAReadBegin: begin
+            next_state = UAReadCheck;
+        end
+
+        UAReadCheck: begin
+            next_state = UAReadEnd;
+        end
+
+        UAReadEnd: begin
+            next_state = UADeviceIdle;
+        end
+
         UADeviceIdle: begin
             next_state = UADeviceIdle;
+            if (~cs & rd_strobe) begin
+                next_state = UAReadBegin;
+            end
         end
 
         default: ;
@@ -211,12 +233,10 @@ always_comb begin
         end
 
         UARxComplete: begin
-            // Set CTL_RX_AVAL
             rx_next_state = UARxIdle;
         end
 
         UAIRQComplete: begin
-            // Set CTL_RX_AVAL
             rx_next_state = UARxIdle;
         end
 
@@ -224,39 +244,38 @@ always_comb begin
     endcase    
 end
 
-always_ff @(posedge clock, posedge rd_strobe) begin
-    if (rd_strobe & ~read_strobe_clr)
-        read_strobe <= 1;
-    else if (read_strobe_clr)
-        read_strobe <= 0;
-end
-
 // #__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__
 // -----------
 // #__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__#__
 always_ff @(posedge clock) begin
+
     // #### __---__---__---__---__---__---__---__---__---__---__--- ####
     // Device/Component
     // #### __---__---__---__---__---__---__---__---__---__---__--- ####
     if (~control_wr)
         control <= control_in;
 
-    // Clear byte-available flag when the System reads the rx_buffer
-    if (read_strobe & ~out_select) begin
-        control[CTL_RX_AVAL] <= 0;
-        read_strobe_clr <= 1;
-    end
-    else
-        read_strobe_clr <= 0;
+    // if (rd_strobe & ~read_strobe_clr)
+    //     read_strobe <= 1;
+    // else if (read_strobe_clr)
+    //     read_strobe <= 0;
 
-    if (rd_strobe) begin
-        rd_busy <= 1;     // Signal busy accessing
-    end
+    // // Clear byte-available flag when the System reads the rx_buffer
+    // if (read_strobe & ~out_select) begin
+    //     // control[CTL_RX_AVAL] <= 0;
+    //     read_strobe_clr <= 1;
+    // end
+    // else
+    //     read_strobe_clr <= 0;
 
-    // Almost immediately (on the next clock) signal not-busy
+    // if (rd_strobe) begin
+    //     rd_busy <= 1;     // Signal busy accessing
+    // end
+
+    // Almost immediately (on the next clock) signal set not-busy
     // because we don't technically have a busy state.
-    if (rd_busy)
-        rd_busy <= 0;
+    // if (rd_busy)
+    //     rd_busy <= 0;
 
     case (state)
         // --------------------------------
@@ -266,14 +285,47 @@ always_ff @(posedge clock) begin
             control <= 0;
             rx_buffer <= 0;
             irq_id <= Component_ID;    // Component id
-            debug <= 0;
+            xbug <= 0;
         end
 
         UAResetComplete: begin
             // Move to UADeviceIdle
         end
 
+        // #### __---__---__---__---__---__---__---__---__---__---__--- ####
+        // Read
+        // #### __---__---__---__---__---__---__---__---__---__---__--- ####
+        UAReadBegin: begin
+            // xbug[0] <= 1;
+            if (out_select) begin
+                xbug <= rx_buffer;
+                out_data <= rx_buffer;
+            end
+            else begin
+                // xbug[2] <= 1;
+                out_data <= control;
+            end
+            rd_busy <= 0;     // Signal done
+            // Move to UAReadCheck
+        end
+
+        UAReadCheck: begin
+                // xbug[3] <= 1;
+            // control[CTL_RX_AVAL] <= 0;
+            // Move to UAReadEnd
+        end
+
+        UAReadEnd: begin
+            // control[CTL_RX_AVAL] <= 0;
+            // Move to UADeviceIdle
+        end
+
         UADeviceIdle: begin
+                // out_data <= xbug;
+            if (~cs & rd_strobe) begin
+            //control[CTL_RX_AVAL] <= 0;
+                rd_busy <= 1;     // Signal busy accessing
+            end
             // Move to UADeviceIdle
         end
 

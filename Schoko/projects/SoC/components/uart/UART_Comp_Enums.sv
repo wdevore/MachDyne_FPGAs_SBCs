@@ -7,6 +7,9 @@ typedef enum logic [5:0] {
     UATxTransmitComplete,
     UARxIdle,
     UARxComplete,
+    UAReadBegin,
+    UAReadCheck,
+    UAReadEnd,
     UAIRQComplete
 } UARTState;
 

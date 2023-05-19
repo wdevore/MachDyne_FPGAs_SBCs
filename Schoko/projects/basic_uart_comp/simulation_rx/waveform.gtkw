@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.104 (w)1999-2020 BSI
-[*] Mon May 15 01:40:47 2023
+[*] Wed May 17 23:54:47 2023
 [*]
 [dumpfile] "/media/RAMDisk/waveform.vcd"
-[dumpfile_mtime] "Mon May 15 01:40:00 2023"
-[dumpfile_size] 8800437
+[dumpfile_mtime] "Wed May 17 23:54:34 2023"
+[dumpfile_size] 8867728
 [savefile] "/media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Schoko/projects/basic_uart_comp/simulation_rx/waveform.gtkw"
-[timestart] 416595
+[timestart] 416678
 [size] 2620 1361
-[pos] 106 110
-*-7.120429 416942 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[pos] 13 134
+*-7.120429 417481 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] TOP.
 [treeopen] TOP.Top.
 [treeopen] TOP.Top.uart_comp.
@@ -26,9 +26,6 @@ TOP.Top.state[4:0]
 @28
 TOP.Top.tx_out
 TOP.Top.uart_addr[2:0]
-TOP.Top.uart_cs
-[color] 1
-TOP.Top.uart_wr
 @22
 TOP.Top.uart_out_data[7:0]
 @200
@@ -44,6 +41,7 @@ TOP.Top.uart_comp.rx_state[5:0]
 @28
 [color] 3
 TOP.Top.uart_comp.cs
+[color] 1
 TOP.Top.uart_comp.wr
 TOP.Top.uart_comp.addr[2:0]
 TOP.Top.uart_comp.control[7:0]
@@ -61,18 +59,21 @@ TOP.Top.uart_comp.tx_buffer[7:0]
 TOP.Top.uart_comp.in_select
 @22
 TOP.Top.uart_comp.in_data[7:0]
-@28
+@29
 [color] 2
 TOP.Top.uart_comp.out_select
+@22
+TOP.Top.uart_comp.out_data[7:0]
+@28
 TOP.Top.uart_comp.tx_en
 TOP.Top.uart_comp.tx_complete
 TOP.Top.uart_comp.rx_complete
 TOP.Top.uart_comp.rx_start
 TOP.Top.uart_comp.rd_busy
+[color] 3
 TOP.Top.uart_comp.rd_strobe
 [color] 3
 TOP.Top.uart_comp.read_strobe
-@29
 TOP.Top.uart_comp.read_strobe_clr
 @200
 -Client Tx

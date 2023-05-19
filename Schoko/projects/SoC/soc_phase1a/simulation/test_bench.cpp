@@ -28,13 +28,13 @@ float picoCnt = 0.0;
 // ------------------------------------------------------------
 int step(int timeStep, TESTBENCH<VTop> *tb, VTop *top)
 {
-    if (picoCnt > hPeriod-1.0) {
+    // if (picoCnt > hPeriod-1.0) {
         top->sysClock ^= 1;
-        picoCnt = 0;
-        // exit(1);
-    } else {
-        picoCnt += 1.0;
-    }
+    //     picoCnt = 0;
+    //     // exit(1);
+    // } else {
+    //     picoCnt += 1.0;
+    // }
     // std::cout << "picoCnt: " << picoCnt << std::endl;
 
     tb->eval();
@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
     timeStep = step(timeStep, tb, top);
 
     // Run enough clocks for module to do its thing.
-    duration = 1500000 + timeStep;
+    duration = 150000 + timeStep;
     while (timeStep < duration)
     {
         // std::cout << "t: " << timeStep << std::endl;

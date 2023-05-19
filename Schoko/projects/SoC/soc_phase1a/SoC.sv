@@ -16,7 +16,9 @@ module SoC
 	output logic [7:0] port_a,
 	output logic port_lr,
 	output logic port_lg,
-	output logic port_lb
+	output logic port_lb,
+	// Debug ----------------------------
+    output logic [7:0] debug
 );
 
 logic clk;
@@ -118,7 +120,6 @@ assign io_address = mem_address[2:0];
 logic port_a_wr;
 assign port_a_wr = mem_address_is_io & (io_device == IO_PORT_A);
 
-// ------- Debug ------------
 // assign port_a[0] = powerUpDelay[25];
 // assign port_a[1] = systemReset;
 // assign port_a[2] = 0;
@@ -158,7 +159,6 @@ logic [7:0] uart_in_data;
 /* verilator lint_off UNUSEDSIGNAL */
 logic uart_irq;
 logic [2:0] uart_irq_id;
-logic [7:0] debug;
 /* verilator lint_on UNUSEDSIGNAL */
 
 UART_Component uart_comp (
@@ -194,8 +194,19 @@ always_comb begin
 			uart_in_data = mem_wdata[31:24];
 	end
 
+	// Even though the UART component is 8bits it still must be
+	// presented to Femto as 32bits and the byte must be positioned
+	// in the correct byte location such that Femto's LOAD_byte
+	// selects the byte based on the lower 2bits of the address.
 	if (uart_cs) begin
-		io_rdata = {{24{1'b0}}, uart_out_data};
+		if (uart_addr[1:0] == 2'b00)
+			io_rdata = {{24{1'b0}}, uart_out_data};
+		else if (uart_addr[1:0] == 2'b01)
+			io_rdata = {{16{1'b0}}, uart_out_data, {8{1'b0}}};
+		else if (uart_addr[1:0] == 2'b10)
+			io_rdata = {{8{1'b0}}, uart_out_data, {16{1'b0}}};
+		else
+			io_rdata = {uart_out_data, {24{1'b0}}};
 	end
 end
 

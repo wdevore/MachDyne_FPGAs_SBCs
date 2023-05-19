@@ -138,7 +138,7 @@ always_comb begin
 
         SMState4: begin
 			next_state = SMState3;
-			uart_cs = 0; // Chip Enable
+			uart_cs = 1;
             mem_rstrb = 0; // Deassert strobe
         end
 

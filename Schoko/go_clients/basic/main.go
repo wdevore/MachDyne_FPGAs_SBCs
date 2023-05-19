@@ -24,14 +24,14 @@ func main() {
 	// Read "Ok\r\n" from UART Rx
 	// rxBuf := make([]byte, 4)
 
-	fmt.Println("Reading...")
+	fmt.Println("Running...")
 	// for i := 0; i < 4; i++ {
 	// 	buf := fetchByte(port)
 	// 	rxBuf = append(rxBuf, buf)
 	// }
 	// fmt.Println("Got:", string(rxBuf))
 
-	// for i := 0; i < 100000; i++ {
+	// for i := 0; i < 10; i++ {
 	uartSend(0x62, port)
 	// }
 

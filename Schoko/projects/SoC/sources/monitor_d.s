@@ -2,17 +2,12 @@
 // When the monitor starts it sends "Ok\r\n" and then waits
 // for incomming bytes.
 //
-// This stage also reads the Rx buffer and Received bit.
-//
-// It recognizes ascii characters "1" or "2". If "1" then send
-// "One\r\n" else if "2" send "Two\r\n".
-// The received char is also written to Port A LEDS
+// Simply read the rx_buffer and write it to Port A
 
 // x1 = byte to send or UART control register (aka scratch reg)
 // x2 = Base address of UART
 // x3 = Base address of Port A
 // x4 = byte pointer to string
-// x7 = Exit signal to detect (aka "`")
 // x8 = Scratch
 // x9 = Scratch
 
@@ -21,52 +16,24 @@ RVector: @0
 Main: @
     lw x3, @Data(x0)        // Port A base
     lw x2, @Data+1(x0)      // UART base
-    addi x7, x0, 0x60       // Set Exit ascii character "`"
     addi x8, x0, 0x04       // Load scratch Rx-Byte-Available mask
-    addi x9, x0, 0x36       // Load scratch debug
+    //addi x9, x0, 0x0
 
-    // Boot by sending "Ok"
+    // Boot by sending "O"
     addi x4, x0, @String_OK    // Set pointer to String
-    jal x5, @PrintString
+    lbu x1, 0x0(x4)         // Load x1 to what x4 is pointing at
+    sb x1, 0x2(x2)          // Send
 
     // Wait for an incomming byte
 WaitForByte: @
     jal x6, @PollRxAvail
-    //sb x9, 0x0(x3)          // DEBUG Display it on port A
     lbu x1, 0x1(x2)         // Read Rx reg at offset 0x01
-    sb x1, 0x0(x3)          // Display it on port A
-    beq x1, x7, @Exit       // Is it the "`" char = "0x60"
+    sb x0, 0x0(x3)          // Display it on port A
+    //addi x9, x9, 0x1
     jal x0, @WaitForByte
 
 Exit: @
-    addi x4, x0, @String_Bye
-    jal x5, @PrintString
     ebreak
-
-// ----------------------------------------------------------
-// Print a Null terminated String
-// x4 to points to String
-// x5 is the return address
-// ----------------------------------------------------------
-PrintString: @
-    lbu x1, 0x0(x4)         // Load x1 to what x4 is pointing at
-    beq x1, x0, @PSExit     // Is x1 a Null char
-    sb x1, 0x2(x2)          // Send
-    jal x6, @PollTxBusy
-    addi x4, x4, 1          // Next char
-    jal x0, @PrintString
-PSExit: @
-    jalr x0, 0x0(x5)        // return
-
-// ----------------------------------------------------------
-// Wait for the Tx busy bit to Clear
-// x6 is the return address
-// ----------------------------------------------------------
-PollTxBusy: @
-    lbu x1, 0x0(x2)         // Load UART Control reg
-    andi x1, x1, 0x02       // Mask = 00000010
-    bne x0, x1, @PollTxBusy
-    jalr x0, 0x0(x6)        // return
 
 // ----------------------------------------------------------
 // Wait for the Rx byte available bit to Set when a byte

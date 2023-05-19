@@ -6,4 +6,6 @@
 5 TxTranComp
 6 RxIdle
 7 RxComp
-8 IRQComp
+8 RdBeg
+9 RdEnd
+10 IRQComp
