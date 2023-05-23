@@ -31,8 +31,11 @@ func main() {
 	// }
 	// fmt.Println("Got:", string(rxBuf))
 
-	// for i := 0; i < 10; i++ {
-	uartSend(0x62, port)
+	uartSend(0x30, port)
+
+	// for i := 97; i < 97+10; i++ {
+	// uartSend(byte(i), port)
+	// time.Sleep(time.Second)
 	// }
 
 	fmt.Println("Good bye")

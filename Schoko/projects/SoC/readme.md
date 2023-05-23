@@ -38,7 +38,7 @@ A port of Femto-intermissum from Verilog to SystemVerilog and Modulerized.
 Turn off "flow control" [Ctrl-a x o]
 
 Tigard's UART port is on the first listed USB port. Note: if you have already plugged in some other UART device prior then the Tigard's port will be higher, for example, **ttyUSB1**.
-```$ minicom -b 115200 -o -D /dev/ttyUSB0```
+```$ minicom -b 115200 -o -D /dev/ttyUSB2```
 Or
 ```$ minicom -b 115200 -o -D /dev/ttyACM0```
 

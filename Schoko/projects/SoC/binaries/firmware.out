@@ -1,18 +1,50 @@
 @00000000 0C002183 lw x3, 000000C0(x0)
 @00000001 0C402103 lw x2, 000000C4(x0)
 @00000002 00400413 addi x8, x0, 0x04       // Load scratch Rx-Byte-Available mask
-@00000003 03300493 addi x9, x0, 0x33
-@00000004 00918023 sb x9, 0x0(x3)          // Write 0x33 to port A to indicate ready
-@00000005 0140036F jal x6, @PollRxAvail
-@00000006 00114083 lbu x1, 0x1(x2)         // Read Rx reg at offset 0x01
-@00000007 00118023 sb x1, 0x0(x3)          // Write it on port A
-@00000008 FF5FF06F jal x0, @WaitForByte
-@00000009 00100073 ebreak
-@0000000A 00014083 lbu x1, 0x0(x2)         // Read Control reg at offset 0x0
-@0000000B 0080F0B3 and x1, x1, x8          // Mask = 00000100
-@0000000C FE141CE3 bne x8, x1, @PollRxAvail
-@0000000D 00030067 jalr x0, 0x0(x6)        // return
+@00000003 0C800213 addi x4, x0, @String_OK    // Set pointer to String
+@00000004 054002EF jal x5, @PrintString
+@00000005 00018023 sb x0, 0x0(x3)          // Clear port A
+@00000006 0780036F jal x6, @PollRxAvail
+@00000007 00114083 lbu x1, 0x1(x2)         // Read Rx reg at offset 0x01
+@00000008 00118023 sb x1, 0x0(x3)          // Display it on port A
+@00000009 06000393 addi x7, x0, 0x60       // Set Exit ascii character "`"
+@0000000A 02708863 beq x1, x7, @Exit       // Is it the "`" char = "0x60"
+@0000000B 03000393 addi x7, x0, 0x30
+@0000000C 00708863 beq x1, x7, @ShowOne    // Is it the "1"
+@0000000D 03100393 addi x7, x0, 0x31
+@0000000E 00708A63 beq x1, x7, @ShowTwo    // Is it the "2"
+@0000000F FDDFF06F jal x0, @WaitForByte
+@00000010 0D000213 addi x4, x0, @String_One
+@00000011 020002EF jal x5, @PrintString
+@00000012 FD1FF06F jal x0, @WaitForByte
+@00000013 0D800213 addi x4, x0, @String_Two
+@00000014 014002EF jal x5, @PrintString
+@00000015 FC5FF06F jal x0, @WaitForByte
+@00000016 0E000213 addi x4, x0, @String_Bye
+@00000017 008002EF jal x5, @PrintString
+@00000018 00100073 ebreak
+@00000019 00024083 lbu x1, 0x0(x4)         // Load x1 to what x4 is pointing at
+@0000001A 00008A63 beq x1, x0, @PSExit     // Is x1 a Null char
+@0000001B 00110123 sb x1, 0x2(x2)          // Send
+@0000001C 0100036F jal x6, @PollTxBusy
+@0000001D 00120213 addi x4, x4, 1          // Next char
+@0000001E FEDFF06F jal x0, @PrintString
+@0000001F 00028067 jalr x0, 0x0(x5)        // return
+@00000020 00014083 lbu x1, 0x0(x2)         // Load UART Control reg
+@00000021 0020F093 andi x1, x1, 0x02       // Mask = 00000010
+@00000022 FE101CE3 bne x0, x1, @PollTxBusy
+@00000023 00030067 jalr x0, 0x0(x6)        // return
+@00000024 00014083 lbu x1, 0x0(x2)         // Read Control reg at offset 0x0
+@00000025 0080F0B3 and x1, x1, x8          // Mask = 00000100
+@00000026 FE141CE3 bne x8, x1, @PollRxAvail
+@00000027 00030067 jalr x0, 0x0(x6)        // return
 @00000030 00400000 d: 00400000    // Base address of Port A
 @00000031 00400100 d: 00400100    // Base address of UART IO
 @00000032 0A0D6B4F d: 0A0D6B4F    // "Ok\r\n" + null
 @00000033 00000000 d: 00000000    //
+@00000034 0D656E4F d: 0D656E4F    // "One\r\n" + null
+@00000035 0000000A d: 0000000A
+@00000036 0D6F7754 d: 0D6F7754    // "Two\r\n" + null
+@00000037 0000000A d: 0000000A
+@00000038 0D657942 d: 0D657942    // "Bye\r\n" + null
+@00000039 0000000A d: 0000000A

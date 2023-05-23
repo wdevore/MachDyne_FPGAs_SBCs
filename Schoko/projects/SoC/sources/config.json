@@ -1,5 +1,5 @@
 {
-    "InFile": "monitor_d_1.s",
+    "InFile": "monitor_e.s",
     "InPath": "/media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Schoko/projects/SoC/sources/",
     "WriteOutFile": "Yes",
     "OutFile": "firmware.out",
