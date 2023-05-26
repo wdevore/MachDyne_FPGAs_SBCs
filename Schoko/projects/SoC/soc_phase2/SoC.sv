@@ -16,15 +16,15 @@ module SoC
 	output logic [7:0] port_a,
 	output logic port_lr,
 	output logic port_lg,
-	output logic port_lb
+	output logic port_lb,
+	// Debug ----------------------------
+    output logic [7:0] debug
 );
 
 logic clk;
 /* verilator lint_off UNUSEDSIGNAL */
 logic locked; // (Active high = locked)
 /* verilator lint_on UNUSEDSIGNAL */
-
-localparam powerResetBit = 23;
 
 // ------------------------------------------------------------------
 // Clock. For testing
@@ -58,9 +58,9 @@ assign ram_word_address = mem_address[15:2];
 //            \--- Bit 22                 \--- Bit 0
 //
 logic mem_address_is_io;
-assign mem_address_is_io =  mem_address[22] & data_access;
+assign mem_address_is_io =  mem_address[22] & mem_access;
 logic mem_address_is_ram;
-assign mem_address_is_ram = !mem_address[22] & !data_access;
+assign mem_address_is_ram = !mem_address[22] & !mem_access;
 
 (* no_rw_check *)
 logic [31:0] RAM[0:(NRV_RAM/4)-1];
@@ -120,8 +120,7 @@ assign io_address = mem_address[2:0];
 logic port_a_wr;
 assign port_a_wr = mem_address_is_io & (io_device == IO_PORT_A);
 
-// ------- Debug ------------
-// assign port_a[0] = powerUpDelay[powerResetBit];
+// assign port_a[0] = powerUpDelay[25];
 // assign port_a[1] = systemReset;
 // assign port_a[2] = 0;
 // assign port_a[3] = 0;
@@ -160,7 +159,6 @@ logic [7:0] uart_in_data;
 /* verilator lint_off UNUSEDSIGNAL */
 logic uart_irq;
 logic [2:0] uart_irq_id;
-logic [7:0] debug;
 /* verilator lint_on UNUSEDSIGNAL */
 
 UART_Component uart_comp (
@@ -196,8 +194,19 @@ always_comb begin
 			uart_in_data = mem_wdata[31:24];
 	end
 
+	// Even though the UART component is 8bits it still must be
+	// presented to Femto as 32bits and the byte must be positioned
+	// in the correct byte location such that Femto's LOAD_byte
+	// selects it based on the lower 2bits of the address.
 	if (uart_cs) begin
-		io_rdata = {{24{1'b0}}, uart_out_data};
+		if (uart_addr[1:0] == 2'b00)
+			io_rdata = {{24{1'b0}}, uart_out_data};
+		else if (uart_addr[1:0] == 2'b01)
+			io_rdata = {{16{1'b0}}, uart_out_data, {8{1'b0}}};
+		else if (uart_addr[1:0] == 2'b10)
+			io_rdata = {{8{1'b0}}, uart_out_data, {16{1'b0}}};
+		else
+			io_rdata = {uart_out_data, {24{1'b0}}};
 	end
 end
 
@@ -219,7 +228,7 @@ logic        mem_rstrb;   // mem read strobe. Goes high to initiate memory write
 logic        mem_rbusy;   // processor <- (mem and peripherals). Stays high until a read transfer is finished.
 logic        mem_wbusy;   // processor <- (mem and peripherals). Stays high until a write transfer is finished.
 logic        interrupt_request = 0; // Active high
-logic        data_access;
+logic        mem_access;
 
 assign mem_wbusy = 0;
 // logic halt;
@@ -236,7 +245,7 @@ FemtoRV32 #(
 	.mem_rstrb(mem_rstrb),		// out
 	.mem_rbusy(mem_rbusy),		// in
 	.mem_wbusy(mem_wbusy),		// in
-	.data_access(data_access),	// out (active high)
+	.mem_access(mem_access),	// out (active high)
 	.interrupt_request(interrupt_request),	// in
 	.reset(systemReset),					// (in) Active Low
 	.halt(halt)
@@ -278,7 +287,7 @@ always_comb begin
 `ifdef SIMULATION
 			if (powerUpDelay[3]) begin
 `else
-			if (powerUpDelay[powerResetBit]) begin // Hold reset for >(~250ms)
+			if (powerUpDelay[25]) begin // Hold reset for >(~250ms)
 `endif
 				next_state = SoCResetComplete;
 			end

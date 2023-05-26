@@ -1,12 +1,5 @@
-// The beginings of a Monitor (phase a)
-// When the monitor starts it sends "Ok\r\n" and then waits
-// for incomming bytes.
+// Simply echo the incomming char back to the client
 //
-// This stage also reads the Rx buffer and Received bit.
-//
-// It recognizes ascii characters "1" or "2". If "1" then send
-// "One\r\n" else if "2" send "Two\r\n".
-// The received char is also written to Port A LEDS
 
 // x1 = byte to send or UART control register (aka scratch reg)
 // x2 = Base address of UART
@@ -15,6 +8,7 @@
 // x7 = Data to scan
 // x8 = Scratch
 // x9 = Scratch
+// x10 = Scratch
 
 RVector: @0
 
@@ -22,6 +16,8 @@ Main: @
     lw x3, @Data(x0)        // Port A base
     lw x2, @Data+1(x0)      // UART base
     addi x8, x0, 0x04       // Load scratch Rx-Byte-Available mask
+    addi x9, x0, 0x0A       // Line feed char
+    addi x10, x0, 0x00
 
     // Boot by sending "Ok"
     addi x4, x0, @String_OK    // Set pointer to String
@@ -33,33 +29,47 @@ Main: @
 WaitForByte: @
     jal x6, @PollRxAvail
     lbu x1, 0x1(x2)         // Read Rx reg at offset 0x01
-    sb x1, 0x0(x3)          // Display it on port A
+    //sb x1, 0x0(x3)          // Display it on port A
 
+    jal x5, @PrintChar      // Echo char
+
+    addi x7, x0, 0x66       // Check return char = 0x0D
+    bne x1, x7, @NotEq      // Goto NotEq if !=
+
+    addi x10, x0, 0x01      // debug
+    jal x5, @WritePortA
+    
+    //sb x9, 0x2(x2)          // Send line-feed "\n"
+    jal x6, @PollTxBusy
+
+LineFeed: @
+    addi x10, x0, 0x0A
+    sb x10, 0x2(x2)          // Send 0x0A
+    jal x6, @PollTxBusy
+    jalr x0, 0x0(x5)        // return
+
+NotEq: @
+    //addi x10, x0, 0x02      // debug
+    jal x5, @WritePortA
+    addi x10, x10, 1
     addi x7, x0, 0x60       // Set Exit ascii character "`"
     beq x1, x7, @Exit       // Is it the "`" char = "0x60"
 
-    addi x7, x0, 0x31
-    beq x1, x7, @ShowOne    // Is it the "1"
-
-    addi x7, x0, 0x32
-    beq x1, x7, @ShowTwo    // Is it the "2"
-
-    jal x0, @WaitForByte
-
-ShowOne: @
-    addi x4, x0, @String_One
-    jal x5, @PrintString
-    jal x0, @WaitForByte
-
-ShowTwo: @
-    addi x4, x0, @String_Two
-    jal x5, @PrintString
-    jal x0, @WaitForByte
+    jal x0, @WaitForByte    // Loop
 
 Exit: @
     addi x4, x0, @String_Bye
     jal x5, @PrintString
     ebreak
+
+// ----------------------------------------------------------
+// Print a Null terminated String
+// x10 has byte to write to port
+// x5 is the return address
+// ----------------------------------------------------------
+WritePortA: @
+    sb x10, 0x0(x3)
+    jalr x0, 0x0(x5)        // return
 
 // ----------------------------------------------------------
 // Print a Null terminated String
@@ -75,6 +85,17 @@ PrintString: @
     jal x0, @PrintString
 PSExit: @
     jalr x0, 0x0(x5)        // return
+
+// ----------------------------------------------------------
+// Print a single character
+// x1 = char
+// x5 is the return address
+// ----------------------------------------------------------
+PrintChar: @
+    sb x1, 0x2(x2)          // Send
+    jal x6, @PollTxBusy
+    jalr x0, 0x0(x5)        // return
+
 
 // ----------------------------------------------------------
 // Wait for the Tx busy bit to Clear
@@ -100,19 +121,13 @@ PollRxAvail: @
 // ----------------------------------------------------------
 // Data
 // ----------------------------------------------------------
-Data: @030
+Data: @040
     d: 00400000    // Base address of Port A
     d: 00400100    // Base address of UART IO
 // Visually the chars (bytes) read from right to left
 String_OK: @
     d: 0A0D6B4F    // "Ok\r\n" + null
     d: 00000000    //
-String_One: @
-    d: 0D656E4F    // "One\r\n" + null
-    d: 0000000A
-String_Two: @
-    d: 0D6F7754    // "Two\r\n" + null
-    d: 0000000A
 String_Bye: @
     d: 0D657942    // "Bye\r\n" + null
     d: 0000000A

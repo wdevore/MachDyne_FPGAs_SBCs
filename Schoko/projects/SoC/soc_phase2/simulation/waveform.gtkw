@@ -1,19 +1,18 @@
 [*]
 [*] GTKWave Analyzer v3.3.104 (w)1999-2020 BSI
-[*] Fri May 12 01:41:48 2023
+[*] Fri May 19 02:55:26 2023
 [*]
 [dumpfile] "/media/RAMDisk/waveform.vcd"
-[dumpfile_mtime] "Fri May 12 01:37:52 2023"
-[dumpfile_size] 9603064
+[dumpfile_mtime] "Fri May 19 02:54:49 2023"
+[dumpfile_size] 32863741
 [savefile] "/media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Schoko/projects/SoC/soc_phase1a/simulation/waveform.gtkw"
-[timestart] 0
-[size] 2634 2088
+[timestart] 8469
+[size] 2634 2019
 [pos] 1 93
-*-9.000000 1546 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-2.470293 8475 120 240 8424 8496 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] TOP.
 [treeopen] TOP.Top.
 [treeopen] TOP.Top.soc.
-[treeopen] TOP.Top.soc.uart_comp.
 [sst_width] 221
 [signals_width] 378
 [sst_expanded] 1
@@ -24,8 +23,16 @@
 [color] 2
 TOP.Top.sysClock
 TOP.Top.reset
+@24
+TOP.Top.state[4:0]
+@28
+TOP.Top.ctx_en
+TOP.Top.ctx_out
+TOP.Top.ctx_complete
+@22
+TOP.Top.ctx_buffer[7:0]
 @200
--CPU
+-Femto
 @c02024
 ^1 /media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Schoko/projects/SoC/soc_phase1a/simulation/filter_femto_states.txt
 TOP.Top.soc.processor.state[4:0]
@@ -82,47 +89,78 @@ TOP.Top.soc.processor.halt
 TOP.Top.soc.processor.mem_addr[31:0]
 TOP.Top.soc.processor.mem_wdata[31:0]
 TOP.Top.soc.processor.mem_rdata[31:0]
-@29
-TOP.Top.soc.processor.mem_rstrb
 @28
+TOP.Top.soc.processor.mem_rstrb
 TOP.Top.soc.processor.mem_rbusy
 @22
 TOP.Top.soc.processor.registerFile[0][31:0]
 TOP.Top.soc.processor.registerFile[1][31:0]
 TOP.Top.soc.processor.registerFile[2][31:0]
 TOP.Top.soc.processor.registerFile[3][31:0]
-TOP.Top.soc.processor.rs1[31:0]
-TOP.Top.soc.processor.rs2[31:0]
-TOP.Top.soc.processor.Simm[31:0]
+TOP.Top.soc.processor.registerFile[8][31:0]
+TOP.Top.soc.processor.registerFile[9][31:0]
 @28
 TOP.Top.soc.processor.isLoad
 TOP.Top.soc.processor.isStore
-TOP.Top.soc.processor.isBranch
-TOP.Top.soc.processor.isALUimm
+TOP.Top.soc.processor.writeBack
 @22
-TOP.Top.soc.processor.aluIn1[31:0]
-TOP.Top.soc.processor.aluIn2[31:0]
-[color] 5
-TOP.Top.soc.processor.aluOut[31:0]
+TOP.Top.soc.processor.writeBackData[31:0]
+TOP.Top.soc.processor.LOAD_data[31:0]
 @28
-TOP.Top.soc.processor.funct3Is[7:0]
+TOP.Top.soc.processor.mem_byteAccess
+@22
+TOP.Top.soc.processor.LOAD_byte[7:0]
+TOP.Top.soc.processor.LOAD_halfword[15:0]
+TOP.Top.soc.processor.loadstore_addr[31:0]
 @200
 -SoC
 @28
 [color] 2
 TOP.Top.soc.clk
-TOP.Top.soc.manualReset
-[color] 1
-TOP.Top.soc.systemReset
 @2024
 ^2 /media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Schoko/projects/SoC/soc_phase1a/simulation/filter_soc_states copy.txt
 TOP.Top.soc.state[4:0]
 @28
-TOP.Top.soc.data_access
 TOP.Top.soc.mem_rstrb
+TOP.Top.soc.mem_rbusy
 TOP.Top.soc.mem_wmask[3:0]
-@22
+@c00022
 TOP.Top.soc.mem_address[31:0]
+@28
+(0)TOP.Top.soc.mem_address[31:0]
+(1)TOP.Top.soc.mem_address[31:0]
+(2)TOP.Top.soc.mem_address[31:0]
+(3)TOP.Top.soc.mem_address[31:0]
+(4)TOP.Top.soc.mem_address[31:0]
+(5)TOP.Top.soc.mem_address[31:0]
+(6)TOP.Top.soc.mem_address[31:0]
+(7)TOP.Top.soc.mem_address[31:0]
+(8)TOP.Top.soc.mem_address[31:0]
+(9)TOP.Top.soc.mem_address[31:0]
+(10)TOP.Top.soc.mem_address[31:0]
+(11)TOP.Top.soc.mem_address[31:0]
+(12)TOP.Top.soc.mem_address[31:0]
+(13)TOP.Top.soc.mem_address[31:0]
+(14)TOP.Top.soc.mem_address[31:0]
+(15)TOP.Top.soc.mem_address[31:0]
+(16)TOP.Top.soc.mem_address[31:0]
+(17)TOP.Top.soc.mem_address[31:0]
+(18)TOP.Top.soc.mem_address[31:0]
+(19)TOP.Top.soc.mem_address[31:0]
+(20)TOP.Top.soc.mem_address[31:0]
+(21)TOP.Top.soc.mem_address[31:0]
+(22)TOP.Top.soc.mem_address[31:0]
+(23)TOP.Top.soc.mem_address[31:0]
+(24)TOP.Top.soc.mem_address[31:0]
+(25)TOP.Top.soc.mem_address[31:0]
+(26)TOP.Top.soc.mem_address[31:0]
+(27)TOP.Top.soc.mem_address[31:0]
+(28)TOP.Top.soc.mem_address[31:0]
+(29)TOP.Top.soc.mem_address[31:0]
+(30)TOP.Top.soc.mem_address[31:0]
+(31)TOP.Top.soc.mem_address[31:0]
+@1401200
+-group_end
 @28
 TOP.Top.soc.mem_address_is_io
 @24
@@ -131,12 +169,49 @@ TOP.Top.soc.io_address[2:0]
 TOP.Top.soc.io_device[7:0]
 @28
 TOP.Top.soc.mem_address_is_ram
-@22
+@c00022
 TOP.Top.soc.mem_rdata[31:0]
+@28
+(0)TOP.Top.soc.mem_rdata[31:0]
+(1)TOP.Top.soc.mem_rdata[31:0]
+(2)TOP.Top.soc.mem_rdata[31:0]
+(3)TOP.Top.soc.mem_rdata[31:0]
+(4)TOP.Top.soc.mem_rdata[31:0]
+(5)TOP.Top.soc.mem_rdata[31:0]
+(6)TOP.Top.soc.mem_rdata[31:0]
+(7)TOP.Top.soc.mem_rdata[31:0]
+(8)TOP.Top.soc.mem_rdata[31:0]
+(9)TOP.Top.soc.mem_rdata[31:0]
+(10)TOP.Top.soc.mem_rdata[31:0]
+(11)TOP.Top.soc.mem_rdata[31:0]
+(12)TOP.Top.soc.mem_rdata[31:0]
+(13)TOP.Top.soc.mem_rdata[31:0]
+(14)TOP.Top.soc.mem_rdata[31:0]
+(15)TOP.Top.soc.mem_rdata[31:0]
+(16)TOP.Top.soc.mem_rdata[31:0]
+(17)TOP.Top.soc.mem_rdata[31:0]
+(18)TOP.Top.soc.mem_rdata[31:0]
+(19)TOP.Top.soc.mem_rdata[31:0]
+(20)TOP.Top.soc.mem_rdata[31:0]
+(21)TOP.Top.soc.mem_rdata[31:0]
+(22)TOP.Top.soc.mem_rdata[31:0]
+(23)TOP.Top.soc.mem_rdata[31:0]
+(24)TOP.Top.soc.mem_rdata[31:0]
+(25)TOP.Top.soc.mem_rdata[31:0]
+(26)TOP.Top.soc.mem_rdata[31:0]
+(27)TOP.Top.soc.mem_rdata[31:0]
+(28)TOP.Top.soc.mem_rdata[31:0]
+(29)TOP.Top.soc.mem_rdata[31:0]
+(30)TOP.Top.soc.mem_rdata[31:0]
+(31)TOP.Top.soc.mem_rdata[31:0]
+@1401200
+-group_end
+@22
 TOP.Top.soc.mem_wdata[31:0]
 @28
 TOP.Top.soc.port_a_wr
 @c00022
+[color] 2
 TOP.Top.soc.port_a[7:0]
 @28
 (0)TOP.Top.soc.port_a[7:0]
@@ -154,9 +229,9 @@ TOP.Top.soc.uart_cs
 TOP.Top.soc.uart_wr
 @22
 TOP.Top.soc.uart_in_data[7:0]
-@28
 [color] 7
 TOP.Top.soc.uart_out_data[7:0]
+@28
 TOP.Top.soc.uart_rx_in
 TOP.Top.soc.uart_tx_out
 @200
@@ -187,16 +262,8 @@ TOP.Top.soc.uart_comp.addr[2:0]
 TOP.Top.soc.uart_comp.in_data[7:0]
 TOP.Top.soc.uart_comp.byte_in[7:0]
 @28
-TOP.Top.soc.uart_comp.tx_en
-TOP.Top.soc.uart_comp.tx_buff_wr
+TOP.Top.soc.uart_comp.rx_complete
 @22
-[color] 3
-TOP.Top.soc.uart_comp.tx_buffer[7:0]
-@28
-TOP.Top.soc.uart_comp.tx_complete
-@200
--UARTTx
-@28
-TOP.Top.soc.uart_comp.uart_tx.tx_out
+TOP.Top.soc.uart_comp.rx_buffer[7:0]
 [pattern_trace] 1
 [pattern_trace] 0

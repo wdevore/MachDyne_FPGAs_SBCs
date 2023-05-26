@@ -54,6 +54,15 @@ assign PMOD_A8  =  port_a[2];
 assign PMOD_A9  =  port_a[1];
 assign PMOD_A10 =  port_a[0];
 
+// assign PMOD_A1  =  debug[7];
+// assign PMOD_A2  =  debug[6];
+// assign PMOD_A3  =  debug[5];
+// assign PMOD_A4  =  debug[4];
+// assign PMOD_A7  =  debug[3];
+// assign PMOD_A8  =  debug[2];
+// assign PMOD_A9  =  debug[1];
+// assign PMOD_A10 =  debug[0];
+
 // assign PMOD_B1  =  port_b[7];
 // assign PMOD_B2  =  port_b[6];
 // assign PMOD_B3  =  port_b[5];
@@ -74,6 +83,8 @@ logic port_lb;
 
 logic halt;
 
+logic [7:0] debug;
+
 SoC soc(
 	.clk_48mhz(CLK_48),
 	.manualReset(~PMOD_B1),	// Invert because button is Active Low but manual is Active High
@@ -83,8 +94,9 @@ SoC soc(
 	.port_a(port_a),
 	.port_lr(port_lr),
 	.port_lg(port_lg),
-	.port_lb(port_lb)
+	.port_lb(port_lb),
 	// .port_b(port_b)
+	.debug(debug)
 );
 
 endmodule

@@ -25,13 +25,28 @@ func main() {
 	// rxBuf := make([]byte, 4)
 
 	fmt.Println("Running...")
+	// Scan incomming bytes for Null. The monitor will send a Null
+	// when it completes
 	// for i := 0; i < 4; i++ {
 	// 	buf := fetchByte(port)
 	// 	rxBuf = append(rxBuf, buf)
 	// }
 	// fmt.Println("Got:", string(rxBuf))
 
-	uartSend(0x30, port)
+	// uartSend(0x37, port)
+	// uartSend(0x0d, port)
+	uartSend(0x04, port) // End of Transmission (EoT) = exit
+
+	// uartSend(0x31, port)
+	// time.Sleep(time.Millisecond)
+	// uartSend(0x32, port)
+	// time.Sleep(time.Millisecond)
+	// uartSend(0x33, port)
+	// time.Sleep(time.Millisecond)
+	// uartSend(0x0D, port)
+	// time.Sleep(time.Millisecond)
+	// uartSend(0x0A, port)
+	// time.Sleep(time.Millisecond)
 
 	// for i := 97; i < 97+10; i++ {
 	// uartSend(byte(i), port)

@@ -131,8 +131,17 @@ assign port_a_wr = mem_address_is_io & (io_device == IO_PORT_A);
 
 always_ff @(posedge clk) begin
 	if (port_a_wr) begin
-		// Write lower 8 bits to port A
-		port_a <= mem_wdata[7:0];
+		// Write 8 bits to port A
+		if (mem_wmask[0])
+			port_a = mem_wdata[7:0];
+		else if (mem_wmask[1])
+			port_a = mem_wdata[15:8];
+		else if (mem_wmask[2])
+			port_a = mem_wdata[23:16];
+		else if (mem_wmask[3])
+			port_a = mem_wdata[31:24];
+		else
+			port_a <= mem_wdata[7:0];
 	end
 end
 
@@ -197,7 +206,7 @@ always_comb begin
 	// Even though the UART component is 8bits it still must be
 	// presented to Femto as 32bits and the byte must be positioned
 	// in the correct byte location such that Femto's LOAD_byte
-	// selects the byte based on the lower 2bits of the address.
+	// selects it based on the lower 2bits of the address.
 	if (uart_cs) begin
 		if (uart_addr[1:0] == 2'b00)
 			io_rdata = {{24{1'b0}}, uart_out_data};

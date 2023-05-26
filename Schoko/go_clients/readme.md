@@ -1,5 +1,6 @@
 # Description
 - Basic is a simple read/write test during the earlier stages of the monitor.
+- Monitor is a bootstrap program for interacting with the hardware at a basic level.
 
 # Links
 - https://pkg.go.dev/go.bug.st/serial
