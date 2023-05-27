@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.104 (w)1999-2020 BSI
-[*] Fri May 19 02:55:26 2023
+[*] Fri May 26 20:47:51 2023
 [*]
 [dumpfile] "/media/RAMDisk/waveform.vcd"
-[dumpfile_mtime] "Fri May 19 02:54:49 2023"
-[dumpfile_size] 32863741
+[dumpfile_mtime] "Fri May 26 20:11:34 2023"
+[dumpfile_size] 23824876
 [savefile] "/media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Schoko/projects/SoC/soc_phase1a/simulation/waveform.gtkw"
-[timestart] 8469
+[timestart] 70
 [size] 2634 2019
 [pos] 1 93
-*-2.470293 8475 120 240 8424 8496 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-2.470293 93 120 240 8424 8496 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] TOP.
 [treeopen] TOP.Top.
 [treeopen] TOP.Top.soc.
@@ -124,7 +124,8 @@ TOP.Top.soc.state[4:0]
 TOP.Top.soc.mem_rstrb
 TOP.Top.soc.mem_rbusy
 TOP.Top.soc.mem_wmask[3:0]
-@c00022
+@c00023
+[color] 1
 TOP.Top.soc.mem_address[31:0]
 @28
 (0)TOP.Top.soc.mem_address[31:0]
@@ -159,7 +160,7 @@ TOP.Top.soc.mem_address[31:0]
 (29)TOP.Top.soc.mem_address[31:0]
 (30)TOP.Top.soc.mem_address[31:0]
 (31)TOP.Top.soc.mem_address[31:0]
-@1401200
+@1401201
 -group_end
 @28
 TOP.Top.soc.mem_address_is_io
@@ -168,7 +169,9 @@ TOP.Top.soc.io_address[2:0]
 @22
 TOP.Top.soc.io_device[7:0]
 @28
+[color] 1
 TOP.Top.soc.mem_address_is_ram
+TOP.Top.soc.mem_access
 @c00022
 TOP.Top.soc.mem_rdata[31:0]
 @28
@@ -254,9 +257,8 @@ TOP.Top.soc.uart_comp.rd_strobe
 TOP.Top.soc.uart_comp.rd_busy
 TOP.Top.soc.uart_comp.wr
 TOP.Top.soc.uart_comp.wr_active
-[color] 7
-TOP.Top.soc.uart_comp.out_select
 @24
+[color] 7
 TOP.Top.soc.uart_comp.addr[2:0]
 @22
 TOP.Top.soc.uart_comp.in_data[7:0]

@@ -1,5 +1,5 @@
 // Simply echo the incomming char back to the client
-//
+// and use a Stack
 
 // x1 = byte to send or UART control register (aka scratch reg)
 // x2 = Base address of UART
@@ -40,7 +40,7 @@ WaitForByte: @
 
     jal x5, @PrintChar          // Echo char
 
-    lbu x1, 0x1(x2)             // WHY??????
+    //lbu x1, 0x1(x2)             // WHY??????
 
     addi x7, x0, 0x04           // Check EoT
     beq x1, x7, @Exit           // Exit
@@ -74,7 +74,7 @@ WritePortA: @
 // x5 is the return address
 // ----------------------------------------------------------
 PrintString: @
-    addi x11, x11, -4      // Move stack pointer 0xfff58593
+    addi x11, x11, -4      // Move stack pointer
     sw x1, 0x4(x11)        // Push x1
 
 PrintLoop: @
@@ -84,9 +84,10 @@ PrintLoop: @
     jal x6, @PollTxBusy
     addi x4, x4, 1          // Next char
     jal x0, @PrintLoop
+    
 PSExit: @
     lw x1, 0x4(x11)        // Pop x1
-    addi x11, x11, 4       // Move stack pointer 0xfff58593
+    addi x11, x11, 4       // Move stack pointer
 
     jalr x0, 0x0(x5)        // return
 
@@ -106,7 +107,7 @@ PrintChar: @
 // x6 is the return address
 // ----------------------------------------------------------
 PollTxBusy: @
-    addi x11, x11, -4      // Move stack pointer 0xfff58593
+    addi x11, x11, -4      // Move stack pointer
     sw x1, 0x4(x11)        // Push x1
 
 PollLoop: @
@@ -115,7 +116,7 @@ PollLoop: @
     bne x0, x1, @PollLoop
 
     lw x1, 0x4(x11)         // Pop x1
-    addi x11, x11, 4        // Move stack pointer 0xfff58593
+    addi x11, x11, 4        // Move stack pointer
 
     jalr x0, 0x0(x6)        // return
 
@@ -125,7 +126,7 @@ PollLoop: @
 // x6 is the return address
 // ----------------------------------------------------------
 PollRxAvail: @
-    addi x11, x11, -4      // Move stack pointer 0xfff58593
+    addi x11, x11, -4      // Move stack pointer
     sw x1, 0x4(x11)        // Push x1
 
 PollRxLoop: @
@@ -134,7 +135,7 @@ PollRxLoop: @
     bne x8, x1, @PollRxLoop
 
     lw x1, 0x4(x11)         // Pop x1
-    addi x11, x11, 4        // Move stack pointer 0xfff58593
+    addi x11, x11, 4        // Move stack pointer
 
     jalr x0, 0x0(x6)        // return
 

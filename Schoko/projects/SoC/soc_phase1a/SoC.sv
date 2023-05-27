@@ -60,7 +60,7 @@ assign ram_word_address = mem_address[15:2];
 logic mem_address_is_io;
 assign mem_address_is_io =  mem_address[22] & mem_access;
 logic mem_address_is_ram;
-assign mem_address_is_ram = !mem_address[22] & !mem_access;
+assign mem_address_is_ram = !mem_address[22] & mem_access;
 
 (* no_rw_check *)
 logic [31:0] RAM[0:(NRV_RAM/4)-1];
@@ -141,7 +141,7 @@ always_ff @(posedge clk) begin
 		else if (mem_wmask[3])
 			port_a = mem_wdata[31:24];
 		else
-			port_a <= mem_wdata[7:0];
+			port_a = mem_wdata[7:0];
 	end
 end
 

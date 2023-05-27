@@ -4,57 +4,56 @@
 @00000003 00A00493 addi x9, x0, 0x0A       // Line feed char
 @00000004 3C000593 addi x11, x0, @Stack    // Initialize Stack
 @00000005 14800213 addi x4, x0, @String_OK     // Set pointer to String
-@00000006 058002EF jal x5, @PrintString
+@00000006 054002EF jal x5, @PrintString
 @00000007 00000513 addi x10, x0, 0x00          // Clear port A
-@00000008 048002EF jal x5, @WritePortA
+@00000008 044002EF jal x5, @WritePortA
 @00000009 0A40036F jal x6, @PollRxAvail
 @0000000A 00114083 lbu x1, 0x1(x2)             // Read Rx reg at offset 0x01
 @0000000B 00008513 addi x10, x1, 0x0
-@0000000C 038002EF jal x5, @WritePortA
+@0000000C 034002EF jal x5, @WritePortA
 @0000000D 068002EF jal x5, @PrintChar          // Echo char
-@0000000E 00114083 lbu x1, 0x1(x2)             // WHY??????
-@0000000F 00400393 addi x7, x0, 0x04           // Check EoT
-@00000010 00708E63 beq x1, x7, @Exit           // Exit
-@00000011 00D00393 addi x7, x0, 0x0D           // Check return char = 0x0D
-@00000012 00709863 bne x1, x7, @Cont           // Continue
-@00000013 00A00513 addi x10, x0, 0x0A          // Send line-feed
-@00000014 00A10123 sb x10, 0x2(x2)
-@00000015 0540036F jal x6, @PollTxBusy
-@00000016 FCDFF06F jal x0, @WaitForByte        // Loop
-@00000017 15000213 addi x4, x0, @String_Bye
-@00000018 010002EF jal x5, @PrintString
-@00000019 00100073 ebreak
-@0000001A 00A18023 sb x10, 0x0(x3)
-@0000001B 00028067 jalr x0, 0x0(x5)        // return
-@0000001C FFC58593 addi x11, x11, -4      // Move stack pointer 0xfff58593
-@0000001D 0015A223 sw x1, 0x4(x11)        // Push x1
-@0000001E 00024083 lbu x1, 0x0(x4)         // Load x1 to what x4 is pointing at
-@0000001F 00008A63 beq x1, x0, @PSExit     // Is x1 a Null char
-@00000020 00110123 sb x1, 0x2(x2)          // Send
-@00000021 0240036F jal x6, @PollTxBusy
-@00000022 00120213 addi x4, x4, 1          // Next char
-@00000023 FEDFF06F jal x0, @PrintLoop
+@0000000E 00400393 addi x7, x0, 0x04           // Check EoT
+@0000000F 00708E63 beq x1, x7, @Exit           // Exit
+@00000010 00D00393 addi x7, x0, 0x0D           // Check return char = 0x0D
+@00000011 00709863 bne x1, x7, @Cont           // Continue
+@00000012 00A00513 addi x10, x0, 0x0A          // Send line-feed
+@00000013 00A10123 sb x10, 0x2(x2)
+@00000014 0580036F jal x6, @PollTxBusy
+@00000015 FD1FF06F jal x0, @WaitForByte        // Loop
+@00000016 15000213 addi x4, x0, @String_Bye
+@00000017 010002EF jal x5, @PrintString
+@00000018 00100073 ebreak
+@00000019 00A18023 sb x10, 0x0(x3)
+@0000001A 00028067 jalr x0, 0x0(x5)        // return
+@0000001B FFC58593 addi x11, x11, -4      // Move stack pointer
+@0000001C 0015A223 sw x1, 0x4(x11)        // Push x1
+@0000001D 00024083 lbu x1, 0x0(x4)         // Load x1 to what x4 is pointing at
+@0000001E 00008C63 beq x1, x0, @PSExit     // Is x1 a Null char
+@0000001F 00110123 sb x1, 0x2(x2)          // Send
+@00000020 0280036F jal x6, @PollTxBusy
+@00000021 00120213 addi x4, x4, 1          // Next char
+@00000022 FEDFF06F jal x0, @PrintLoop
 @00000024 0045A083 lw x1, 0x4(x11)        // Pop x1
-@00000025 00458593 addi x11, x11, 4       // Move stack pointer 0xfff58593
+@00000025 00458593 addi x11, x11, 4       // Move stack pointer
 @00000026 00028067 jalr x0, 0x0(x5)        // return
 @00000027 00110123 sb x1, 0x2(x2)          // Send by storing in Rx buffer
 @00000028 0080036F jal x6, @PollTxBusy
 @00000029 00028067 jalr x0, 0x0(x5)        // return
-@0000002A FFC58593 addi x11, x11, -4      // Move stack pointer 0xfff58593
+@0000002A FFC58593 addi x11, x11, -4      // Move stack pointer
 @0000002B 0015A223 sw x1, 0x4(x11)        // Push x1
 @0000002C 00014083 lbu x1, 0x0(x2)         // Load UART Control reg
 @0000002D 0020F093 andi x1, x1, 0x02       // Mask = 00000010
 @0000002E FE101CE3 bne x0, x1, @PollLoop
 @0000002F 0045A083 lw x1, 0x4(x11)         // Pop x1
-@00000030 00458593 addi x11, x11, 4        // Move stack pointer 0xfff58593
+@00000030 00458593 addi x11, x11, 4        // Move stack pointer
 @00000031 00030067 jalr x0, 0x0(x6)        // return
-@00000032 FFC58593 addi x11, x11, -4      // Move stack pointer 0xfff58593
+@00000032 FFC58593 addi x11, x11, -4      // Move stack pointer
 @00000033 0015A223 sw x1, 0x4(x11)        // Push x1
 @00000034 00014083 lbu x1, 0x0(x2)         // Read Control reg at offset 0x0
 @00000035 0080F0B3 and x1, x1, x8          // Mask = 00000100
 @00000036 FE141CE3 bne x8, x1, @PollRxLoop
 @00000037 0045A083 lw x1, 0x4(x11)         // Pop x1
-@00000038 00458593 addi x11, x11, 4        // Move stack pointer 0xfff58593
+@00000038 00458593 addi x11, x11, 4        // Move stack pointer
 @00000039 00030067 jalr x0, 0x0(x6)        // return
 @00000050 00400000 d: 00400000    // Base address of Port A
 @00000051 00400100 d: 00400100    // Base address of UART IO

@@ -33,7 +33,7 @@ func main() {
 	// }
 	// fmt.Println("Got:", string(rxBuf))
 
-	// uartSend(0x37, port)
+	// uartSend(0x39, port)
 	// uartSend(0x0d, port)
 	uartSend(0x04, port) // End of Transmission (EoT) = exit
 
