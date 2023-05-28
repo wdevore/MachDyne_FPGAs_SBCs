@@ -3,11 +3,16 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
+	"strconv"
+	"strings"
 
 	"go.bug.st/serial"
 )
 
 func main() {
+	args := os.Args[1:]
+
 	// ---------------------------------------------------------
 	// UART port
 	// ---------------------------------------------------------
@@ -33,9 +38,14 @@ func main() {
 	// }
 	// fmt.Println("Got:", string(rxBuf))
 
-	// uartSend(0x39, port)
+	byteToSend, err := StringHexToInt(args[0])
+	if err != nil {
+		fmt.Println("can't convert string to hex")
+		log.Fatal(err)
+	}
+	uartSend(byte(byteToSend), port)
 	// uartSend(0x0d, port)
-	uartSend(0x04, port) // End of Transmission (EoT) = exit
+	// uartSend(0x04, port) // End of Transmission (EoT) = exit
 
 	// uartSend(0x31, port)
 	// time.Sleep(time.Millisecond)
@@ -90,4 +100,14 @@ func uartSend(data byte, port serial.Port) {
 		fmt.Println("UART port write error")
 		log.Fatal(err)
 	}
+}
+
+func StringHexToInt(hex string) (value int64, err error) {
+	hex = strings.Replace(hex, "0x", "", 1)
+
+	value, err = strconv.ParseInt(hex, 16, 64)
+	if err != nil {
+		return 0, err
+	}
+	return value, nil
 }

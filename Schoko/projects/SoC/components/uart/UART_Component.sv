@@ -17,8 +17,8 @@ module UART_Component
     input  logic rd_strobe,         // Pulses at the start of a Read
     output logic rd_busy,           // Active High while UART is busy accessing.
     input  logic wr,                // Active Low
-    input  logic rx_in,             // Incoming bits
-    output logic tx_out,            // Outgoing bits
+    input  logic rx_in,             // Incoming bits (Device world)
+    output logic tx_out,            // Outgoing bits (Device world)
     input  logic [2:0] addr,        // Address: controls, buffer, key-code
     output logic [7:0] out_data,    // Ouput data port
     input  logic [7:0] in_data,     // Input data port (routed to DeMux)
@@ -37,8 +37,6 @@ localparam DATA_WIDTH = 8;
 // ------------------------------------------------------------------
 logic wr_active;
 assign wr_active = cs | wr; // = inverted inputs Nand gate = ~(~cs & ~wr) (Active low)
-// logic rd_active;
-// assign rd_active = cs | rd;
 
 // ------------------------------------------------------------------
 // Control N-bits (combined at Addres 0x00)
@@ -160,6 +158,13 @@ always_comb begin
             next_state = UADeviceIdle;
         end
 
+        UADeviceIdle: begin
+            next_state = UADeviceIdle;
+            if (~cs & rd_strobe) begin
+                next_state = UAReadBegin;
+            end
+        end
+
         // #### __---__---__---__---__---__---__---__---__---__---__--- ####
         // Read
         // #### __---__---__---__---__---__---__---__---__---__---__--- ####
@@ -169,13 +174,6 @@ always_comb begin
 
         UAReadEnd: begin
             next_state = UADeviceIdle;
-        end
-
-        UADeviceIdle: begin
-            next_state = UADeviceIdle;
-            if (~cs & rd_strobe) begin
-                next_state = UAReadBegin;
-            end
         end
 
         default: ;

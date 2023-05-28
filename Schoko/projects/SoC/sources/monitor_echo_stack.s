@@ -9,7 +9,6 @@
 // x6 = return address of sub-subroutines
 // x7 = Data to scan
 // x8 = Scratch
-// x9 = Scratch
 // x10 = Scratch
 // x11 = Stack
 
@@ -20,7 +19,6 @@ Main: @
     lw x3, @Data(x0)        // Port A base
     lw x2, @Data+1(x0)      // UART base
     addi x8, x0, 0x04       // Load scratch Rx-Byte-Available mask
-    addi x9, x0, 0x0A       // Line feed char
     addi x11, x0, @Stack    // Initialize Stack
 
     // Boot by sending "Ok"
@@ -38,9 +36,7 @@ WaitForByte: @
     addi x10, x1, 0x0
     jal x5, @WritePortA
 
-    jal x5, @PrintChar          // Echo char
-
-    //lbu x1, 0x1(x2)             // WHY??????
+    jal x5, @PrintChar          // Echo char to Terminal
 
     addi x7, x0, 0x04           // Check EoT
     beq x1, x7, @Exit           // Exit
