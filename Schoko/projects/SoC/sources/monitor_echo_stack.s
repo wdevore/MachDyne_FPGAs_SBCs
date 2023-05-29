@@ -93,7 +93,7 @@ PSExit: @
 // x5 is the return address
 // ----------------------------------------------------------
 PrintChar: @
-    sb x1, 0x2(x2)          // Send by storing in Rx buffer
+    sb x1, 0x2(x2)          // Send by storing in Tx buffer
     jal x6, @PollTxBusy
     jalr x0, 0x0(x5)        // return
 
