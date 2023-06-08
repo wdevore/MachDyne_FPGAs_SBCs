@@ -60,7 +60,7 @@ assign ram_word_address = mem_address[15:2];
 logic mem_address_is_io;
 assign mem_address_is_io =  mem_address[22] & mem_access;
 logic mem_address_is_ram;
-assign mem_address_is_ram = !mem_address[22] & !mem_access;
+assign mem_address_is_ram = !mem_address[22] & mem_access;
 
 (* no_rw_check *)
 logic [31:0] RAM[0:(NRV_RAM/4)-1];
@@ -131,8 +131,17 @@ assign port_a_wr = mem_address_is_io & (io_device == IO_PORT_A);
 
 always_ff @(posedge clk) begin
 	if (port_a_wr) begin
-		// Write lower 8 bits to port A
-		port_a <= mem_wdata[7:0];
+		// Write 8 bits to port A
+		if (mem_wmask[0])
+			port_a = mem_wdata[7:0];
+		else if (mem_wmask[1])
+			port_a = mem_wdata[15:8];
+		else if (mem_wmask[2])
+			port_a = mem_wdata[23:16];
+		else if (mem_wmask[3])
+			port_a = mem_wdata[31:24];
+		else
+			port_a = mem_wdata[7:0];
 	end
 end
 

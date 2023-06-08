@@ -63,6 +63,7 @@ transport select jtag
 ```
 
 ## lfe5u-45f.cfg:
+The 45F has ~60K words.
 
 ```
 jtag newtap ecp5 tap -irlen 8 -expected-id 0x41112043 -irmask 0xFF -ircapture 0x1
