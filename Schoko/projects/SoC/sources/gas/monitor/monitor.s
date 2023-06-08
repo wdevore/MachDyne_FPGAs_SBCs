@@ -70,7 +70,7 @@ PrintString:
     beq t0, zero, PSExit        # Is t0 a Null char
     sb t0, UART_TX_REG(s3)      # Send
     jal t1, PollTxBusy
-    addi t0, t0, 1              # Next char
+    addi a0, a0, 1              # Next char
     j PrintString
 
 PSExit:
@@ -84,10 +84,10 @@ PollTxBusy:
     addi sp, sp, -4             # Move stack pointer
     sw t0, 0x4(sp)              # Push
 
-PollLoop:
+1:
     lbu t0, UART_CTRL_REG(s3)   # Read UART Control reg
     andi t0, t0, 0x02           # Mask = 00000010
-    bne zero, t0, PollLoop
+    bne zero, t0, 1b            # Loop
 
     lw t0, 4(sp)                # Pop
     addi sp, sp, 4              # Move stack pointer
@@ -103,10 +103,10 @@ PollRxAvail:
     sw t0, 4(sp)                # Push
     li t1, 0x04                 # Rx-Byte-Available mask
 
-PollRxLoop:
+1:
     lbu t0, UART_CTRL_REG(s3)   # Read Control reg at offset 0x0
     and t0, t0, t1              # Mask = 00000100
-    bne t1, t0, PollRxLoop
+    bne t1, t0, 1b              # Loop
 
     lw t0, 0x4(sp)              # Pop
     addi sp, sp, 4              # Move stack pointer
