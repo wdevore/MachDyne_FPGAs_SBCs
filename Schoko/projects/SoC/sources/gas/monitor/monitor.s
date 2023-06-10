@@ -3,14 +3,28 @@
 .set KEY_BUFFER_SIZE, 32
 .set STACK_SIZE, 256
 
+# **__**__**__**__**__**__**__**__**__**__**__**__**__**__
+# Port A
+# **__**__**__**__**__**__**__**__**__**__**__**__**__**__
 .set IO_PORT_A_BASE, 0x00400000
-.set IO_UART_BASE, 0x00400100
-
 .set PORT_A_REG, 0
 
+# **__**__**__**__**__**__**__**__**__**__**__**__**__**__
+# UART
+# **__**__**__**__**__**__**__**__**__**__**__**__**__**__
+.set IO_UART_BASE, 0x00400100
 .set UART_CTRL_REG, 0
 .set UART_RX_REG, 1
 .set UART_TX_REG, 2
+.set MASK_CTL_RX_AVAL, 0b00000100
+.set MASK_CTL_TX_BUSY, 0b00000010
+
+# **__**__**__**__**__**__**__**__**__**__**__**__**__**__
+# Ascii
+# **__**__**__**__**__**__**__**__**__**__**__**__**__**__
+.set ASCII_EoT, 0x04        # End of transmission
+.set ASCII_CR, 0x0D         # Carriage return
+.set ASCII_LF, 0x0A         # Line feed
 
 .section .text
 .align 2
@@ -22,94 +36,66 @@
 _start:
     la s2, Port_A_base
     la s3, UART_base
-    la sp, stack                # Initialize Stack
+    la sp, stack_bottom            # Initialize Stack
 
     # Boot by sending "Ok"
     la a0, string_Ok            # Set pointer to String
-    j PrintString
+    jal PrintString
 
     # Clear port A
-    addi a0, zero, 0
-    j WritePortA
+    li a0,0
+    jal WritePortA
 
     # Wait for an incomming byte
 WaitForByte:
-    j PollRxAvail
-    lbu t0, UART_RX_REG(s3)     # Read Rx reg
+    jal PollRxAvail
 
-    addi a0, t0, 0
-    j WritePortA
+    lbu t0, UART_RX_REG(s3)     # Access byte just received
 
-    j PrintChar                 # Echo char to Terminal
+    mv a0, t0                   # Set argument for Jal(s)
+    jal WritePortA              # Echo to port A
+    jal PrintChar               # Echo char to Terminal
 
-    addi t0, zero, 0x04         # Check EoT
+    li t0, ASCII_EoT            # Check EoT
     beq a0, t0, Exit            # Exit
 
-    addi t0, zero, 0x0D         # Check return char = 0x0D
-    bne a0, t0, Cont            # Continue
+    li t0, ASCII_CR             # Check CR char
+    bne a0, t0, 1f              # Continue
 
-    addi t0, zero, 0x0A         # Send line-feed
+    li t0, ASCII_LF             # Send line-feed
     sb t0, UART_TX_REG(s3)
-    j PollTxBusy
+    jal PollTxBusy
 
-Cont:
+1:
     j WaitForByte               # Loop
 
 Exit:
     la a0, string_Bye
-    j PrintString
+    jal PrintString
     ebreak
-
-
-# ---------------------------------------------
-# Print a Null terminated String
-# a0 points to start of String
-# ---------------------------------------------
-PrintString:
-    lbu t0, 0(a0)               # Load t0 to what a0 is pointing at
-    beq t0, zero, PSExit        # Is t0 a Null char
-    sb t0, UART_TX_REG(s3)      # Send
-    jal t1, PollTxBusy
-    addi a0, a0, 1              # Next char
-    j PrintString
-
-PSExit:
-    ret
 
 # ---------------------------------------------
 # Wait for the Tx busy bit to Clear
-# t1 is the return address
 # ---------------------------------------------
 PollTxBusy:
-    addi sp, sp, -4             # Move stack pointer
-    sw t0, 0x4(sp)              # Push
+    lbu t0, UART_CTRL_REG(s3)       # Read UART Control reg
+    andi t0, t0, MASK_CTL_TX_BUSY   # Mask
+    bne zero, t0, PollTxBusy        # Loop
 
-1:
-    lbu t0, UART_CTRL_REG(s3)   # Read UART Control reg
-    andi t0, t0, 0x02           # Mask = 00000010
-    bne zero, t0, 1b            # Loop
-
-    lw t0, 4(sp)                # Pop
-    addi sp, sp, 4              # Move stack pointer
-
-    jalr x0, 0(t1)              # return
+    ret
 
 # ----------------------------------------------------------
 # Wait for the Rx byte available bit to Set when a byte
 # has arrived.
 # ----------------------------------------------------------
 PollRxAvail:
-    addi sp, sp, -4             # Move stack pointer
-    sw t0, 4(sp)                # Push
-    li t1, 0x04                 # Rx-Byte-Available mask
+    li t1, MASK_CTL_RX_AVAL     # Rx-Byte-Available mask
 
 1:
-    lbu t0, UART_CTRL_REG(s3)   # Read Control reg at offset 0x0
-    and t0, t0, t1              # Mask = 00000100
+    lbu t0, UART_CTRL_REG(s3)   # Read UART Control reg
+    and t0, t0, t1              # Apply Mask
     bne t1, t0, 1b              # Loop
 
-    lw t0, 0x4(sp)              # Pop
-    addi sp, sp, 4              # Move stack pointer
     ret
 
 # ---------------------------------------------
@@ -117,6 +103,32 @@ PollRxAvail:
 # ---------------------------------------------
 WritePortA:
     sb a0, PORT_A_REG(s2)
+
+    ret
+
+# ---------------------------------------------
+# Print a Null terminated String
+# a0 points to start of String
+# ---------------------------------------------
+PrintString:
+    addi sp, sp, -4             # Move stack pointer
+    sw ra, 4(sp)                # Push any return address
+
+1:
+    lbu t0, 0(a0)               # Load t0 to what a0 is pointing at
+    beq t0, zero, 1f            # if t0 == Null then exit
+
+    sb t0, UART_TX_REG(s3)      # Send
+
+    jal PollTxBusy              # Call subroutine
+
+    addi a0, a0, 1              # Next char
+    j 1b
+
+1:
+    lw ra, 4(sp)                # Resetore return address
+    addi sp, sp, 4              # Reset stack pointer
+
     ret
 
 # ---------------------------------------------
@@ -124,36 +136,42 @@ WritePortA:
 # a0 = char
 # ---------------------------------------------
 PrintChar:
-    sb a0, UART_TX_REG(s3)      # Send
-    jal t1, PollTxBusy
-    ret
+    addi sp, sp, -4             # Move stack pointer
+    sw ra, 4(sp)                # Push any return address
 
+    sb a0, UART_TX_REG(s3)      # Send
+
+    jal PollTxBusy              # Call subroutine
+
+    lw ra, 4(sp)                # Resetore return address
+    addi sp, sp, 4              # Reset stack pointer
+
+    ret
 
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
 # ROM-ish
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
 .section .rodata
 .balign 4
-string_Ok: .string "Ok\n"
-string_Bye: .string "Bye\n"
 Port_A_base: .word IO_PORT_A_BASE
-UART_base: .word IO_UART_BASE
+UART_base:   .word IO_UART_BASE
+string_Ok:   .string "Ok\n"
+string_Bye:  .string "\nBye\n"
 
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
 # Incoming data buffer
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
-.section .data
-keyBuf:
-.skip KEY_BUFFER_SIZE
+# .section keybuffer, "w", @nobits
+# keyBuf:
+# .skip KEY_BUFFER_SIZE
    
 
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
 # Stack. Grows towards data section
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
-.bss
+.section stack, "w", @nobits
 .balign 4
 .skip STACK_SIZE
-stack:
 
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
 # IO

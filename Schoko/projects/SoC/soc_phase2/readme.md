@@ -130,6 +130,7 @@ Disassembly of section .text:
 - ```arm-none-eabi-objcopy -O ihex -R .eeprom filename.elf filename.hex```
 - [RISC-V from scratch Part 1](https://twilco.github.io/riscv-from-scratch/2019/03/10/riscv-from-scratch-1.html) Part 1 and 2 use qemu to emulate a HiFive board.
 - [RISC-V from scratch Part 2](https://twilco.github.io/riscv-from-scratch/2019/04/27/riscv-from-scratch-2.html) This part covers linker scripts
+- [Section name](https://sourceware.org/binutils/docs/as/Section.html)
 
 riscv64-linux-gnu-ld: supported targets: elf64-littleriscv **elf32-littleriscv** elf32-bigriscv elf64-bigriscv elf64-little elf64-big elf32-little elf32-big srec symbolsrec verilog tekhex binary ihex plugin
 

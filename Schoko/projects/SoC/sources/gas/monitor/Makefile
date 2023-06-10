@@ -26,17 +26,25 @@ assemble:
 	-fno-pic \
 	-o $(BINARY_MODULE).o $(SUB_MODULES_FILES)
 
+# -T linker_script.ld
+
 link: $(BINARY_MODULE).o
 	@echo "############### Linking... ##################"
 	@$(RISCV_TOOLCHAIN)$(LD) \
 	-m elf32lriscv_ilp32 \
 	-o ${BINARY_MODULE} \
 	-O 0 \
+	-nostdlib \
+	-Map monitor.map \
+	-T ${BINARY_MODULE}.ld \
 	${BINARY_MODULE}.o
 
 # You can also dump the .o file such that it isn't relocated 
 # by the linker.
-# --section=.text
+#	--visualize-jumps \
+# 	--disassembler-options=no-aliases \
+#	--section=keybuffer \
+# 	-t \
 
 .PHONY: dump
 dump: ${BINARY_MODULE}
@@ -44,19 +52,21 @@ dump: ${BINARY_MODULE}
 	@$(RISCV_TOOLCHAIN)$(DUMP) \
 	-d \
 	-h \
-	-s \
+	-w \
+	-t \
+	--insn-width=4 \
 	--disassemble-zeroes \
 	--section=.text \
 	--section=.data \
 	--section=.rodata \
-	--section=.bss \
-	--section=.stack \
+	--section=stack \
 	${BINARY_MODULE} \
 	>firmware.out
 
-.PHONY: elf2hex
-elf2hex: firmware.out
+.PHONY: out2hex
+out2hex: firmware.out
 
+.PHONY: clean
 clean:
 	rm	*.o \
 		*.out \

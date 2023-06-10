@@ -1,0 +1,36 @@
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+BRAM             0x00000000         0x00000100         xw
+ROM              0x00000200         0x00000100
+STACK            0x00000300         0x00000100         w
+*default*        0x00000000         0xffffffff
+
+Linker script and memory map
+
+
+.text           0x00000000       0xe4
+ *(.text)
+ .text          0x00000000       0xe4 monitor.o
+                0x00000000                _start
+
+.rodata         0x00000200       0x12
+ *(.rodata)
+ .rodata        0x00000200       0x12 monitor.o
+
+.rela.dyn       0x00000214        0x0
+ .rela.text     0x00000214        0x0 monitor.o
+
+.data           0x00000212        0x0
+ .data          0x00000212        0x0 monitor.o
+
+.bss            0x00000212        0x0
+ .bss           0x00000212        0x0 monitor.o
+
+stack           0x00000300      0x100
+ *(stack)
+ stack          0x00000300      0x100 monitor.o
+                0x00000400                        stack_bottom = .
+LOAD monitor.o
+OUTPUT(monitor elf32-littleriscv)
