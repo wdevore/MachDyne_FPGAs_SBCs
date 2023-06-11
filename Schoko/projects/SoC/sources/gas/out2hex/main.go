@@ -37,7 +37,7 @@ func main() {
 
 	scanner := bufio.NewScanner(dumpfile)
 
-	instrExpr, _ := regexp.Compile(`([0-9A-Fa-f]+)([:\t]+)([0-9A-Fa-f]+)`)
+	instrExpr, _ := regexp.Compile(`([0-9A-Fa-f]+):([\t]+)([0-9A-Fa-f]+)`)
 
 	firmware, err := os.Create("../monitor/firmware.hex")
 	if err != nil {
