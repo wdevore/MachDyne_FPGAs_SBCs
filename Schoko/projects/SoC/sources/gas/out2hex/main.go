@@ -92,19 +92,3 @@ func StringHexToInt(hex string) (value int64, err error) {
 func IntToHexString(value int64) string {
 	return fmt.Sprintf("%08X", value)
 }
-
-func matchEntryPoint(scanner *bufio.Scanner, expr *regexp.Regexp) (value string, isMatch bool, err error) {
-	for scanner.Scan() {
-		line := scanner.Text()
-		if line == "" {
-			continue
-		}
-
-		fields := expr.FindStringSubmatch(line)
-		if len(fields) > 0 {
-			return fields[1], true, nil
-		}
-	}
-
-	return "", false, nil
-}
