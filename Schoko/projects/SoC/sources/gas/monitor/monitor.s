@@ -13,9 +13,9 @@
 # UART
 # **__**__**__**__**__**__**__**__**__**__**__**__**__**__
 .set IO_UART_BASE, 0x00400100
-.set UART_CTRL_REG, 0
-.set UART_RX_REG, 1
-.set UART_TX_REG, 2
+.set UART_CTRL_REG_ADDR, 0
+.set UART_RX_REG_ADDR, 1
+.set UART_TX_REG_ADDR, 2
 .set MASK_CTL_RX_AVAL, 0b00000100
 .set MASK_CTL_TX_BUSY, 0b00000010
 
@@ -23,8 +23,8 @@
 # Ascii
 # **__**__**__**__**__**__**__**__**__**__**__**__**__**__
 .set ASCII_EoT, 0x04        # End of transmission
-.set ASCII_CR, 0x0D         # Carriage return
-.set ASCII_LF, 0x0A         # Line feed
+.set ASCII_CR, '\r'         # Carriage return
+.set ASCII_LF, '\n'         # Line feed
 
 .section .text
 .align 2
@@ -50,7 +50,7 @@ _start:
 WaitForByte:
     jal PollRxAvail
 
-    lbu t0, UART_RX_REG(s3)     # Access byte just received
+    lbu t0, UART_RX_REG_ADDR(s3)     # Access byte just received
 
     mv a0, t0                   # Set argument for Jal(s)
     jal WritePortA              # Echo to port A
@@ -63,7 +63,7 @@ WaitForByte:
     bne a0, t0, 1f              # Continue
 
     li t0, ASCII_LF             # Send line-feed
-    sb t0, UART_TX_REG(s3)
+    sb t0, UART_TX_REG_ADDR(s3)
     jal PollTxBusy
 
 1:
@@ -78,7 +78,7 @@ Exit:
 # Wait for the Tx busy bit to Clear
 # ---------------------------------------------
 PollTxBusy:
-    lbu t0, UART_CTRL_REG(s3)       # Read UART Control reg
+    lbu t0, UART_CTRL_REG_ADDR(s3)  # Read UART Control reg
     andi t0, t0, MASK_CTL_TX_BUSY   # Mask
     bne zero, t0, PollTxBusy        # Loop
 
@@ -92,9 +92,9 @@ PollRxAvail:
     li t1, MASK_CTL_RX_AVAL     # Rx-Byte-Available mask
 
 1:
-    lbu t0, UART_CTRL_REG(s3)   # Read UART Control reg
-    and t0, t0, t1              # Apply Mask
-    bne t1, t0, 1b              # Loop
+    lbu t0, UART_CTRL_REG_ADDR(s3)  # Read UART Control reg
+    and t0, t0, t1                  # Apply Mask
+    bne t1, t0, 1b                  # Loop
 
     ret
 
@@ -118,7 +118,7 @@ PrintString:
     lbu t0, 0(a0)               # Load t0 to what a0 is pointing at
     beq t0, zero, 1f            # if t0 == Null then exit
 
-    sb t0, UART_TX_REG(s3)      # Send
+    sb t0, UART_TX_REG_ADDR(s3) # Send
 
     jal PollTxBusy              # Call subroutine
 
@@ -139,7 +139,7 @@ PrintChar:
     addi sp, sp, -4             # Move stack pointer
     sw ra, 4(sp)                # Push any return address
 
-    sb a0, UART_TX_REG(s3)      # Send
+    sb a0, UART_TX_REG_ADDR(s3) # Send
 
     jal PollTxBusy              # Call subroutine
 
@@ -167,7 +167,7 @@ string_Bye:  .string "\nBye\n"
    
 
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
-# Stack. Grows towards data section
+# Stack. Grows towards rodata section
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
 .section stack, "w", @nobits
 .balign 4

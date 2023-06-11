@@ -37,20 +37,7 @@ func main() {
 
 	scanner := bufio.NewScanner(dumpfile)
 
-	startExpr, _ := regexp.Compile(`([0-9A-Fa-f]+) <_start>:`)
 	instrExpr, _ := regexp.Compile(`([0-9A-Fa-f]+)([:\t]+)([0-9A-Fa-f]+)`)
-
-	// Scan for the entry point
-	v, isMatch, err := matchEntryPoint(scanner, startExpr)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(-1)
-	}
-
-	if !isMatch {
-		fmt.Println(err)
-		os.Exit(-2)
-	}
 
 	firmware, err := os.Create("../monitor/firmware.hex")
 	if err != nil {
@@ -59,9 +46,6 @@ func main() {
 	}
 
 	defer firmware.Close()
-
-	entryPoint, err := StringHexToInt(v)
-	fmt.Println(entryPoint)
 
 	// Start scanning instructions
 	for scanner.Scan() {
@@ -75,25 +59,22 @@ func main() {
 			continue
 		}
 
-		addr := fields[1]
-		location, err := StringHexToInt(addr)
+		dataOrInstruction, err := StringHexToInt(fields[3])
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(-3)
 		}
 
-		location -= entryPoint
-		di := fields[3]
-		dataOrInstruction, err := StringHexToInt(di)
+		intAddr, err := StringHexToInt(fields[1])
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(-3)
 		}
 
-		hexLoc := IntToHexString(location)
 		hexData := IntToHexString(dataOrInstruction)
+		hexAddr := IntToHexString(intAddr)
 
-		outLine := fmt.Sprintf("@%s %s\n", hexLoc, hexData)
+		outLine := fmt.Sprintf("@%s %s\n", hexAddr, hexData)
 		firmware.WriteString(outLine)
 	}
 

@@ -27,6 +27,7 @@ assemble:
 	-o $(BINARY_MODULE).o $(SUB_MODULES_FILES)
 
 # -T linker_script.ld
+# 	-nostdlib \
 
 link: $(BINARY_MODULE).o
 	@echo "############### Linking... ##################"
@@ -34,7 +35,6 @@ link: $(BINARY_MODULE).o
 	-m elf32lriscv_ilp32 \
 	-o ${BINARY_MODULE} \
 	-O 0 \
-	-nostdlib \
 	-Map monitor.map \
 	-T ${BINARY_MODULE}.ld \
 	${BINARY_MODULE}.o
@@ -53,7 +53,6 @@ dump: ${BINARY_MODULE}
 	-d \
 	-h \
 	-w \
-	-t \
 	--insn-width=4 \
 	--disassemble-zeroes \
 	--section=.text \
