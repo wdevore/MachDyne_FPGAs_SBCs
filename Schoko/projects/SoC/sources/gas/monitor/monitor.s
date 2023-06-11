@@ -36,10 +36,10 @@
 _start:
     la s2, Port_A_base
     la s3, UART_base
-    la sp, stack_bottom            # Initialize Stack
+    la sp, stack_bottom             # Initialize Stack
 
     # Boot by sending "Ok"
-    la a0, string_Ok            # Set pointer to String
+    la a0, string_Ok                # Set pointer to String
     jal PrintString
 
     # Clear port A
@@ -50,24 +50,24 @@ _start:
 WaitForByte:
     jal PollRxAvail
 
-    lbu t0, UART_RX_REG_ADDR(s3)     # Access byte just received
+    lbu t0, UART_RX_REG_ADDR(s3)    # Access byte just received
 
-    mv a0, t0                   # Set argument for Jal(s)
-    jal WritePortA              # Echo to port A
-    jal PrintChar               # Echo char to Terminal
+    mv a0, t0                       # Set argument for Jal(s)
+    jal WritePortA                  # Echo to port A
+    jal PrintChar                   # Echo char to Terminal
 
-    li t0, ASCII_EoT            # Check EoT
-    beq a0, t0, Exit            # Exit
+    li t0, ASCII_EoT                # Check EoT
+    beq a0, t0, Exit                # Exit
 
-    li t0, ASCII_CR             # Check CR char
-    bne a0, t0, 1f              # Continue
+    li t0, ASCII_CR                 # Check CR char
+    bne a0, t0, 1f                  # Continue
 
-    li t0, ASCII_LF             # Send line-feed
+    li t0, ASCII_LF                 # Send line-feed
     sb t0, UART_TX_REG_ADDR(s3)
     jal PollTxBusy
 
 1:
-    j WaitForByte               # Loop
+    j WaitForByte                   # Loop
 
 Exit:
     la a0, string_Bye
@@ -126,7 +126,7 @@ PrintString:
     j 1b
 
 1:
-    lw ra, 4(sp)                # Resetore return address
+    lw ra, 4(sp)                # Restore return address
     addi sp, sp, 4              # Reset stack pointer
 
     ret
@@ -143,7 +143,7 @@ PrintChar:
 
     jal PollTxBusy              # Call subroutine
 
-    lw ra, 4(sp)                # Resetore return address
+    lw ra, 4(sp)                # Restore return address
     addi sp, sp, 4              # Reset stack pointer
 
     ret
