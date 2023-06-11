@@ -13,7 +13,7 @@ SUB_MODULES_FILES = \
 BUILD_BIN = /media/RAMDisk
 
 .PHONY: all
-all: assemble link dump
+all: assemble link dump out2hex
 
 assemble:
 	@echo "############### Assembling ##################"
@@ -64,6 +64,9 @@ dump: ${BINARY_MODULE}
 
 .PHONY: out2hex
 out2hex: firmware.out
+	@echo "############### Generating hex firmware... ##################"
+	@cd ../out2hex; \
+	go run . ../monitor/firmware.out
 
 .PHONY: clean
 clean:

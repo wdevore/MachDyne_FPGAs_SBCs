@@ -33,7 +33,7 @@ func main() {
 	// defer the closing of our jsonFile so that we can parse it later on
 	defer dumpfile.Close()
 
-	fmt.Printf("Successfully Opened `%s`\n", fileName)
+	//fmt.Printf("Successfully Opened `%s`\n", fileName)
 
 	scanner := bufio.NewScanner(dumpfile)
 
@@ -77,8 +77,6 @@ func main() {
 		outLine := fmt.Sprintf("@%s %s\n", hexAddr, hexData)
 		firmware.WriteString(outLine)
 	}
-
-	fmt.Println("Good bye")
 }
 
 func StringHexToInt(hex string) (value int64, err error) {
