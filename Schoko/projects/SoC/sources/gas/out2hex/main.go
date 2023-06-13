@@ -22,6 +22,7 @@ func main() {
 	// Search for the "_start" entry point. The address we find
 	// is what we subtract from all instruction addresses.
 	fileName := args[0]
+	outFileName := args[1]
 
 	// Open our jsonFile
 	dumpfile, err := os.Open(fileName)
@@ -39,11 +40,12 @@ func main() {
 
 	instrExpr, _ := regexp.Compile(`([0-9A-Fa-f]+):([\t]+)([0-9A-Fa-f]+)`)
 
-	firmware, err := os.Create("../monitor/firmware.hex")
+	firmware, err := os.Create(outFileName)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(-4)
 	}
+	//fmt.Printf("Successfully Created `%s`\n", fileName)
 
 	defer firmware.Close()
 
@@ -72,7 +74,7 @@ func main() {
 		}
 
 		hexData := IntToHexString(dataOrInstruction)
-		hexAddr := IntToHexString(intAddr)
+		hexAddr := IntToHexString(intAddr / 4)
 
 		outLine := fmt.Sprintf("@%s %s\n", hexAddr, hexData)
 		firmware.WriteString(outLine)

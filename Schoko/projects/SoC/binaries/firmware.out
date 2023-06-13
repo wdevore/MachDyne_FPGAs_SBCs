@@ -35,7 +35,7 @@
 @00000023 0045A083 lw x1, 0x4(x11)        // Pop x1
 @00000024 00458593 addi x11, x11, 4       // Move stack pointer
 @00000025 00028067 jalr x0, 0x0(x5)        // return
-@00000026 00110123 sb x1, 0x2(x2)          // Send by storing in Rx buffer
+@00000026 00110123 sb x1, 0x2(x2)          // Send by storing in Tx buffer
 @00000027 0080036F jal x6, @PollTxBusy
 @00000028 00028067 jalr x0, 0x0(x5)        // return
 @00000029 FFC58593 addi x11, x11, -4      // Move stack pointer

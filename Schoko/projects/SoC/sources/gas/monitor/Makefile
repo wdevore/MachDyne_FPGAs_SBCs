@@ -45,6 +45,7 @@ link: $(BINARY_MODULE).o
 # 	--disassembler-options=no-aliases \
 #	--section=keybuffer \
 # 	-t \
+#   --full-contents \
 
 .PHONY: dump
 dump: ${BINARY_MODULE}
@@ -66,7 +67,7 @@ dump: ${BINARY_MODULE}
 out2hex: firmware.out
 	@echo "############### Generating hex firmware... ##################"
 	@cd ../out2hex; \
-	go run . ../monitor/firmware.out
+	go run . ../monitor/firmware.out ../../../binaries/firmware.hex
 
 .PHONY: clean
 clean:

@@ -14,6 +14,19 @@ Monitor 0.0.1 May 2023
 >
 ```
 
+# Dev setup 
+Open 4 Terminals laid out in quadrants.
+- The upper left runs: ```minicom -b 115200 -o -D /dev/ttyUSB2```
+- The bottome left runs: ```make``` from */media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Schoko/projects/SoC/soc_phase2*
+- The upper right runs the simple Go program to send a byte: ```go run . 0x34``` from */media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Schoko/go_clients/basic*
+
+### Using custom assembler
+- The lower right runs the assembler: ```go run . /media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Schoko/projects/SoC/sources/config.json``` from */media/iposthuman/Nihongo/Hardware/RISC-V/RISC-V-Assemblers/basic*
+
+### Using Gas
+- The lower right runs the assembler: ```make``` from */media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Schoko/projects/SoC/sources/gas/monitor*
+
+
 # Commands
 | Command | Description            | Example  |
 |   ---   |   ---                  |  ---     |
@@ -57,7 +70,7 @@ When compiling don't attempt to use ```j$(nproc)``` as it can cause headers to f
 - [QuantSpack](https://www.youtube.com/watch?v=-thR3Jy-Gew) another vid on linker script. There are several vids.
 - [Russ Ross](https://www.youtube.com/watch?v=5g8M85r8Au8) vid on setting up cross assembly with good info on assembling and linking.
 - [Build run](https://inst.eecs.berkeley.edu/~cs250/fa10/handouts/tut3-riscv.pdf) covers params and dumps
-- [Helloworld](https://smist08.wordpress.com/2019/09/07/risc-v-assembly-language-hello-world/) Simply hello world you can run in [rars](https://github.com/TheThirdOne/rars). Run the *.jar* as ```java -jar rars1_6.jar```. You will need to install a JRE: ```sudo apt install default-jre```.
+- [Helloworld](https://smist08.wordpress.com/2019/09/07/risc-v-assembly-language-hello-world/) Simply hello world you can run in [rars](https://github.com/TheThirdOne/rars). Run the *.jar* as ```java -jar rars1_6.jar``` from the *Downloads* folder. You will need to install a JRE: ```sudo apt install default-jre```.
   - [More Rars](http://ecen323wiki.groups.et.byu.net/labs/lab-04/)
 - [RISC-V options](https://gcc.gnu.org/onlinedocs/gcc/RISC-V-Options.html) parameters
 - [RISC-V options 2](https://sourceware.org/binutils/docs/as/RISC_002dV_002dOptions.html) Example: *-fpic*

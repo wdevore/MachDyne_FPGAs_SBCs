@@ -6,13 +6,11 @@
 # **__**__**__**__**__**__**__**__**__**__**__**__**__**__
 # Port A
 # **__**__**__**__**__**__**__**__**__**__**__**__**__**__
-.set IO_PORT_A_BASE, 0x00400000
 .set PORT_A_REG, 0
 
 # **__**__**__**__**__**__**__**__**__**__**__**__**__**__
 # UART
 # **__**__**__**__**__**__**__**__**__**__**__**__**__**__
-.set IO_UART_BASE, 0x00400100
 .set UART_CTRL_REG_ADDR, 0
 .set UART_RX_REG_ADDR, 1
 .set UART_TX_REG_ADDR, 2
@@ -22,7 +20,7 @@
 # **__**__**__**__**__**__**__**__**__**__**__**__**__**__
 # Ascii
 # **__**__**__**__**__**__**__**__**__**__**__**__**__**__
-.set ASCII_EoT, 0x04        # End of transmission
+.set ASCII_EoT, 0x03        # Control-C = End-of-Text
 .set ASCII_CR, '\r'         # Carriage return
 .set ASCII_LF, '\n'         # Line feed
 
@@ -34,16 +32,18 @@
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
 .global _start
 _start:
-    la s2, Port_A_base
-    la s3, UART_base
-    la sp, stack_bottom             # Initialize Stack
+    lla s2, rom_data
+    lw s2, 0(s2)                    # Port A base
+    lla s3, rom_data
+    lw s3, 4(s3)                    # UART
+    lla sp, stack_bottom            # Initialize Stack
 
     # Boot by sending "Ok"
-    la a0, string_Ok                # Set pointer to String
+    lla a0, string_Ok               # Set pointer to String
     jal PrintString
 
     # Clear port A
-    li a0,0
+    li a0, 0
     jal WritePortA
 
     # Wait for an incomming byte
@@ -70,7 +70,7 @@ WaitForByte:
     j WaitForByte                   # Loop
 
 Exit:
-    la a0, string_Bye
+    lla a0, string_Bye
     jal PrintString
     ebreak
 
@@ -89,7 +89,7 @@ PollTxBusy:
 # has arrived.
 # ----------------------------------------------------------
 PollRxAvail:
-    li t1, MASK_CTL_RX_AVAL     # Rx-Byte-Available mask
+    li t1, MASK_CTL_RX_AVAL         # Rx-Byte-Available mask
 
 1:
     lbu t0, UART_CTRL_REG_ADDR(s3)  # Read UART Control reg
@@ -153,10 +153,12 @@ PrintChar:
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
 .section .rodata
 .balign 4
-Port_A_base: .word IO_PORT_A_BASE
-UART_base:   .word IO_UART_BASE
-string_Ok:   .string "Ok\n"
-string_Bye:  .string "\nBye\n"
+.word 0x00400000                # Port A base
+.word 0x00400100                # UART base
+string_Ok:   .string "Ok\r\n"
+.balign 4
+string_Bye:  .string "\r\nBye\r\n"
+.balign 4
 
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
 # Incoming data buffer
