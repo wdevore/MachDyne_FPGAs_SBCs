@@ -12,26 +12,26 @@ Linker script and memory map
 
 .text           0x00000000       0xe4
  *(.text)
- .text          0x00000000       0xe4 monitor.o
+ .text          0x00000000       0xe4 /media/RAMDisk/monitor.o
                 0x00000000                _start
 
 .rodata         0x00000100       0x18
                 0x00000100                        rom_data = .
  *(.rodata)
- .rodata        0x00000100       0x18 monitor.o
+ .rodata        0x00000100       0x18 /media/RAMDisk/monitor.o
 
 .rela.dyn       0x00000118        0x0
- .rela.text     0x00000118        0x0 monitor.o
+ .rela.text     0x00000118        0x0 /media/RAMDisk/monitor.o
 
 .data           0x00000118        0x0
- .data          0x00000118        0x0 monitor.o
+ .data          0x00000118        0x0 /media/RAMDisk/monitor.o
 
 .bss            0x00000118        0x0
- .bss           0x00000118        0x0 monitor.o
+ .bss           0x00000118        0x0 /media/RAMDisk/monitor.o
 
 stack           0x00000200      0x100
  *(stack)
- stack          0x00000200      0x100 monitor.o
+ stack          0x00000200      0x100 /media/RAMDisk/monitor.o
                 0x00000300                        stack_bottom = .
-LOAD monitor.o
-OUTPUT(monitor elf32-littleriscv)
+LOAD /media/RAMDisk/monitor.o
+OUTPUT(/media/RAMDisk/monitor elf32-littleriscv)

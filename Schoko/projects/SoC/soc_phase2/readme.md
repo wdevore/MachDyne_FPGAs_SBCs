@@ -31,7 +31,10 @@ Open 4 Terminals laid out in quadrants.
 | Command | Description            | Example  |
 |   ---   |   ---                  |  ---     |
 | **r** addr      | read a memory location | >R 03ff |
+| **r** addrS:AddrE      | read a memory range | >R 03ff:0500 |
+| **r** addr;size      | read a memory range | >R 03ff;50 |
 | **w** addr value      | write a memory location | >W 03ff ff |
+| **w** addr value value2 ...      | write several locations | >W 03ff ff 44 36 |
 | **d** start-addr row-count     | dump a memory block  | >D 03ff 50 |
 | **u** | upload a block of bytes | >U |
 
@@ -46,7 +49,6 @@ Monitor 0.0.1 May 2023
 >r 3ff
 ```
 then hitting "return" will cause *4a* to return. It should be displayed
-
 
 
 # Tasks
@@ -164,4 +166,8 @@ It is a binary editor.
 # Terminals
 ```screen /dev/ttyUSB1 115200```  "Ctrl-a \" to exit
 
-```minicom -b 115200 -o -D /dev/ttyUSB2``` Ctrl-a Crtl-z x
+```minicom -b 115200 -o -D /dev/ttyUSB2``` "Ctrl-a Crtl-z x"
+
+## Screen
+- C-a C              (clear)           Clear the screen.
+- C-a \              (quit)            Kill all windows and terminate screen.

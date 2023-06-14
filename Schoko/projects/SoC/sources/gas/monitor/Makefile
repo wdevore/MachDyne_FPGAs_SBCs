@@ -7,7 +7,7 @@ BINARY_MODULE := monitor
 FIRMWARE := firmware
 HEX_FIRMWARE := $(FIRMWARE).hex
 
-SUB_MODULES_FILES = \
+MODULES_FILES = \
 	monitor.s
 
 BUILD_BIN = /media/RAMDisk
@@ -15,7 +15,7 @@ BUILD_BIN = /media/RAMDisk
 .PHONY: all
 all: assemble link dump out2hex
 
-assemble:
+assemble: $(MODULES_FILES)
 	@echo "############### Assembling ##################"
 	@$(RISCV_TOOLCHAIN)$(GAS) \
 	-march=rv32im \
@@ -24,20 +24,20 @@ assemble:
 	-mno-relax \
 	-mno-arch-attr \
 	-fno-pic \
-	-o $(BINARY_MODULE).o $(SUB_MODULES_FILES)
+	-o $(BUILD_BIN)/$(BINARY_MODULE).o $(MODULES_FILES)
 
 # -T linker_script.ld
 # 	-nostdlib \
 
-link: $(BINARY_MODULE).o
+link: $(BUILD_BIN)/$(BINARY_MODULE).o
 	@echo "############### Linking... ##################"
 	@$(RISCV_TOOLCHAIN)$(LD) \
 	-m elf32lriscv_ilp32 \
-	-o ${BINARY_MODULE} \
+	-o $(BUILD_BIN)/$(BINARY_MODULE) \
 	-O 0 \
-	-Map monitor.map \
-	-T ${BINARY_MODULE}.ld \
-	${BINARY_MODULE}.o
+	-Map $(BINARY_MODULE).map \
+	-T $(BINARY_MODULE).ld \
+	$(BUILD_BIN)/$(BINARY_MODULE).o
 
 # You can also dump the .o file such that it isn't relocated 
 # by the linker.
@@ -49,7 +49,7 @@ link: $(BINARY_MODULE).o
 #   --full-contents \
 
 .PHONY: dump
-dump: ${BINARY_MODULE}
+dump: $(BUILD_BIN)/${BINARY_MODULE}
 	@echo "############### Dumping... ##################"
 	@$(RISCV_TOOLCHAIN)$(DUMP) \
 	-d \
@@ -60,20 +60,20 @@ dump: ${BINARY_MODULE}
 	--section=.data \
 	--section=.rodata \
 	--section=stack \
-	${BINARY_MODULE} \
-	>firmware.out
+	$(BUILD_BIN)/$(BINARY_MODULE) \
+	>$(BUILD_BIN)/$(FIRMWARE).out
 
 .PHONY: out2hex
-out2hex: firmware.out
+out2hex: $(BUILD_BIN)/$(FIRMWARE).out
 	@echo "############### Generating hex firmware... ##################"
 	@cd ../out2hex; \
-	go run . ../monitor/firmware.out ../../../binaries/firmware.hex
+	go run . $(BUILD_BIN)/$(FIRMWARE).out ../../../binaries/$(FIRMWARE).hex
 
 .PHONY: clean
 clean:
-	rm	*.o \
-		*.out \
-		${BINARY_MODULE}
+	@rm	$(BUILD_BIN)/*.o \
+		$(BUILD_BIN)/*.out \
+		$(BUILD_BIN)/$(BINARY_MODULE)
 
 learn:
 	@echo $(MAKE_VERSION)

@@ -38,16 +38,16 @@ func main() {
 
 	scanner := bufio.NewScanner(dumpfile)
 
-	instrExpr, _ := regexp.Compile(`([0-9A-Fa-f]+):([\t]+)([0-9A-Fa-f]+)`)
-
 	firmware, err := os.Create(outFileName)
 	if err != nil {
 		fmt.Println(err)
-		os.Exit(-4)
+		os.Exit(-2)
 	}
 	//fmt.Printf("Successfully Created `%s`\n", fileName)
 
 	defer firmware.Close()
+
+	instrExpr, _ := regexp.Compile(`([0-9A-Fa-f]+):([\t]+)([0-9A-Fa-f]+)`)
 
 	// Start scanning instructions
 	for scanner.Scan() {
@@ -70,10 +70,11 @@ func main() {
 		intAddr, err := StringHexToInt(fields[1])
 		if err != nil {
 			fmt.Println(err)
-			os.Exit(-3)
+			os.Exit(-4)
 		}
 
 		hexData := IntToHexString(dataOrInstruction)
+		// Divide by 4 to convert from Byte to Word addressing form
 		hexAddr := IntToHexString(intAddr / 4)
 
 		outLine := fmt.Sprintf("@%s %s\n", hexAddr, hexData)
