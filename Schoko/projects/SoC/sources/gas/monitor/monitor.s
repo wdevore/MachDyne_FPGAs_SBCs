@@ -32,10 +32,9 @@
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
 .global _start
 _start:
-    lla s2, rom_data
-    lw s2, 0(s2)                    # Port A base
-    lla s3, rom_data
-    lw s3, 4(s3)                    # UART
+    lla t0, rom_data
+    lw s2, 0(t0)                    # Port A base
+    lw s3, 4(t0)                    # UART
     lla sp, stack_bottom            # Initialize Stack
 
     # Boot by sending "Ok"
@@ -174,7 +173,3 @@ string_Bye:  .string "\r\nBye\r\n"
 .section stack, "w", @nobits
 .balign 4
 .skip STACK_SIZE
-
-# __++__++__++__++__++__++__++__++__++__++__++__++__++
-# IO
-# __++__++__++__++__++__++__++__++__++__++__++__++__++

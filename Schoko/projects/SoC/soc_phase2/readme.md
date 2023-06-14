@@ -160,3 +160,8 @@ riscv64-linux-gnu-ld: supported emulations: elf64lriscv elf64lriscv_lp64f elf64l
 It is a binary editor.
 - http://www.jemarch.net/poke
 - GDB Dashboard
+
+# Terminals
+```screen /dev/ttyUSB1 115200```  "Ctrl-a \" to exit
+
+```minicom -b 115200 -o -D /dev/ttyUSB2``` Ctrl-a Crtl-z x

@@ -42,6 +42,7 @@ link: $(BINARY_MODULE).o
 # You can also dump the .o file such that it isn't relocated 
 # by the linker.
 #	--visualize-jumps \
+#	--disassemble-zeroes \
 # 	--disassembler-options=no-aliases \
 #	--section=keybuffer \
 # 	-t \
@@ -55,7 +56,6 @@ dump: ${BINARY_MODULE}
 	-h \
 	-w \
 	--insn-width=4 \
-	--disassemble-zeroes \
 	--section=.text \
 	--section=.data \
 	--section=.rodata \
