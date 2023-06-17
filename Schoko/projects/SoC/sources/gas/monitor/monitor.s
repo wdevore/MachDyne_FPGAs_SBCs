@@ -6,11 +6,13 @@
 # **__**__**__**__**__**__**__**__**__**__**__**__**__**__
 # Port A
 # **__**__**__**__**__**__**__**__**__**__**__**__**__**__
+.set PORT_A_OFFSET, 0
 .set PORT_A_REG, 0
 
 # **__**__**__**__**__**__**__**__**__**__**__**__**__**__
 # UART
 # **__**__**__**__**__**__**__**__**__**__**__**__**__**__
+.set UART_OFFSET, 4
 .set UART_CTRL_REG_ADDR, 0
 .set UART_RX_REG_ADDR, 1
 .set UART_TX_REG_ADDR, 2
@@ -33,8 +35,8 @@
 .global _start
 _start:
     lla t0, rom_data
-    lw s2, 0(t0)                    # Port A base
-    lw s3, 4(t0)                    # UART
+    lw s2, PORT_A_OFFSET(t0)        # Port A base
+    lw s3, UART_OFFSET(t0)          # UART
     lla sp, stack_bottom            # Initialize Stack
 
     # Boot by sending "Ok"
@@ -46,27 +48,27 @@ _start:
     jal WritePortA
 
     # Wait for an incomming byte
-WaitForByte:
+ScanInput:
     jal PollRxAvail
 
     lbu t0, UART_RX_REG_ADDR(s3)    # Access byte just received
 
-    mv a0, t0                       # Set argument for Jal(s)
+    mv a0, t0                       # Set argument for WritePortA
     jal WritePortA                  # Echo to port A
     jal PrintChar                   # Echo char to Terminal
 
     li t0, ASCII_EoT                # Check EoT
-    beq a0, t0, Exit                # Exit
+    beq a0, t0, Exit                # Terminate
 
     li t0, ASCII_CR                 # Check CR char
     bne a0, t0, 1f                  # Continue
 
-    li t0, ASCII_LF                 # Send line-feed
+    li t0, ASCII_LF                 # Else Send line-feed
     sb t0, UART_TX_REG_ADDR(s3)
     jal PollTxBusy
 
 1:
-    j WaitForByte                   # Loop
+    j ScanInput                     # Loop (aka Goto)
 
 Exit:
     lla a0, string_Bye
