@@ -22,9 +22,13 @@
 # **__**__**__**__**__**__**__**__**__**__**__**__**__**__
 # Ascii
 # **__**__**__**__**__**__**__**__**__**__**__**__**__**__
-.set ASCII_EoT, 0x03        # Control-C = End-of-Text
-.set ASCII_CR, '\r'         # Carriage return
-.set ASCII_LF, '\n'         # Line feed
+.set ASCII_EoT,         0x03        # Control-C = End-of-Text
+.set ASCII_CR,          '\r'        # Carriage return
+.set ASCII_LF,          '\n'        # Line feed
+.set ASCII_DEL,         0x7F        # [Del] key
+.set ASCII_BACK,        0x08        # Backspace
+.set ASCII_SPC,         0x20        # [Space] char
+.set ASCII_R_SQR_BRAK,  ']'         # Square bracket char
 
 .section .text
 .align 2
@@ -39,41 +43,207 @@ _start:
     lw s3, UART_OFFSET(t0)          # UART
     lla sp, stack_bottom            # Initialize Stack
 
-    # Boot by sending "Ok"
-    lla a0, string_Ok               # Set pointer to String
+    # Boot and send greetings
+    lla a0, string_Greet            # Set pointer to String
     jal PrintString
 
     # Clear port A
     li a0, 0
     jal WritePortA
 
+    # Clear key buffer
+    jal ClearKeyBuffer
+
     # Wait for an incomming byte
 ScanInput:
-    jal PollRxAvail
+    jal PollRxAvail                 # Blocks until byte arrives
 
-    lbu t0, UART_RX_REG_ADDR(s3)    # Access byte just received
+    lbu a0, UART_RX_REG_ADDR(s3)    # Access byte just received
 
-    mv a0, t0                       # Set argument for WritePortA
     jal WritePortA                  # Echo to port A
     jal PrintChar                   # Echo char to Terminal
 
     li t0, ASCII_EoT                # Check EoT
     beq a0, t0, Exit                # Terminate
 
-    li t0, ASCII_CR                 # Check CR char
-    bne a0, t0, 1f                  # Continue
+    # If CR then process buffer
+    jal CheckForCR
+    beq zero, a0, 1f                # a0 == 1 if CR detected
+    jal ProcessBuf
 
-    li t0, ASCII_LF                 # Else Send line-feed
-    sb t0, UART_TX_REG_ADDR(s3)
-    jal PollTxBusy
+    j ScanInput
 
 1:
+    jal CheckForDEL
+
     j ScanInput                     # Loop (aka Goto)
 
 Exit:
     lla a0, string_Bye
     jal PrintString
     ebreak
+
+# ---------------------------------------------
+# Process what was placed into the buffer
+# ---------------------------------------------
+ProcessBuf:
+    addi sp, sp, -4             # Prologe
+    sw ra, 4(sp)
+
+    lla a0, keyBuf
+    jal PrintString
+
+    jal PrintCursor
+
+    jal ClearKeyBuffer
+
+    lw ra, 4(sp)                # Epiloge
+    addi sp, sp, 4
+
+    ret
+
+# ---------------------------------------------
+# Check for Backspace/Delete
+# Moves the cursor back and then print a Space
+# ---------------------------------------------
+CheckForDEL:
+    addi sp, sp, -4             # Prologe
+    sw ra, 4(sp)
+
+    lbu a0, UART_RX_REG_ADDR(s3)    # Access byte just received
+
+    # Update terminal visual only
+    # Is a0 = [Del] key
+    li t0, ASCII_DEL
+    bne a0, t0, 1f
+
+    # First move back "over" the character
+    li a0, ASCII_BACK
+    jal PrintChar
+
+    # Now erase it
+    li a0, ASCII_SPC
+    jal PrintChar
+
+    # Finally position the cursor back over the Space
+    li a0, ASCII_BACK
+    jal PrintChar
+
+    # Now update buffer
+    jal TrimLastKeyBuffer
+
+1:
+    lw ra, 4(sp)                # Epiloge
+    addi sp, sp, 4
+
+    ret
+
+# ---------------------------------------------
+# Check for Carriage return
+# If it isn't CR then place into buffer
+# a0 = key to check
+# a0 = return value
+# ---------------------------------------------
+CheckForCR:
+    addi sp, sp, -4             # Prologe
+    sw ra, 4(sp)
+
+    # Is a0 = CR
+    li t0, ASCII_CR
+    bne a0, t0, 1f              # branch if not CR
+    beq a0, t0, 2f
+
+1:                              # Not CR, append to buffer
+    # Fetch counter offset
+    lla t0, bufOffset
+    lbu t0, 0(t0)               # current index value
+
+    # Place into buffer
+    lla t1, keyBuf
+    add t1, t1, t0              # Move pointer
+    sb a0, 0(t1)                # Store in buffer
+
+    addi t0, t0, 1              # Inc offset and store
+    lla t1, bufOffset
+    sb t0, 0(t1)
+
+    # Signal CR not detected
+    li a0, 0
+
+    j 3f
+
+2:                              # Is CR
+    # Echo a LF back as well
+    li a0, ASCII_LF
+    jal PrintChar
+
+    # Fetch current offset
+    lla t0, bufOffset
+    lbu t0, 0(t0)               # current index value
+
+    # Null terminate key buffer
+    lla t1, keyBuf              # Pointer to buf
+    add t1, t1, t0              # Move pointer to current position
+    sb zero, 0(t1)              # Store Null
+
+    # Signal a CR was detected
+    li a0, 1
+
+3:
+    lw ra, 4(sp)                # Epiloge
+    addi sp, sp, 4
+
+    ret
+
+# ---------------------------------------------
+# Clear key input buffer
+# ---------------------------------------------
+ClearKeyBuffer:
+    # Reset offset to zero
+    lla t0, bufOffset
+    sb zero, 0(t0)
+
+    lla t0, keyBuf
+    li t1, KEY_BUFFER_SIZE
+1:
+    sb zero, 0(t0)
+    addi t0, t0, 1              # Move pointer
+    addi t1, t1, -1             # Dec counter
+    beq zero, t1, 1f
+    j 1b
+
+1:
+    ret
+
+# ---------------------------------------------
+# Trim off the last character in the key buffer.
+# If the offset index is == 0 then just put a Null
+# and return, otherwise, put a Null and dec the offset.
+# offset = 3 = t0
+#    v
+# 0123
+# abcd<-
+#   ^
+# ---------------------------------------------
+TrimLastKeyBuffer:
+    lla t0, bufOffset           # Pointer to offset
+
+    # Is offset == 0?
+    lbu t0, 0(t0)               # t0 = offset value
+    beq zero, t0, 1f
+
+    # Else decrement offset
+    lla t1, bufOffset           # Pointer to offset
+    addi t0, t0, -2             # Dec offset value (char + null)
+    sb t0, 0(t1)                # Save value
+
+1:
+    # Put a Null at the current offset
+    lla t1, keyBuf              # Pointer to key buffer
+    add t1, t1, t0              # Move pointer
+    sb zero, 0(t1)              # zero = Null
+
+    ret
 
 # ---------------------------------------------
 # Wait for the Tx busy bit to Clear
@@ -149,6 +319,48 @@ PrintChar:
 
     ret
 
+PrintCharCrLn:
+    addi sp, sp, -4
+    sw ra, 4(sp)
+
+    sb a0, UART_TX_REG_ADDR(s3) # Send
+    jal PollTxBusy
+
+    li a0, ASCII_CR
+    sb a0, UART_TX_REG_ADDR(s3) # Send
+    jal PollTxBusy
+
+    li a0, ASCII_LF
+    sb a0, UART_TX_REG_ADDR(s3) # Send
+    jal PollTxBusy
+
+    lw ra, 4(sp)
+    addi sp, sp, 4
+
+    ret
+
+# ---------------------------------------------
+# Moves the cursor back to the begining of the line
+# and print the "]" char.
+# ---------------------------------------------
+PrintCursor:
+    addi sp, sp, -4             # Prologe
+    sw ra, 4(sp)
+
+    li a0, ASCII_LF
+    jal PrintChar
+
+    li a0, ASCII_CR
+    jal PrintChar
+
+    li a0, ASCII_R_SQR_BRAK
+    jal PrintChar
+
+    lw ra, 4(sp)                # Epiloge
+    addi sp, sp, 4
+
+    ret
+
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
 # ROM-ish
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
@@ -156,7 +368,7 @@ PrintChar:
 .balign 4
 .word 0x00400000                # Port A base
 .word 0x00400100                # UART base
-string_Ok:   .string "Ok\r\n"
+string_Greet:   .string "\r\nMonitor 0.0.5 Jun 2023\r\n]"
 .balign 4
 string_Bye:  .string "\r\nBye\r\n"
 .balign 4
@@ -164,9 +376,11 @@ string_Bye:  .string "\r\nBye\r\n"
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
 # Incoming data buffer
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
-# .section keybuffer, "w", @nobits
-# keyBuf:
-# .skip KEY_BUFFER_SIZE
+.section keybuffer, "w", @nobits
+bufOffset: .byte 0
+.balign 4
+keyBuf:
+.skip KEY_BUFFER_SIZE
    
 
 # __++__++__++__++__++__++__++__++__++__++__++__++__++

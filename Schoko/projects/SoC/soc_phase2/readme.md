@@ -1,19 +1,6 @@
 # Description
 *Phase 2* integrates GNU Gas assembler for writing a basic Monitor. This does not include a bootloader, just a barebones monitor.
 
-# Requirements
-- Read a memory location
-- Modify a memory location
-- Dump a block of memory
-- Upload a block of memory
-
-# Description
-When the monitor first boots it displays "Monitor 0.0.1 May 2023" and displays a ">". For example:
-```
-Monitor 0.0.1 May 2023
->
-```
-
 # Dev setup 
 Open 4 Terminals laid out in quadrants.
 - The upper left runs: ```minicom -b 115200 -o -D /dev/ttyUSB2```
@@ -26,43 +13,13 @@ Open 4 Terminals laid out in quadrants.
 ### Using Gas
 - The lower right runs the assembler: ```make``` from */media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Schoko/projects/SoC/sources/gas/monitor*
 
-
-# Commands
-| Command | Description            | Example  |
-|   ---   |   ---                  |  ---     |
-| **r** addr      | read a memory location | >R 03ff |
-| **r** addrS:AddrE      | read a memory range | >R 03ff:0500 |
-| **r** addr;size      | read a memory range | >R 03ff;50 |
-| **w** addr value      | write a memory location | >W 03ff ff |
-| **w** addr value value2 ...      | write several locations | >W 03ff ff 44 36 |
-| **d** start-addr row-count     | dump a memory block  | >D 03ff 50 |
-| **u** | upload a block of bytes | >U |
-
-## Command "R"
-The **r** command accepts an Address. It then returns a value that should be displayed along side the command.
-
-For example, entering: ```>r 3ff``` will cause a value to return, for example *4a*. The returned value should be appended: ```>r 3ff 4a```.
-
-In this case entering:
-```
-Monitor 0.0.1 May 2023
->r 3ff
-```
-then hitting "return" will cause *4a* to return. It should be displayed
-
-
-# Tasks
-- [ ] Read a memory location
-- [ ] Modify a memory location
-- [ ] Dump a block of memory
-- [ ] Upload a block of memory
-
 # Gas assembler
 When compiling don't attempt to use ```j$(nproc)``` as it can cause headers to fail to be found.
 
 ```./configure --prefix=/opt/riscv --enable-multilib```
 
 - [Manual 2.40](https://sourceware.org/binutils/docs/as/)
+- [Debian install](https://www.drtuber.com/video/4381194/beautiful-blonde-showing-her-big-boobs-on-cam#) see section 3.1 "Cross compilation/Pre-built toolchains"
 - [ASM manual risc-v](https://github.com/riscv-non-isa/riscv-asm-manual/blob/master/riscv-asm.md) More details on params and meanings (**important**)
 - [John's Basement - Youtube](https://www.youtube.com/watch?v=ODn7vnWOptM) where he covers compiling via gcc on a *.S* file.
 - [Western digital 1-12](https://www.youtube.com/playlist?list=PL6noQ0vZDAdh_aGvqKvxd0brXImHXMuLY)
@@ -78,6 +35,8 @@ When compiling don't attempt to use ```j$(nproc)``` as it can cause headers to f
 - [RISC-V options 2](https://sourceware.org/binutils/docs/as/RISC_002dV_002dOptions.html) Example: *-fpic*
 - [RISC-V options 3](https://gcc.gnu.org/onlinedocs/gcc/gcc-command-options/machine-dependent-options/risc-v-options.html) From GNU org
 - [ASM example.s](http://ix.io/2dyN/gas)
+- [LearnRISC-V HiFive-RevB](https://www.youtube.com/watch?v=Xshh5iPholc) I have the original RevA. Shows setting up a linker script for the board.
+- [](https://www.dynamsoft.com/codepool/riscv-barcode-sdk-qemu-emulator-ubuntu.html) Talks about installing pre-builts and QEMU
 
 ## Options
 ```
@@ -137,15 +96,16 @@ Disassembly of section .text:
 # Linker and scripts
 - [Every thing you wanted to know about linker scripts](https://mcyoung.xyz/2021/06/01/linker-script/) Very good and clear descriptions.
 - [GNU ld](https://sourceware.org/binutils/docs/ld/index.html) Contains section on the linker scripts.
-- Objdump: https://unix.stackexchange.com/questions/421556/get-hex-only-output-from-objdump
-- Use Verilog file IO: http://www.chris.spear.net/pli/fileio.htm
-- elfview: https://github.com/mattfischer/elfview/tree/master/src
-- elf2hex: https://github.com/sifive/elf2hex
-- convert elf 2 hex: https://community.st.com/s/question/0D50X0000AlflsxSQA/how-to-convert-hex-file-to-elf-file
+- [Objdump](https://unix.stackexchange.com/questions/421556/)get-hex-only-output-from-objdump
+- [Use Verilog file IO](http://www.chris.spear.net/pli/fileio.htm)
+- [elfview](https://github.com/mattfischer/elfview/tree/master/src)
+- [elf2hex](https://github.com/sifive/elf2hex)
+- [convert elf 2 hex](https://community.st.com/s/question/0D50X0000AlflsxSQA/) how-to-convert-hex-file-to-elf-file
 - ```arm-none-eabi-objcopy -O ihex -R .eeprom filename.elf filename.hex```
 - [RISC-V from scratch Part 1](https://twilco.github.io/riscv-from-scratch/2019/03/10/riscv-from-scratch-1.html) Part 1 and 2 use qemu to emulate a HiFive board.
 - [RISC-V from scratch Part 2](https://twilco.github.io/riscv-from-scratch/2019/04/27/riscv-from-scratch-2.html) This part covers linker scripts
 - [Section name](https://sourceware.org/binutils/docs/as/Section.html)
+- [Ld Man page](https://manpages.debian.org/testing/binutils-riscv64-linux-gnu/riscv64-linux-gnu-ld.1.en.html)
 
 riscv64-linux-gnu-ld: supported targets: elf64-littleriscv **elf32-littleriscv** elf32-bigriscv elf64-bigriscv elf64-little elf64-big elf32-little elf32-big srec symbolsrec verilog tekhex binary ihex plugin
 
@@ -171,3 +131,10 @@ It is a binary editor.
 ## Screen
 - C-a C              (clear)           Clear the screen.
 - C-a \              (quit)            Kill all windows and terminate screen.
+
+# Misc Links
+- [Makefile tutorial](https://makefiletutorial.com/) Pretty good
+
+# RISC-V Assembler and Runtime Simulator
+- [RISC-V Assembler and Runtime Simulator](https://github.com/TheThirdOne/rars/wiki/Environment-Calls)
+- [ChibiAkumas](https://www.youtube.com/watch?v=bEUMLh2lasE&list=PLp_QNRIYljFqBuOYDFluT66Y7biUH1Dnc&index=2) Shows usage of Rars.

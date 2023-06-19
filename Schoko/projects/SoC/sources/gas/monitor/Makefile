@@ -59,6 +59,7 @@ dump: $(BUILD_BIN)/${BINARY_MODULE}
 	--section=.text \
 	--section=.data \
 	--section=.rodata \
+	--section=keybuffer \
 	--section=stack \
 	$(BUILD_BIN)/$(BINARY_MODULE) \
 	>$(BUILD_BIN)/$(FIRMWARE).out
@@ -75,5 +76,9 @@ clean:
 		$(BUILD_BIN)/*.out \
 		$(BUILD_BIN)/$(BINARY_MODULE)
 
-learn:
-	@echo $(MAKE_VERSION)
+.PHONY: out2verlog
+out2verlog: $(BUILD_BIN)/$(BINARY_MODULE)
+	riscv64-unknown-linux-gnu-objcopy \
+	-O verilog \
+	--verilog-data-width 4 \
+	$(BUILD_BIN)/$(BINARY_MODULE) $(BUILD_BIN)/filename.hex

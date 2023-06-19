@@ -31,7 +31,7 @@ logic locked; // (Active high = locked)
 // ------------------------------------------------------------------
 pll soc_pll (
     .clkin(clk_48mhz),
-	.reset(0),		// It is not proper to reset the PLL after power up
+	.reset(1'b0),		// It is not proper to reset the PLL after power up
     .clkout0(clk),		// ~10MHz
     .locked(locked)		// Active High
 );

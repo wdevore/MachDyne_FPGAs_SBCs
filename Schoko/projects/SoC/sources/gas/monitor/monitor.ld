@@ -3,9 +3,10 @@ ENTRY(_start)
 
 MEMORY
 {
-    BRAM(wx) :ORIGIN =0x00000000,LENGTH =256
-    ROM      :ORIGIN =0x00000100,LENGTH =256
-    STACK(w) :ORIGIN =0x00000200,LENGTH =256
+    BRAM(wx) :ORIGIN =0x00000000,LENGTH =1K
+    ROM      :ORIGIN =0x00000400,LENGTH =256
+    KEYBUFF  :ORIGIN =0x00000500,LENGTH =64
+    STACK(w) :ORIGIN =0x00000600,LENGTH =256
 }
 
 SECTIONS
@@ -18,6 +19,10 @@ SECTIONS
         rom_data = .;
         *(.rodata)
     }> ROM
+
+    keybuffer : {
+        *(keybuffer)
+    }> KEYBUFF
 
     stack : {
         *(stack)
