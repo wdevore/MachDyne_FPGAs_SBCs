@@ -29,6 +29,9 @@
 .set ASCII_BACK,        0x08        # Backspace
 .set ASCII_SPC,         0x20        # [Space] char
 .set ASCII_R_SQR_BRAK,  ']'         # Square bracket char
+.set ASCII_a,           'a'
+.set ASCII_w,           'w'
+.set ASCII_colon,       ':'         # Colon is used to check < '9'
 
 .section .text
 .align 2
@@ -38,14 +41,16 @@
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
 .global _start
 _start:
-    lla t0, rom_data
+    la t0, rom_data
     lw s2, PORT_A_OFFSET(t0)        # Port A base
     lw s3, UART_OFFSET(t0)          # UART
-    lla sp, stack_bottom            # Initialize Stack
+    la sp, stack_bottom             # Initialize Stack
 
     # Boot and send greetings
-    lla a0, string_Greet            # Set pointer to String
+    la a0, string_Greet             # Set pointer to String
     jal PrintString
+
+    jal PrintCursor
 
     # Clear port A
     li a0, 0
@@ -79,7 +84,7 @@ ScanInput:
     j ScanInput                     # Loop (aka Goto)
 
 Exit:
-    lla a0, string_Bye
+    la a0, string_Bye
     jal PrintString
     ebreak
 
@@ -90,8 +95,10 @@ ProcessBuf:
     addi sp, sp, -4             # Prologe
     sw ra, 4(sp)
 
-    lla a0, keyBuf
-    jal PrintString
+    # la a0, keyBuf
+    # jal PrintString
+
+    # jal ProcessWCommand
 
     jal PrintCursor
 
@@ -100,6 +107,41 @@ ProcessBuf:
     lw ra, 4(sp)                # Epiloge
     addi sp, sp, 4
 
+    ret
+
+# ---------------------------------------------
+# 'a' Command:
+# Sets the working address
+# ---------------------------------------------
+ProcessWCommand:
+    addi sp, sp, -8             # Prologe
+    sw ra, 4(sp)
+    sw a0, 8(sp)
+
+    # The first char in the key buffer is the command
+    la t1, keyBuf
+    lbu t1, 0(t1)
+    li t0, ASCII_a
+    bne t0, t1, 1f              # Exit if not 'a' command
+
+    # It is the 'w' command. Process it
+
+    # Move past Space and position to next char
+    # la t1, bufOffset            # Pointer to offset
+    # lbu t2, 0(t1)               # offset value
+    # addi t2, t2, 2
+    # sb t2, 0(t1)
+
+    # The address can be of the form 1234, 0x1234, 0x00001234
+
+    # la a0, debug_str
+    # jal PrintString
+
+1:
+    lw a0, 8(sp)                # Epiloge
+    lw ra, 4(sp)
+    addi sp, sp, 8
+    
     ret
 
 # ---------------------------------------------
@@ -155,16 +197,16 @@ CheckForCR:
 
 1:                              # Not CR, append to buffer
     # Fetch counter offset
-    lla t0, bufOffset
+    la t0, bufOffset
     lbu t0, 0(t0)               # current index value
 
     # Place into buffer
-    lla t1, keyBuf
+    la t1, keyBuf
     add t1, t1, t0              # Move pointer
     sb a0, 0(t1)                # Store in buffer
 
     addi t0, t0, 1              # Inc offset and store
-    lla t1, bufOffset
+    la t1, bufOffset
     sb t0, 0(t1)
 
     # Signal CR not detected
@@ -178,11 +220,11 @@ CheckForCR:
     jal PrintChar
 
     # Fetch current offset
-    lla t0, bufOffset
+    la t0, bufOffset
     lbu t0, 0(t0)               # current index value
 
     # Null terminate key buffer
-    lla t1, keyBuf              # Pointer to buf
+    la t1, keyBuf               # Pointer to buf
     add t1, t1, t0              # Move pointer to current position
     sb zero, 0(t1)              # Store Null
 
@@ -200,10 +242,10 @@ CheckForCR:
 # ---------------------------------------------
 ClearKeyBuffer:
     # Reset offset to zero
-    lla t0, bufOffset
+    la t0, bufOffset
     sb zero, 0(t0)
 
-    lla t0, keyBuf
+    la t0, keyBuf
     li t1, KEY_BUFFER_SIZE
 1:
     sb zero, 0(t0)
@@ -219,27 +261,24 @@ ClearKeyBuffer:
 # Trim off the last character in the key buffer.
 # If the offset index is == 0 then just put a Null
 # and return, otherwise, put a Null and dec the offset.
-# offset = 3 = t0
-#    v
-# 0123
-# abcd<-
-#   ^
+# Decrement by 2 because the "cursor" is always after
+# last visible char.
 # ---------------------------------------------
 TrimLastKeyBuffer:
-    lla t0, bufOffset           # Pointer to offset
+    la t0, bufOffset            # Pointer to offset
 
     # Is offset == 0?
     lbu t0, 0(t0)               # t0 = offset value
     beq zero, t0, 1f
 
     # Else decrement offset
-    lla t1, bufOffset           # Pointer to offset
-    addi t0, t0, -2             # Dec offset value (char + null)
+    la t1, bufOffset            # Pointer to offset
+    addi t0, t0, -2             # Dec offset value
     sb t0, 0(t1)                # Save value
 
 1:
     # Put a Null at the current offset
-    lla t1, keyBuf              # Pointer to key buffer
+    la t1, keyBuf               # Pointer to key buffer
     add t1, t1, t0              # Move pointer
     sb zero, 0(t1)              # zero = Null
 
@@ -341,23 +380,66 @@ PrintCharCrLn:
 
 # ---------------------------------------------
 # Moves the cursor back to the begining of the line
-# and print the "]" char.
+# and prints the working address + "]" char.
+# For example: 00001234]
 # ---------------------------------------------
 PrintCursor:
     addi sp, sp, -4             # Prologe
     sw ra, 4(sp)
 
-    li a0, ASCII_LF
-    jal PrintChar
+    # li a0, ASCII_LF
+    # jal PrintChar
 
-    li a0, ASCII_CR
-    jal PrintChar
+    # li a0, ASCII_CR
+    # jal PrintChar
+
+    # Print working address
+    la t0, working_addr
+    lw a0, 0(t0)                # Word value to convert
+    jal HexWordToString
+    la a0, string_buf
+    jal PrintString
 
     li a0, ASCII_R_SQR_BRAK
     jal PrintChar
 
     lw ra, 4(sp)                # Epiloge
     addi sp, sp, 4
+
+    ret
+
+# \__/\__/\__/\__/\__/\__/\__/\__/\__/\__/\__/\__/\__/
+# Conversions
+# /--\/--\/--\/--\/--\/--\/--\/--\/--\/--\/--\/--\/--\
+
+# ---------------------------------------------
+# Converts a 32 bit value to an 8 char string.
+# The string is stored in string_buf.
+# left most nibble = LM nibble
+# a0 = word to convert
+# ---------------------------------------------
+HexWordToString:
+    la t0, string_buf           # Pointer to buffer
+    li t2, 8                    # Count 8 chars
+    li t3, ASCII_colon
+
+1:
+    srli t1, a0, 28             # Shift LM nibble to right most position
+    slli a0, a0, 4              # Update word by shifting in a new LM nibble
+                                # for next pass.
+    andi t1, t1, 0xF            # Isolate current nibble
+    addi t1, t1, '0'            # Translate to Ascii by adding '0' = 0x30
+    blt t1, t3, 2f              # See if we're > '9'
+    addi t1, t1, 39             # Else convert to 'a'-'f' chars first
+
+2:
+    sb t1, 0(t0)                # Store char in buffer
+    addi t0, t0, 1              # Move pointer
+
+    addi t2, t2, -1
+    bne zero, t2, 1b            # Loop while count > 0
+
+    sb zero, 0(t0)              # Null terminate
 
     ret
 
@@ -368,9 +450,10 @@ PrintCursor:
 .balign 4
 .word 0x00400000                # Port A base
 .word 0x00400100                # UART base
-string_Greet:   .string "\r\nMonitor 0.0.5 Jun 2023\r\n]"
+string_Greet:   .string "\r\nMonitor 0.0.6 - Ranger SoC - Jun 2023\r\n"
 .balign 4
 string_Bye:  .string "\r\nBye\r\n"
+debug_str:  .string "\r\nDEBUG\r\n"
 .balign 4
 
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
@@ -381,7 +464,17 @@ bufOffset: .byte 0
 .balign 4
 keyBuf:
 .skip KEY_BUFFER_SIZE
-   
+
+# __++__++__++__++__++__++__++__++__++__++__++__++__++
+# Program variables
+# __++__++__++__++__++__++__++__++__++__++__++__++__++
+.section .data
+working_addr: .word 0x00000000
+
+# Index into string buffer
+str_buf_index: .byte 0
+# String buffer used for conversions
+string_buf: .fill 128, 1, 0      # 128*1 bytes with value 0
 
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
 # Stack. Grows towards rodata section
