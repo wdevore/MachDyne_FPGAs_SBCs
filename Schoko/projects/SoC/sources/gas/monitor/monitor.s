@@ -32,6 +32,7 @@
 .set ASCII_a,           'a'
 .set ASCII_w,           'w'
 .set ASCII_colon,       ':'         # Colon is used to check < '9'
+.set ASCII_0,           '0'
 
 .section .text
 .align 2
@@ -98,7 +99,7 @@ ProcessBuf:
     # la a0, keyBuf
     # jal PrintString
 
-    # jal ProcessWCommand
+    jal ProcessWCommand
 
     jal PrintCursor
 
@@ -111,7 +112,12 @@ ProcessBuf:
 
 # ---------------------------------------------
 # 'a' Command:
+# Example: 00000000] a 000012ab
+#
 # Sets the working address
+# The address can be of the form 1234, 00001234
+# The address is converted from String to Word. Any invalid
+# hex character signals an error.
 # ---------------------------------------------
 ProcessWCommand:
     addi sp, sp, -8             # Prologe
@@ -122,26 +128,101 @@ ProcessWCommand:
     la t1, keyBuf
     lbu t1, 0(t1)
     li t0, ASCII_a
-    bne t0, t1, 1f              # Exit if not 'a' command
+    bne t0, t1, 3f              # Exit if not 'a' command
 
-    # It is the 'w' command. Process it
+    # It is the 'w' command. Handle it.
+    la t3, string_buf           # Pointer to buffer
+    li t4, 0
 
-    # Move past Space and position to next char
-    # la t1, bufOffset            # Pointer to offset
-    # lbu t2, 0(t1)               # offset value
-    # addi t2, t2, 2
-    # sb t2, 0(t1)
+    # Is valid address
+    la a0, keyBuf
+    addi a0, a0, 2              # Move past Space, and at first hex digit
+    jal IsHexAddress
+    beq zero, a0, 2f            # if zero then display error
 
-    # The address can be of the form 1234, 0x1234, 0x00001234
+    # Convert address to Word and Store
 
-    # la a0, debug_str
-    # jal PrintString
+    # Check the digit is actually a hex digit
+    # lbu a0, 0(t1)
+    # jal IsHexDigit
+    # beq zero, a0, 2f            # if zero then display error
 
-1:
+    la a0, debug_str
+    jal PrintString
+
+    
+    j 3f                        # Exit
+
+2:
+    # Display error message
+    la a0, str_w_cmd_error
+    jal PrintString
+
+3:
     lw a0, 8(sp)                # Epiloge
     lw ra, 4(sp)
     addi sp, sp, 8
     
+    ret
+
+# ---------------------------------------------
+# Check if a0 (char) is a hex digit: 0-9 or a-f
+# return = a0 => 0 (no), 1 (yes)
+# ---------------------------------------------
+IsHexDigit:
+    li t0, '0'                  # if a0 < '0' it isn't a digit
+    bltu a0, t0, 1f
+
+    li t0, 'f'                  # if a0 > 'f' it isn't a digit
+    bgtu a0, t0, 1f
+
+    li t0, ':'                  # if a0 < ':' it IS a digit
+    bltu a0, t0, 2f
+    
+    li t0, '`'                  # if a0 > '`' it IS a digit
+    bgtu a0, t0, 2f
+
+1:
+    li a0, 0                    # No: not valid
+    ret
+
+2:
+    li a0, 1                    # Yes: it valid
+    ret
+
+# ---------------------------------------------
+# Scan each char for valid hex chars
+# a0 points to string
+# return = a0 => 0 (no), 1 (yes)
+# ---------------------------------------------
+IsHexAddress:
+    addi sp, sp, -4             # Prologe
+    sw ra, 4(sp)
+
+    mv t1, a0                   # Copy pointer
+
+1:
+    lbu t2, 0(t1)               # Fetch char
+    beq zero, t2, 1f            # Loop while not Null
+
+    addi t1, t1, 1              # Move to next char
+    mv a0, t2                   # Set argument hex check
+    jal IsHexDigit
+    beq zero, a0, 2f            # Exit if invalid
+
+    j 1b                        # Loop while a0 = 1
+
+1:
+    li a0, 1                    # Valid address
+    j 3f
+
+2:
+    li a0, 0                    # Invalid address
+
+3:
+    lw ra, 4(sp)                # Epiloge
+    addi sp, sp, 4
+
     ret
 
 # ---------------------------------------------
@@ -403,6 +484,9 @@ PrintCursor:
     li a0, ASCII_R_SQR_BRAK
     jal PrintChar
 
+    li a0, ASCII_SPC
+    jal PrintChar
+
     lw ra, 4(sp)                # Epiloge
     addi sp, sp, 4
 
@@ -429,7 +513,7 @@ HexWordToString:
                                 # for next pass.
     andi t1, t1, 0xF            # Isolate current nibble
     addi t1, t1, '0'            # Translate to Ascii by adding '0' = 0x30
-    blt t1, t3, 2f              # See if we're > '9'
+    blt t1, t3, 2f              # See if t1 > '9' i.e. t1 > ':'
     addi t1, t1, 39             # Else convert to 'a'-'f' chars first
 
 2:
@@ -443,6 +527,69 @@ HexWordToString:
 
     ret
 
+# ---------------------------------------------
+# a0 = Address of string to left-pad with '0' chars
+# a1 = output size requested, for example, 8 chars
+# output is put in string_buf2
+# 23456...
+# 00023456
+# ---------------------------------------------
+PadLeftZerosString:
+    addi sp, sp, -4             # Prologe
+    sw ra, 4(sp)
+
+    mv t1, a0                   # backup address of source to t1
+
+    # If string to pad is already = to size then return
+    jal LengthOfString          # a0 now = length
+    beq a0, a1, 2f              # If equal then exit
+
+    # Calc difference: source_length  - size
+    sub t2, a1, a0              # t2 = how many '0's to pad
+
+    # First pad destination buffer with '0's
+    la t3, string_buf2
+    li t4, ASCII_0
+1:
+    sb t4, 0(t3)                # Write '0'
+    addi t3, t3, 1              # Move pointer
+    addi t2, t2, -1             # Dec counter
+    bne zero, t2, 1b            # Loop
+
+    # Finally append source chars to new buffer
+1:
+    lbu t5, 0(t1)               # Read source char
+    sb t5, 0(t3)                # Write to destination
+    addi t1, t1, 1              # Inc both pointers
+    addi t3, t3, 1
+    addi a0, a0, -1             # Dec source length
+    bne zero, a0, 1b            # Loop while a0 != 0
+
+2:
+    lw ra, 4(sp)                # Epiloge
+    addi sp, sp, 4
+
+    ret
+
+# ---------------------------------------------
+# a0 = Address of string to find size of
+# a0 is overriden with size
+# String must be Null terminated
+# ---------------------------------------------
+LengthOfString:
+    li t0, 0                    # Clear counter
+
+1:
+    lbu t1, 0(a0)               # Fetch char
+    beq zero, t1, 1f            # Loop while not Null
+    addi a0, a0, 1              # Move to next char
+    addi t0, t0, 1              # Inc counter
+    j 1b
+
+1:
+    mv a0, t0                   # Return value
+    ret
+
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
 # ROM-ish
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
@@ -450,10 +597,13 @@ HexWordToString:
 .balign 4
 .word 0x00400000                # Port A base
 .word 0x00400100                # UART base
-string_Greet:   .string "\r\nMonitor 0.0.6 - Ranger SoC - Jun 2023\r\n"
+string_Greet:   .string "\r\nMonitor 0.0.7 - Ranger SoC - Jun 2023\r\n"
 .balign 4
 string_Bye:  .string "\r\nBye\r\n"
+.balign 4
 debug_str:  .string "\r\nDEBUG\r\n"
+.balign 4
+str_w_cmd_error: .string "Invalid address\r\n"
 .balign 4
 
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
@@ -471,10 +621,9 @@ keyBuf:
 .section .data
 working_addr: .word 0x00000000
 
-# Index into string buffer
-str_buf_index: .byte 0
 # String buffer used for conversions
-string_buf: .fill 128, 1, 0      # 128*1 bytes with value 0
+string_buf:  .fill 128, 1, 0      # 128*1 bytes with value 0
+string_buf2: .fill 128, 1, 0      # 128*1 bytes with value 0
 
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
 # Stack. Grows towards rodata section
