@@ -120,17 +120,34 @@ Exit:
 ProcessBuf:
     PrologRa
 
-    li a0, 3
-    jal StringToWord            # returns a0 = converted Word
-    jal PrintWordAsBinary
-    jal WritePortA
-    li a0, ASCII_CR
-    jal PrintChar
-    li a0, ASCII_LF
-    jal PrintChar
+    # la a0, string_buf2
+    # jal PrintString
+    # li a0, ASCII_CR
+    # jal PrintChar
+    # li a0, ASCII_LF
+    # jal PrintChar
+
+    # la a0, string_buf2
+    # li a1, 8
+    # jal PadLeftZerosString
+    # jal StringToWord            # returns a0 = converted Word
+    # jal PrintWordAsBinary
+
+    # la a0, string_buf2
+    # jal PrintString
+
+    # la t0, string_buf2
+    # lbu a0, 0(t0)
+    # jal HexCharToWord
+    # jal PrintWordAsBinary
+
+    # li a0, ASCII_CR
+    # jal PrintChar
+    # li a0, ASCII_LF
+    # jal PrintChar
 
 
-    # jal ProcessWCommand
+    jal Process_A_Command
 
     jal PrintCursor
 
@@ -149,7 +166,7 @@ ProcessBuf:
 # The address is converted from String to Word. Any invalid
 # hex character signals an error.
 # ---------------------------------------------
-ProcessWCommand:
+Process_A_Command:
     PrologRa 8
     sw a0, 8(sp)
 
@@ -166,41 +183,43 @@ ProcessWCommand:
     # Is valid address
     la a0, keyBuf
     addi a0, a0, 2              # Move past Space, and position to 1st digit
+    mv t5, a0                   # Backup
     jal IsHexAddress
     beq zero, a0, 2f            # if zero then display error
 
-    # Convert address to Word and Store
-    la a0, keyBuf
-    addi a0, a0, 2              # Move past Space, and position to 1st digit
-
+    mv a0, t5                   # Restore char position
+    jal LengthOfString          # a0 <== length
     li a1, 8                    # Set Max with to 8 chars
+    bgt a0, a1, 2f
+
+    mv a0, t5                   # Restore char position
     jal PadLeftZerosString      # Results into string_buf2
 
     # !!!!!!!! BEGIN DEBUG !!!!!!!!
-    la a0, string_buf2
-    jal PrintString
-    li a0, ASCII_CR
-    jal PrintChar
-    li a0, ASCII_LF
-    jal PrintChar
+    # la a0, string_buf2
+    # jal PrintString
+    # li a0, ASCII_CR
+    # jal PrintChar
+    # li a0, ASCII_LF
+    # jal PrintChar
     # !!!!!!!! END DEBUG !!!!!!!!
 
     jal StringToWord            # returns a0 = converted Word
-    jal WritePortA
+    # jal WritePortA
 
 
     # !!!!!!!! BEGIN DEBUG !!!!!!!!
-    mv t1, a0
-    jal PrintWordAsBinary
-    li a0, ASCII_CR
-    jal PrintChar
-    li a0, ASCII_LF
-    jal PrintChar
-    mv a0, t1
+    # mv t1, a0
+    # jal PrintWordAsBinary
+    # li a0, ASCII_CR
+    # jal PrintChar
+    # li a0, ASCII_LF
+    # jal PrintChar
+    # mv a0, t1
     # !!!!!!!! END DEBUG !!!!!!!!
 
     la t0, working_addr
-    sb a0, 0(t0)
+    sw a0, 0(t0)
     
     j 3f                        # Exit
 
@@ -600,9 +619,10 @@ PrintWordAsBinary:
     li t0, 32                   # Load Dec Counter
     mv t2, a0                   # Copy a0 for modification
     li t3, 0x80000000           # MSb mask for slli
+
 1:
-    and t1, t2, t3              # Mask bit 0
-    bne zero, t1, 2f            # Test bit 0
+    and t1, t2, t3              # Mask in MSb
+    bne zero, t1, 2f            # Test
 
     li a0, ASCII_0
     jal PrintChar
@@ -614,8 +634,8 @@ PrintWordAsBinary:
 
 3:
     slli t2, t2, 1              # Move next bit to MSb
-    addi t0, t0, -1
-    bne zero, t0, 1b
+    addi t0, t0, -1             # Dec counter
+    bne zero, t0, 1b            # Loop while t0 > 0
 
     lw t3, 24(sp)
     lw t2, 20(sp)
@@ -665,42 +685,43 @@ HexWordToString:
 # a0 = Address of string to left-pad with '0' chars
 # a1 = output size requested, for example, 8 chars
 # output is put in string_buf2
-# 1234....
-# 00001234
+# 123.....
+# 00000123
 # ---------------------------------------------
 PadLeftZerosString:
     PrologRa
 
-    mv t1, a0                   # backup address of source to t1
-
-    # If string to pad is already = to size then return
-    jal LengthOfString          # a0 now = length
-    beq a0, a1, 2f              # If equal then exit
-    # Calc difference: source_length  - size
-    sub t2, a1, a0              # t2 = a1 - a0 = how many '0's to pad
-
-    # First pad destination buffer with '0's
     la t3, string_buf2
     li t4, ASCII_0
-1:
+    mv t1, a0                   # Copy address of source to t1
+
+    # Is string to pad is already = to size then just copy
+    jal LengthOfString          # a0 now = length
+    beq a0, a1, 2f              # Just copy src to dest
+
+    # Calc difference: output_size - length => how many '0's to pad
+    sub t2, a1, a0
+    blt t2, zero, 3f            # buf2 is larger than output size requested
+
+1:  # Pad destination buffer with '0's
     sb t4, 0(t3)                # Write '0'
     addi t3, t3, 1              # Move pointer
     addi t2, t2, -1             # Dec count of '0's
     bne zero, t2, 1b            # Loop
-
-    # Now append source chars to new buffer
-1:
+    
+2:  # Now append source chars to new buffer
     lbu t5, 0(t1)               # Read source char
     sb t5, 0(t3)                # Write to destination
     addi t1, t1, 1              # Inc both pointers
     addi t3, t3, 1
     addi a0, a0, -1             # Dec source length
-    bne zero, a0, 1b            # Loop while a0 != 0
+    bne zero, a0, 2b            # Loop while a0 != 0
 
     # Finally Null terminate
     addi t3, t3, 1
     sb zero, 0(t3)                # Null
-2:
+
+3:
     EpilogeRa
 
     ret
@@ -742,18 +763,50 @@ LengthOfString:
 # 0000_0000_0000_0000_0000_0000_0000_0000
 # ---------------------------------------------
 StringToWord:
-    PrologRa
+    PrologRa 20
+    sw t1, 8(sp)
+    sw t2, 12(sp)
+    sw t3, 16(sp)
+    sw t4, 20(sp)
 
     li t2, 28                   # Shift amount shrinks by 4 on each pass
     mv t3, zero                 # The final converted Word pre cleared
     la t4, string_buf2          # Pointer to hex string to convert
 
 1:
+    # li a0, '!'
+    # jal PrintChar
+    # lbu a0, 0(t4)               # Get char
+    # jal PrintChar
+    # li a0, '!'
+    # jal PrintChar
+
+    # li a0, '$'
+    # jal PrintChar
+
+    # lbu a0, 0(t4)               # Get char
+    # jal HexCharToWord           # Convert char to number in a0
+    # jal PrintWordAsBinary
+   
+    # li a0, '$'
+    # jal PrintChar
+
     lbu a0, 0(t4)               # Get char
     jal HexCharToWord           # Convert to number in a0
-
     sll t1, a0, t2              # Shift LM nibble of a0 by t2 into t1
     or t3, t3, t1               # Merge into t3
+
+    # li a0, ':'
+    # jal PrintChar
+    # mv a0, t3
+    # jal PrintWordAsBinary
+    # li a0, ':'
+    # jal PrintChar
+    # li a0, ASCII_CR
+    # jal PrintChar
+    # li a0, ASCII_LF
+    # jal PrintChar
+
 
     addi t2, t2, -4             # Dec shift amount value
     addi t4, t4, 1              # Move pointer to next char
@@ -761,7 +814,11 @@ StringToWord:
 
     mv a0, t3                   # Move result to return arg
 
-    EpilogeRa
+    lw t4, 20(sp)
+    lw t3, 16(sp)
+    lw t2, 12(sp)
+    lw t1, 8(sp)
+    EpilogeRa 20
 
     ret
 
@@ -770,16 +827,24 @@ StringToWord:
 # It is assumed that char is already a valid hex digit
 # ---------------------------------------------
 HexCharToWord:
-    li t3, ASCII_colon          # Determine which ascii set
+    PrologRa 8
+    sw t3, 8(sp)
+
+    li t3, ASCII_colon          # Determine which ascii group
     bltu a0, t3, 1f
 
     # a-f
-    addi a0, a0, -51
-    ret
+    addi a0, a0, -'a'+10
+    j 2f
 
 1:
     # 0-9
-    addi a0, a0, -30
+    addi a0, a0, -'0'
+
+2:
+    lw t3, 8(sp)
+    EpilogeRa 8
+
     ret
 
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
@@ -816,7 +881,7 @@ working_addr: .word 0x00000000
 # String buffer used for conversions
 string_buf:  .fill 128, 1, 0      # 128*1 bytes with value 0
 # string_buf2: .fill 128, 1, 0      # 128*1 bytes with value 0
-string_buf2: .string "00000012"
+string_buf2: .string "12345678"
 
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
 # Stack. Grows towards rodata section
