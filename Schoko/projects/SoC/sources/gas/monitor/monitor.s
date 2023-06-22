@@ -33,7 +33,32 @@
 .set ASCII_w,           'w'
 .set ASCII_colon,       ':'         # Colon is used to check < '9'
 .set ASCII_0,           '0'
+.set ASCII_1,           '1'
+.set ASCII_BACK_TICK,    '`'
 
+# ---__------__------__------__------__------__------__---
+# Macros
+# ---__------__------__------__------__------__------__---
+
+# ---------------------------------------------
+# Pushes Return address onto the stack
+# You must use this macro if your subroutine has 1 or more
+# "jal" calls present, otherwise your stack will corrupt.
+# ---------------------------------------------
+.macro PrologRa frameSize=4
+    addi sp, sp, -\frameSize
+    sw ra, 4(sp)
+.endm
+
+# ---------------------------------------------
+# Pops Return address from the stack
+# ---------------------------------------------
+.macro EpilogeRa frameSize=4
+    lw ra, 4(sp)
+    addi sp, sp, \frameSize
+.endm
+
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++
 .section .text
 .align 2
 
@@ -66,7 +91,7 @@ ScanInput:
 
     lbu a0, UART_RX_REG_ADDR(s3)    # Access byte just received
 
-    jal WritePortA                  # Echo to port A
+    # jal WritePortA                  # Echo to port A
     jal PrintChar                   # Echo char to Terminal
 
     li t0, ASCII_EoT                # Check EoT
@@ -93,20 +118,25 @@ Exit:
 # Process what was placed into the buffer
 # ---------------------------------------------
 ProcessBuf:
-    addi sp, sp, -4             # Prologe
-    sw ra, 4(sp)
+    PrologRa
 
-    # la a0, keyBuf
-    # jal PrintString
+    # jal StringToWord            # returns a0 = converted Word
+    li a0, 0x12
+    jal PrintWordAsBinary
+    jal WritePortA
+    li a0, ASCII_CR
+    jal PrintChar
+    li a0, ASCII_LF
+    jal PrintChar
 
-    jal ProcessWCommand
+
+    # jal ProcessWCommand
 
     jal PrintCursor
 
     jal ClearKeyBuffer
 
-    lw ra, 4(sp)                # Epiloge
-    addi sp, sp, 4
+    EpilogeRa
 
     ret
 
@@ -120,8 +150,7 @@ ProcessBuf:
 # hex character signals an error.
 # ---------------------------------------------
 ProcessWCommand:
-    addi sp, sp, -8             # Prologe
-    sw ra, 4(sp)
+    PrologRa 8
     sw a0, 8(sp)
 
     # The first char in the key buffer is the command
@@ -136,20 +165,42 @@ ProcessWCommand:
 
     # Is valid address
     la a0, keyBuf
-    addi a0, a0, 2              # Move past Space, and at first hex digit
+    addi a0, a0, 2              # Move past Space, and position to 1st digit
     jal IsHexAddress
     beq zero, a0, 2f            # if zero then display error
 
     # Convert address to Word and Store
+    la a0, keyBuf
+    addi a0, a0, 2              # Move past Space, and position to 1st digit
 
-    # Check the digit is actually a hex digit
-    # lbu a0, 0(t1)
-    # jal IsHexDigit
-    # beq zero, a0, 2f            # if zero then display error
+    li a1, 8                    # Set Max with to 8 chars
+    jal PadLeftZerosString      # Results into string_buf2
 
-    la a0, debug_str
+    # !!!!!!!! BEGIN DEBUG !!!!!!!!
+    la a0, string_buf2
     jal PrintString
+    li a0, ASCII_CR
+    jal PrintChar
+    li a0, ASCII_LF
+    jal PrintChar
+    # !!!!!!!! END DEBUG !!!!!!!!
 
+    jal StringToWord            # returns a0 = converted Word
+    jal WritePortA
+
+
+    # !!!!!!!! BEGIN DEBUG !!!!!!!!
+    mv t1, a0
+    jal PrintWordAsBinary
+    li a0, ASCII_CR
+    jal PrintChar
+    li a0, ASCII_LF
+    jal PrintChar
+    mv a0, t1
+    # !!!!!!!! END DEBUG !!!!!!!!
+
+    la t0, working_addr
+    sb a0, 0(t0)
     
     j 3f                        # Exit
 
@@ -159,9 +210,8 @@ ProcessWCommand:
     jal PrintString
 
 3:
-    lw a0, 8(sp)                # Epiloge
-    lw ra, 4(sp)
-    addi sp, sp, 8
+    lw a0, 8(sp)
+    EpilogeRa 8
     
     ret
 
@@ -196,8 +246,7 @@ IsHexDigit:
 # return = a0 => 0 (no), 1 (yes)
 # ---------------------------------------------
 IsHexAddress:
-    addi sp, sp, -4             # Prologe
-    sw ra, 4(sp)
+    PrologRa
 
     mv t1, a0                   # Copy pointer
 
@@ -206,10 +255,9 @@ IsHexAddress:
     beq zero, t2, 1f            # Loop while not Null
 
     addi t1, t1, 1              # Move to next char
-    mv a0, t2                   # Set argument hex check
+    mv a0, t2                   # Pass argument to "is" check
     jal IsHexDigit
-    beq zero, a0, 2f            # Exit if invalid
-
+    beq zero, a0, 2f            # Exit to invalid if a0 = 0
     j 1b                        # Loop while a0 = 1
 
 1:
@@ -220,8 +268,7 @@ IsHexAddress:
     li a0, 0                    # Invalid address
 
 3:
-    lw ra, 4(sp)                # Epiloge
-    addi sp, sp, 4
+    EpilogeRa
 
     ret
 
@@ -230,8 +277,7 @@ IsHexAddress:
 # Moves the cursor back and then print a Space
 # ---------------------------------------------
 CheckForDEL:
-    addi sp, sp, -4             # Prologe
-    sw ra, 4(sp)
+    PrologRa
 
     lbu a0, UART_RX_REG_ADDR(s3)    # Access byte just received
 
@@ -256,8 +302,7 @@ CheckForDEL:
     jal TrimLastKeyBuffer
 
 1:
-    lw ra, 4(sp)                # Epiloge
-    addi sp, sp, 4
+    EpilogeRa
 
     ret
 
@@ -268,8 +313,7 @@ CheckForDEL:
 # a0 = return value
 # ---------------------------------------------
 CheckForCR:
-    addi sp, sp, -4             # Prologe
-    sw ra, 4(sp)
+    PrologRa
 
     # Is a0 = CR
     li t0, ASCII_CR
@@ -313,8 +357,7 @@ CheckForCR:
     li a0, 1
 
 3:
-    lw ra, 4(sp)                # Epiloge
-    addi sp, sp, 4
+    EpilogeRa
 
     ret
 
@@ -369,10 +412,17 @@ TrimLastKeyBuffer:
 # Wait for the Tx busy bit to Clear
 # ---------------------------------------------
 PollTxBusy:
+    PrologRa 8
+    sw t0, 8(sp)
+
+1:
     lbu t0, UART_CTRL_REG_ADDR(s3)  # Read UART Control reg
     andi t0, t0, MASK_CTL_TX_BUSY   # Mask
-    bne zero, t0, PollTxBusy        # Loop
+    bne zero, t0, 1b                # Loop
 
+    lw t0, 8(sp)
+    EpilogeRa 8
+    
     ret
 
 # ----------------------------------------------------------
@@ -402,8 +452,9 @@ WritePortA:
 # a0 points to start of String
 # ---------------------------------------------
 PrintString:
-    addi sp, sp, -4             # Move stack pointer
-    sw ra, 4(sp)                # Push any return address
+    PrologRa 12
+    sw a0, 8(sp)
+    sw t0, 12(sp)
 
 1:
     lbu t0, 0(a0)               # Load t0 to what a0 is pointing at
@@ -417,8 +468,9 @@ PrintString:
     j 1b
 
 1:
-    lw ra, 4(sp)                # Restore return address
-    addi sp, sp, 4              # Reset stack pointer
+    lw t0, 12(sp)
+    lw a0, 8(sp)
+    EpilogeRa 12
 
     ret
 
@@ -427,21 +479,18 @@ PrintString:
 # a0 = char
 # ---------------------------------------------
 PrintChar:
-    addi sp, sp, -4             # Move stack pointer
-    sw ra, 4(sp)                # Push any return address
+    PrologRa
 
     sb a0, UART_TX_REG_ADDR(s3) # Send
 
     jal PollTxBusy              # Call subroutine
 
-    lw ra, 4(sp)                # Restore return address
-    addi sp, sp, 4              # Reset stack pointer
+    EpilogeRa
 
     ret
 
 PrintCharCrLn:
-    addi sp, sp, -4
-    sw ra, 4(sp)
+    PrologRa
 
     sb a0, UART_TX_REG_ADDR(s3) # Send
     jal PollTxBusy
@@ -454,8 +503,7 @@ PrintCharCrLn:
     sb a0, UART_TX_REG_ADDR(s3) # Send
     jal PollTxBusy
 
-    lw ra, 4(sp)
-    addi sp, sp, 4
+    EpilogeRa
 
     ret
 
@@ -465,8 +513,7 @@ PrintCharCrLn:
 # For example: 00001234]
 # ---------------------------------------------
 PrintCursor:
-    addi sp, sp, -4             # Prologe
-    sw ra, 4(sp)
+    PrologRa
 
     # li a0, ASCII_LF
     # jal PrintChar
@@ -487,8 +534,93 @@ PrintCursor:
     li a0, ASCII_SPC
     jal PrintChar
 
-    lw ra, 4(sp)                # Epiloge
-    addi sp, sp, 4
+    EpilogeRa
+
+    ret
+
+# ---------------------------------------------
+# Print a0's LS nibble
+# ---------------------------------------------
+PrintNibble:
+    PrologRa 12
+    sw t3, 8(sp)
+    sw t0, 12(sp)
+
+    li t3, 10
+    bltu a0, t3, 1f
+    addi t0, a0, ASCII_BACK_TICK - 9
+    j 2f
+
+1:
+    addi t0, a0, ASCII_0
+
+2:
+    sb t0, UART_TX_REG_ADDR(s3) # Send
+
+    jal PollTxBusy              # Call subroutine
+
+    lw t0, 12(sp)
+    lw t3, 8(sp)
+    EpilogeRa 12
+
+    ret
+
+# ---------------------------------------------
+# Print a0's LSB
+# ---------------------------------------------
+PrintByte:
+    PrologRa 12
+    sw a0, 8(sp)
+    sw t0, 12(sp)
+
+    mv t0, a0                   # Backup a0
+    andi a0, a0, 0x0F           # Mask off lower nibble
+    jal PrintNibble
+    mv a0, t0                   # Restore a0
+    slli a0, a0, 4              # Shift higher nibble to lower nibble
+    jal PrintNibble
+
+    lw t0, 12(sp)
+    lw a0, 8(sp)
+    EpilogeRa 12
+    
+    ret
+
+# ---------------------------------------------
+# Print a0 Word as binary string
+# ---------------------------------------------
+PrintWordAsBinary:
+    PrologRa 20
+    sw a0, 8(sp)
+    sw t0, 12(sp)
+    sw t1, 16(sp)
+    sw t2, 20(sp)
+
+    li t0, 32                   # Load Dec Counter
+    mv t2, a0                   # Copy a0 for modification
+
+1:
+    andi t1, t2, 1              # Mask bit 0
+    bne zero, t1, 2f            # Test bit 0
+
+    li a0, ASCII_0
+    jal PrintChar
+    j 3f
+
+2:
+    li a0, ASCII_1
+    jal PrintChar
+
+3:
+    srli t2, t2, 1              # Move next bit to LSb
+    addi t0, t0, -1
+    bne zero, t0, 1b
+
+    lw t2, 20(sp)
+    lw t1, 16(sp)
+    lw t0, 12(sp)
+    lw a0, 8(sp)
+    EpilogeRa 20
 
     ret
 
@@ -531,21 +663,19 @@ HexWordToString:
 # a0 = Address of string to left-pad with '0' chars
 # a1 = output size requested, for example, 8 chars
 # output is put in string_buf2
-# 23456...
-# 00023456
+# 1234....
+# 00001234
 # ---------------------------------------------
 PadLeftZerosString:
-    addi sp, sp, -4             # Prologe
-    sw ra, 4(sp)
+    PrologRa
 
     mv t1, a0                   # backup address of source to t1
 
     # If string to pad is already = to size then return
     jal LengthOfString          # a0 now = length
     beq a0, a1, 2f              # If equal then exit
-
     # Calc difference: source_length  - size
-    sub t2, a1, a0              # t2 = how many '0's to pad
+    sub t2, a1, a0              # t2 = a1 - a0 = how many '0's to pad
 
     # First pad destination buffer with '0's
     la t3, string_buf2
@@ -553,10 +683,10 @@ PadLeftZerosString:
 1:
     sb t4, 0(t3)                # Write '0'
     addi t3, t3, 1              # Move pointer
-    addi t2, t2, -1             # Dec counter
+    addi t2, t2, -1             # Dec count of '0's
     bne zero, t2, 1b            # Loop
 
-    # Finally append source chars to new buffer
+    # Now append source chars to new buffer
 1:
     lbu t5, 0(t1)               # Read source char
     sb t5, 0(t3)                # Write to destination
@@ -565,9 +695,11 @@ PadLeftZerosString:
     addi a0, a0, -1             # Dec source length
     bne zero, a0, 1b            # Loop while a0 != 0
 
+    # Finally Null terminate
+    addi t3, t3, 1
+    sb zero, 0(t3)                # Null
 2:
-    lw ra, 4(sp)                # Epiloge
-    addi sp, sp, 4
+    EpilogeRa
 
     ret
 
@@ -577,6 +709,10 @@ PadLeftZerosString:
 # String must be Null terminated
 # ---------------------------------------------
 LengthOfString:
+    PrologRa 12
+    sw t1, 8(sp)
+    sw t0, 12(sp)
+
     li t0, 0                    # Clear counter
 
 1:
@@ -588,6 +724,60 @@ LengthOfString:
 
 1:
     mv a0, t0                   # Return value
+
+    lw t0, 12(sp)
+    lw t1, 8(sp)
+    EpilogeRa 12
+
+    ret
+
+# ---------------------------------------------
+# Convert String (8 chars in string_buf2) to Word and return in a0
+# a0 = Address of string to convert
+# a0 = return = Word
+# 00000010
+#  28   24   20   16   12    8   4    0        <-- shift amount
+# 0000_0000_0000_0000_0000_0000_0000_0000
+# ---------------------------------------------
+StringToWord:
+    PrologRa
+
+    li t2, 28                   # Shift amount shrinks by 4 on each pass
+    mv t3, zero                 # The final converted Word pre cleared
+    la t4, string_buf2          # Pointer to hex string to convert
+
+1:
+    lbu a0, 0(t4)               # Get char
+    jal HexCharToWord           # Convert to number in a0
+
+    sll t1, a0, t2              # Shift LM nibble of a0 by t2 into t1
+    or t3, t3, t1               # Merge into t3
+
+    addi t2, t2, -4             # Dec shift amount value
+    addi t4, t4, 1              # Move pointer to next char
+    bge t2, zero, 1b            # Loop while t2 >= 0
+
+    mv a0, t3                   # Move result to return arg
+
+    EpilogeRa
+
+    ret
+
+# ---------------------------------------------
+# Convert ascii char (in a0) to Word and return in a0
+# It is assumed that char is already a valid hex digit
+# ---------------------------------------------
+HexCharToWord:
+    li t3, ASCII_colon          # Determine which ascii set
+    bltu a0, t3, 1f
+
+    # a-f
+    addi a0, a0, -51
+    ret
+
+1:
+    # 0-9
+    addi a0, a0, -30
     ret
 
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
@@ -597,7 +787,7 @@ LengthOfString:
 .balign 4
 .word 0x00400000                # Port A base
 .word 0x00400100                # UART base
-string_Greet:   .string "\r\nMonitor 0.0.7 - Ranger SoC - Jun 2023\r\n"
+string_Greet:   .string "\r\nMonitor 0.0.8 - Ranger SoC - Jun 2023\r\n"
 .balign 4
 string_Bye:  .string "\r\nBye\r\n"
 .balign 4
@@ -623,7 +813,8 @@ working_addr: .word 0x00000000
 
 # String buffer used for conversions
 string_buf:  .fill 128, 1, 0      # 128*1 bytes with value 0
-string_buf2: .fill 128, 1, 0      # 128*1 bytes with value 0
+# string_buf2: .fill 128, 1, 0      # 128*1 bytes with value 0
+string_buf2: .string "00000012"
 
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
 # Stack. Grows towards rodata section
