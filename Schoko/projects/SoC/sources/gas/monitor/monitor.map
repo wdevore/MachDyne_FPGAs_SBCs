@@ -12,9 +12,9 @@ STACK            0x00000c00         0x00000100         w
 Linker script and memory map
 
 
-.text           0x00000000      0x620
+.text           0x00000000      0x630
  *(.text)
- .text          0x00000000      0x620 /media/RAMDisk/monitor.o
+ .text          0x00000000      0x630 /media/RAMDisk/monitor.o
                 0x00000000                _start
 
 .rodata         0x00000800       0x5c

@@ -120,8 +120,8 @@ Exit:
 ProcessBuf:
     PrologRa
 
-    # jal StringToWord            # returns a0 = converted Word
-    li a0, 0x12
+    li a0, 3
+    jal StringToWord            # returns a0 = converted Word
     jal PrintWordAsBinary
     jal WritePortA
     li a0, ASCII_CR
@@ -590,17 +590,18 @@ PrintByte:
 # Print a0 Word as binary string
 # ---------------------------------------------
 PrintWordAsBinary:
-    PrologRa 20
+    PrologRa 24
     sw a0, 8(sp)
     sw t0, 12(sp)
     sw t1, 16(sp)
     sw t2, 20(sp)
+    sw t3, 24(sp)
 
     li t0, 32                   # Load Dec Counter
     mv t2, a0                   # Copy a0 for modification
-
+    li t3, 0x80000000           # MSb mask for slli
 1:
-    andi t1, t2, 1              # Mask bit 0
+    and t1, t2, t3              # Mask bit 0
     bne zero, t1, 2f            # Test bit 0
 
     li a0, ASCII_0
@@ -612,15 +613,16 @@ PrintWordAsBinary:
     jal PrintChar
 
 3:
-    srli t2, t2, 1              # Move next bit to LSb
+    slli t2, t2, 1              # Move next bit to MSb
     addi t0, t0, -1
     bne zero, t0, 1b
 
+    lw t3, 24(sp)
     lw t2, 20(sp)
     lw t1, 16(sp)
     lw t0, 12(sp)
     lw a0, 8(sp)
-    EpilogeRa 20
+    EpilogeRa 24
 
     ret
 
