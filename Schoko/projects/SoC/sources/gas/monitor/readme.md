@@ -17,15 +17,53 @@ Monitor 0.0.1 May 2023
 # Commands
 | Command | Description            | Example  |
 |   ---   |   ---                  |  ---     |
-| **r** addr      | read a memory location | >R 03ff |
-| **r** addrS:AddrE      | read a memory range | >R 03ff:0500 |
-| **r** addr;size      | read a memory range | >R 03ff;50 |
-| **w** addr value      | write a memory location | >W 03ff ff |
-| **w** addr value value2 ...      | write several locations | >W 03ff ff 44 36 |
-| **d** start-addr row-count     | dump a memory block  | >D 03ff 50 |
-| **u** | upload a block of bytes | >U |
+| **a** addr      | set working address | ] a 03ff |
+| **w** value      | write to working address | ] w ff |
+| **w** value value2 ...      | write to several locations starting at working address | ] w ff 44 |
+| **r** type count      | read "count" of "type" memory locations starting at working address | ] r b 50 |
 
-## Command "R"
+## Command "a"
+**a** sets the working address that other commands reference.
+
+## Command "w"
+The **w** command can be given one or more values. The *width* of the value determines its type, for example, ff = byte, ffff = hword, ffffffff = word.
+
+### Example 1
+- ```00000001] w ff``` Writes a byte to address 0x00000001
+- ```00400100] w ff ab 32``` Writes 3 bytes starting at working address
+- ```00000001] w 1234abcd``` Writes a word at address 0x00000001. The address must be word aligned.
+
+## Command "r"
+The **r** command can be given a *type* and *count*. The *count* is how many *types* to read.
+
+### Example 1
+- ```00000001] r b 5``` Read 5 bytes starting at address 0x00000001
+- ```00000001] r b 25``` Read 25 bytes starting at address 0x00000001
+- ```00400100] r w 5``` Read 5 words starting at address 0x00400100
+
+The output format of example #1 is:
+```
+00000001 01 02 03 04 05
+```
+
+The output format of example #2 is:
+```
+00000001 01 02 03 04 05 01 02 03
+00000003 04 05 01 02 05 01 02 03
+00000005 04 05 01 02 01 02 03 04
+00000006 04
+```
+
+The output format of example #3 is:
+```
+00400100 01020304
+00400101 04050102
+00400102 04050102
+00400103 01020304
+00400104 01020304
+```
+
+## Command "r"
 The **r** command accepts an Address. It then returns a value that should be displayed along side the command.
 
 For example, entering: ```>r 3ff``` will cause a value to return, for example *4a*. The returned value should be appended: ```>r 3ff 4a```.

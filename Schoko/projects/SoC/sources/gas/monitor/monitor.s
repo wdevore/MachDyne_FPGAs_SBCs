@@ -31,6 +31,7 @@
 .set ASCII_R_SQR_BRAK,  ']'         # Square bracket char
 .set ASCII_a,           'a'
 .set ASCII_w,           'w'
+.set ASCII_r,           'r'
 .set ASCII_colon,       ':'         # Colon is used to check < '9'
 .set ASCII_0,           '0'
 .set ASCII_1,           '1'
@@ -73,7 +74,7 @@ _start:
     la sp, stack_bottom             # Initialize Stack
 
     # Boot and send greetings
-    la a0, string_Greet             # Set pointer to String
+    la a0, str_Greet             # Set pointer to String
     jal PrintString
 
     jal PrintCursor
@@ -110,7 +111,7 @@ ScanInput:
     j ScanInput                     # Loop (aka Goto)
 
 Exit:
-    la a0, string_Bye
+    la a0, str_Bye
     jal PrintString
     ebreak
 
@@ -148,7 +149,15 @@ ProcessBuf:
 
 
     jal Process_A_Command
+    bgtu a0, zero, 1f
 
+    jal Process_R_Command
+    bgtu a0, zero, 1f
+
+    la a0, str_UnknownCommand
+    jal PrintString
+
+1:
     jal PrintCursor
 
     jal ClearKeyBuffer
@@ -158,6 +167,7 @@ ProcessBuf:
     ret
 
 # ---------------------------------------------
+# a0 = 0 (not handled), 1 (handled), 2 (error)
 # 'a' Command:
 # Example: 00000000] a 000012ab
 #
@@ -167,8 +177,7 @@ ProcessBuf:
 # hex character signals an error.
 # ---------------------------------------------
 Process_A_Command:
-    PrologRa 8
-    sw a0, 8(sp)
+    PrologRa
 
     # The first char in the key buffer is the command
     la t1, keyBuf
@@ -176,7 +185,7 @@ Process_A_Command:
     li t0, ASCII_a
     bne t0, t1, 3f              # Exit if not 'a' command
 
-    # It is the 'w' command. Handle it.
+    # It is the 'a' command. Handle it.
     la t3, string_buf           # Pointer to buffer
     li t4, 0
 
@@ -221,16 +230,65 @@ Process_A_Command:
     la t0, working_addr
     sw a0, 0(t0)
     
-    j 3f                        # Exit
+    li a0, 1
+    j 4f                        # Exit
 
 2:
     # Display error message
     la a0, str_w_cmd_error
     jal PrintString
+    li a0, 2
+    j 4f
 
 3:
-    lw a0, 8(sp)
-    EpilogeRa 8
+    li a0, 0                    # Not handled
+
+4:
+    EpilogeRa
+    
+    ret
+
+# ---------------------------------------------
+# a0 = 0 (not handled), 1 (handled), 2 (error)
+# ] r 25
+# The 'count' parm 
+# ---------------------------------------------
+Process_R_Command:
+    PrologRa
+
+    # The first char in the key buffer is the command
+    la t1, keyBuf
+    lbu t1, 0(t1)
+    li t0, ASCII_r
+    bne t0, t1, 3f              # Exit if not 'r' command
+
+    # It is the 'r' command. Handle it.
+    # la t3, string_buf           # Pointer to buffer
+    # li t4, 0
+
+    la a0, keyBuf
+    addi a0, a0, 2              # Move past Space, and position to 1st digit
+
+    # The 'count' parm should be an Integer not Hex number
+    lbu a0, 0(a0)
+    jal IsIntDigit
+    beq zero, a0, 2f
+
+    li t4, 1
+    j 4f
+
+2:
+    # Display error message
+    la a0, str_r_cmd_error
+    jal PrintString
+    li a0, 2
+    j 4f
+
+3:
+    li a0, 0                    # Not handled
+
+4:
+    EpilogeRa
     
     ret
 
@@ -257,6 +315,26 @@ IsHexDigit:
 
 2:
     li a0, 1                    # Yes: it valid
+    ret
+
+# ---------------------------------------------
+# Check if a0 (char) is a integer digit: 0-9
+# return = a0 => 0 (no), 1 (yes)
+# ---------------------------------------------
+IsIntDigit:
+    
+    li t0, '0'                  # if a0 < '0' it isn't a digit
+    bltu a0, t0, 1f
+
+    li t0, '9'                  # if a0 <= '9' it isn't a digit
+    bleu a0, t0, 2f
+
+1:
+    li a0, 0                    # No: not integer
+    ret
+
+2:
+    li a0, 1                    # Yes: it integer
     ret
 
 # ---------------------------------------------
@@ -854,13 +932,17 @@ HexCharToWord:
 .balign 4
 .word 0x00400000                # Port A base
 .word 0x00400100                # UART base
-string_Greet:   .string "\r\nMonitor 0.0.8 - Ranger SoC - Jun 2023\r\n"
+str_Greet:   .string "\r\nMonitor 0.0.10 - Ranger SoC - Jun 2023\r\n"
 .balign 4
-string_Bye:  .string "\r\nBye\r\n"
+str_Bye:  .string "\r\nBye\r\n"
 .balign 4
 debug_str:  .string "\r\nDEBUG\r\n"
 .balign 4
 str_w_cmd_error: .string "Invalid address\r\n"
+.balign 4
+str_r_cmd_error: .string "Invalid 'r' format\r\n"
+.balign 4
+str_UnknownCommand: .string "Unknown command\r\n"
 .balign 4
 
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
