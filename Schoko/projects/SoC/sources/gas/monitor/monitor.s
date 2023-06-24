@@ -148,9 +148,12 @@ PB_EXIT:
     ret
 
 # ---------------------------------------------
+# 'a' Command
 # a0 = 0 (not handled), 1 (handled), 2 (error)
-# 'a' Command:
-# Example: 00000000] a 000012ab
+# ] aw word-address Word aligned
+# Example: 00000000] aw 000012ab
+# ] ab byte-address
+# Example: 00000000] ab ef
 #
 # Sets the working address
 # The address can be of the form 1234, 00001234
@@ -166,13 +169,22 @@ Process_A_Command:
     li t0, ASCII_a
     bne t0, t1, PAC_NH          # Exit if not 'a' command
 
-    # It is the 'a' command. Handle it.
-    la t3, string_buf           # Pointer to buffer
-    li t4, 0
+    la a0, keyBuf               # Pointer to buffer
+    addi a0, a0, 1              # Move to 'type': ('b' or 'w')
 
-    # Is valid address
-    la a0, keyBuf
-    addi a0, a0, 2              # Move past Space, and position to 1st digit
+    lbu t1, 0(a0)               # Get char to check
+
+    li t0, ASCII_b
+    beq t0, t1, PAC_Bytes
+
+    li t0, ASCII_w
+    beq t0, t1, PAC_Words
+
+    j PRC_Error
+
+PAC_Words:
+    addi a0, a0, 2              # Move to address (space + char)
+
     mv t5, a0                   # Backup
     jal IsHex32String
     beq zero, a0, PAC_Error     # if zero then display error
@@ -189,6 +201,30 @@ Process_A_Command:
     jal String32ToWord          # returns a0 = converted Word
     # jal WritePortA
     jal WordAlign               # a0 aligned and returned in a0
+
+    la t0, working_addr
+    sw a0, 0(t0)
+    
+    li a0, 1
+    j PAC_Exit
+
+PAC_Bytes:
+    addi a0, a0, 2              # Move to address (space + char)
+
+    mv t5, a0                   # Backup
+    jal IsHex32String
+    beq zero, a0, PAC_Error     # if zero then display error
+
+    mv a0, t5                   # Restore char position
+    jal LengthOfString          # a0 <== length
+    li a1, 8                    # Set Max with to 8 chars
+    bgt a0, a1, PAC_Error
+
+    mv a0, t5                   # Restore char position
+    jal PadLeftZerosString      # Results into string_buf2 for next call
+
+    la a0, string_buf2
+    jal String32ToWord          # returns a0 = converted Word
 
     la t0, working_addr
     sw a0, 0(t0)
@@ -231,11 +267,9 @@ Process_R_Command:
     lbu t1, 0(a0)               # Get char to check
 
     li t0, ASCII_b
-    li t2, 0                    # Indicate byte format
     beq t0, t1, PRC_Bytes
 
     li t0, ASCII_w
-    li t2, 1                    # Indicate word format
     beq t0, t1, PRC_Words
 
     j PRC_Error
@@ -336,6 +370,21 @@ PWC_Words:
     j PWC_Exit
 
 PWC_Bytes:
+    addi a0, a0, 2              # Move to 'value' (space + char)
+    mv t5, a0                   # Backup copy
+
+    jal IsHexByte               # a0 = 0 if invalid hex
+    beq zero, a0, PWC_Error
+
+    # Now write word to working address
+    la t0, working_addr         # Point to working address variable
+    lw t0, 0(t0)                # Fetch value from variable = working address
+
+    mv a0, t5                   # Restore char position
+    jal String8ToWord           # a0 = word (i.e. byte) to store
+
+    sb a0, 0(t0)
+
     j PWC_Exit
 
 PWC_Error:  # Display error message
@@ -586,6 +635,44 @@ IH_Exit:
     EpilogeRa 12
 
     ret
+
+# ---------------------------------------------
+# Scan 2 chars for valid hex chars
+# Input:
+#   a0 points to string
+# Output:
+#   a0 => 0 (no), 1 (yes)
+# ---------------------------------------------
+IsHexByte:
+    PrologRa 12
+    sw t1, 8(sp)
+    sw t2, 12(sp)
+
+    mv t1, a0                   # Copy pointer a0 will be destroyed
+
+    lbu a0, 0(t1)               # Fetch char into argument
+    jal IsHexDigit
+    beq zero, a0, IHB_Invalid    # Exit to invalid if a0 = 0
+
+    addi t1, t1, 1              # Move to 2nd char
+    lbu a0, 0(t1)               # Fetch char
+    jal IsHexDigit
+    beq zero, a0, IHB_Invalid    # Exit to invalid if a0 = 0
+
+IHB_Valid:
+    li a0, 1                    # Valid address
+    j IHB_Exit
+
+IHB_Invalid:
+    li a0, 0                    # Invalid address
+
+IHB_Exit:
+    lw t2, 12(sp)
+    lw t1, 8(sp)
+    EpilogeRa 12
+
+    ret
+
 
 # ---------------------------------------------
 # Check for Backspace/Delete
@@ -1065,7 +1152,7 @@ LengthOfString:
     ret
 
 # ---------------------------------------------
-# Convert String (8 chars in string_buf2) to Word and return in a0
+# Convert String (8 chars) to Word and return in a0
 # Input:
 #   a0 = address to source string buffer
 # Output:
@@ -1084,7 +1171,6 @@ String32ToWord:
     mv t4, a0                   # Copy pointer
     li t2, 28                   # Shift amount shrinks by 4 on each pass
     mv t3, zero                 # The final converted Word pre cleared
-    # la t4, string_buf2          # Pointer to hex string to convert
 
 1:
     lbu a0, 0(t4)               # Get char
@@ -1103,6 +1189,40 @@ String32ToWord:
     lw t2, 12(sp)
     lw t1, 8(sp)
     EpilogeRa 20
+
+    ret
+
+# ---------------------------------------------
+# Convert String (2 chars) to Word and return in a0
+# Input:
+#   a0 = address to source string buffer
+# Output:
+#   a0 = LSB of Word
+# ---------------------------------------------
+String8ToWord:
+    PrologRa 16
+    sw t4, 8(sp)
+    sw t3, 12(sp)
+    sw t2, 16(sp)
+
+    mv t4, a0                   # Copy pointer
+    mv t3, zero                 # The final converted Word pre cleared
+
+    lbu a0, 0(t4)               # Get ascii char (upper nibble)
+    jal HexCharToWord           # Convert to number in a0
+    mv t2, a0                   # Copy for merging later
+    slli t2, t2, 4              # Shift 4 bits to high position
+
+    addi t4, t4, 1              # Move to next nibble char
+    lbu a0, 0(t4)               # Get ascii char (lower nibble)
+    jal HexCharToWord           # Convert to number in a0
+
+    or a0, t2, a0               # Merge together
+
+    lw t2, 16(sp)
+    lw t3, 12(sp)
+    lw t4, 8(sp)
+    EpilogeRa 16
 
     ret
 
@@ -1289,7 +1409,7 @@ WordAlign:
 .balign 4
 .word 0x00400000                # Port A base
 .word 0x00400100                # UART base
-str_Greet:   .string "\r\nMonitor 0.0.13 - Ranger SoC - Jun 2023\r\n"
+str_Greet:   .string "\r\nMonitor 0.0.14 - Ranger SoC - Jun 2023\r\n"
 .balign 4
 str_Bye:  .string "\r\nBye\r\n"
 .balign 4
