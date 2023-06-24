@@ -78,6 +78,10 @@ _start:
     la a0, str_Greet             # Set pointer to String
     jal PrintString
 
+    # Clear working address
+    la a0, working_addr
+    sw zero, 0(a0)   
+
     jal PrintCursor
 
     # Clear port A
@@ -121,18 +125,6 @@ Exit:
 # ---------------------------------------------
 ProcessBuf:
     PrologRa
-
-#     la a0, string_buf2
-#     jal PrintString
-#     la a0, string_buf2
-#     jal String32ToWord              # Convert count String to Word
-#     jal HexWordToString
-#     la a0, string_buf
-#     jal PrintString
-#     jal PrintCrLn
-# XXX2:
-#     li a0, 0
-#     j XXX2
 
     jal Process_A_Command
     bgtu a0, zero, PB_EXIT          # a == 0 then process next command
@@ -190,30 +182,10 @@ Process_A_Command:
     mv a0, t5                   # Restore char position
     jal PadLeftZerosString      # Results into string_buf2 for next call
 
-    # !!!!!!!! BEGIN DEBUG !!!!!!!!
-    # la a0, string_buf2
-    # jal PrintString
-    # li a0, ASCII_CR
-    # jal PrintChar
-    # li a0, ASCII_LF
-    # jal PrintChar
-    # !!!!!!!! END DEBUG !!!!!!!!
-
     la a0, string_buf2
     jal String32ToWord          # returns a0 = converted Word
     # jal WritePortA
     jal WordAlign               # a0 aligned and returned in a0
-
-
-    # !!!!!!!! BEGIN DEBUG !!!!!!!!
-    # mv t1, a0
-    # jal PrintWordAsBinary
-    # li a0, ASCII_CR
-    # jal PrintChar
-    # li a0, ASCII_LF
-    # jal PrintChar
-    # mv a0, t1
-    # !!!!!!!! END DEBUG !!!!!!!!
 
     la t0, working_addr
     sw a0, 0(t0)
@@ -340,6 +312,50 @@ DW_Loop:
     jal HexWordToString         # Convert value to string
     la a0, string_buf
     jal PrintString             # Print value
+
+    li a0, ASCII_SPC
+    jal PrintChar
+    li a0, ASCII_SPC
+    jal PrintChar
+
+    # To match the little-endian order use a sequence "3,2,1,0"
+    # If you want it in readable form then use "0,1,2,3"
+    la t0, endian_order         # Check for readable flag
+    lbu t0, 0(t0)
+    beq zero, t0, 1f
+
+    lbu a0, 3(t1)
+    jal ByteToChar
+    jal PrintChar    
+
+    lbu a0, 2(t1)
+    jal ByteToChar
+    jal PrintChar    
+
+    lbu a0, 1(t1)
+    jal ByteToChar
+    jal PrintChar    
+
+    lbu a0, 0(t1)
+    jal ByteToChar
+    jal PrintChar    
+
+1:  # Readable form
+    lbu a0, 0(t1)
+    jal ByteToChar
+    jal PrintChar    
+
+    lbu a0, 1(t1)
+    jal ByteToChar
+    jal PrintChar    
+
+    lbu a0, 2(t1)
+    jal ByteToChar
+    jal PrintChar    
+
+    lbu a0, 3(t1)
+    jal ByteToChar
+    jal PrintChar    
 
     jal PrintCrLn
 
@@ -997,39 +1013,10 @@ String32ToWord:
     # la t4, string_buf2          # Pointer to hex string to convert
 
 1:
-    # li a0, '!'
-    # jal PrintChar
-    # lbu a0, 0(t4)               # Get char
-    # jal PrintChar
-    # li a0, '!'
-    # jal PrintChar
-
-    # li a0, '$'
-    # jal PrintChar
-
-    # lbu a0, 0(t4)               # Get char
-    # jal HexCharToWord           # Convert char to number in a0
-    # jal PrintWordAsBinary
-   
-    # li a0, '$'
-    # jal PrintChar
-
     lbu a0, 0(t4)               # Get char
     jal HexCharToWord           # Convert to number in a0
     sll t1, a0, t2              # Shift LM nibble of a0 by t2 into t1
     or t3, t3, t1               # Merge into t3
-
-    # li a0, ':'
-    # jal PrintChar
-    # mv a0, t3
-    # jal PrintWordAsBinary
-    # li a0, ':'
-    # jal PrintChar
-    # li a0, ASCII_CR
-    # jal PrintChar
-    # li a0, ASCII_LF
-    # jal PrintChar
-
 
     addi t2, t2, -4             # Dec shift amount value
     addi t4, t4, 1              # Move pointer to next char
@@ -1091,6 +1078,101 @@ HWT_Store:
     ret
 
 # ---------------------------------------------
+# Converts a byte value to an ascii char.
+# The string is stored in string_buf.
+# Visible characters start at ' ' -> '~' otherwise
+# Show a '.'
+# Input:
+#   a0 = word with LSB to convert
+# Output:
+#   a0 = visibility adjusted
+# ---------------------------------------------
+ByteToChar:
+    PrologRa 8
+    sw t0, 8(sp)
+
+    # If byte value < 0x20 (space), or = 7F (delete)
+    # return a '.'
+    li t0, ASCII_SPC
+    bltu a0, t0, 1f
+    li t0, '~'
+    bgtu a0, t0, 1f
+    j 2f
+
+1:
+    # Translate to '.'
+    li a0, '.'
+
+2:
+    lw t0, 8(sp)
+    EpilogeRa 8
+
+    ret
+
+# ---------------------------------------------
+# Converts a 8 bit value to an 2 char hex string.
+# The string is stored in string_buf.
+# Input:
+#   a0 = word with LSB to convert
+# Output:
+#   string_buf
+# ---------------------------------------------
+HexByteToString:
+    PrologRa 12
+    sw t0, 8(sp)
+    sw t1, 12(sp)
+
+    la t0, string_buf           # Pointer to buffer
+    mv t1, a0                   # Copy argument
+
+    # Convert lower Nibble
+    andi a0, a0, 0x0F           # Isolate nibble
+    jal NibbleToHexChar
+    sb a0, 0(t0)                # Store char in buffer
+
+    addi t0, t0, 1
+    mv a0, t1                   # Reset from copy
+
+    # Convert higher Nibble
+    andi a0, a0, 0xF0           # Isolate nibble
+    srli a0, a0, 4              # Move nibble 4 bits for subroutine
+    jal NibbleToHexChar
+    sb a0, 0(t0)                # Store char in buffer
+
+    addi t0, t0, 1
+    sb zero, 0(t0)              # Null terminate
+
+    lw t1, 12(sp)
+    lw t0, 8(sp)
+    EpilogeRa 12
+
+    ret
+
+# ---------------------------------------------
+# Converts a Nibble to a char.
+# Input:
+#   a0 = word with the Nibble
+# Output:
+#   a0 = char
+# ---------------------------------------------
+NibbleToHexChar:
+    PrologRa 8
+    sw t0, 8(sp)
+
+    li t0, ASCII_colon
+
+    addi a0, a0, '0'            # Translate to Ascii by adding '0' = 0x30
+    blt a0, t0, 1f              # See if t1 > '9' i.e. t1 > ':'
+    addi a0, a0, 39             # Else convert to 'a'-'f'
+
+1:
+    lw t0, 8(sp)
+    EpilogeRa 8
+
+    ret
+
+
+# ---------------------------------------------
 # Convert ascii char (in a0) to Word and return in a0
 # It is assumed that char is already a valid hex digit
 # ---------------------------------------------
@@ -1133,7 +1215,7 @@ WordAlign:
 .balign 4
 .word 0x00400000                # Port A base
 .word 0x00400100                # UART base
-str_Greet:   .string "\r\nMonitor 0.0.12 - Ranger SoC - Jun 2023\r\n"
+str_Greet:   .string "\r\nMonitor 0.0.13 - Ranger SoC - Jun 2023\r\n"
 .balign 4
 str_Bye:  .string "\r\nBye\r\n"
 .balign 4
@@ -1160,11 +1242,10 @@ keyBuf:
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
 .section .data
 working_addr: .word 0x00000000
-
+endian_order: .byte 0               # Default to readable (0 = big endian)
 # String buffer used for conversions
-string_buf:  .fill 128, 1, 0      # 128*1 bytes with value 0
-string_buf2: .fill 128, 1, 0      # 128*1 bytes with value 0
-# string_buf2: .string "00000055"
+string_buf:  .fill 128, 1, 0        # 128*1 bytes with value 0
+string_buf2: .fill 128, 1, 0        # 128*1 bytes with value 0
 
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
 # Stack. Grows towards rodata section
