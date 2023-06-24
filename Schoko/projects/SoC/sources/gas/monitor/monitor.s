@@ -132,6 +132,9 @@ ProcessBuf:
     jal Process_R_Command
     bgtu a0, zero, PB_EXIT
 
+    jal Process_W_Command
+    bgtu a0, zero, PB_EXIT
+
     la a0, str_UnknownCommand
     jal PrintString
 
@@ -171,7 +174,7 @@ Process_A_Command:
     la a0, keyBuf
     addi a0, a0, 2              # Move past Space, and position to 1st digit
     mv t5, a0                   # Backup
-    jal IsHexAddress
+    jal IsHex32String
     beq zero, a0, PAC_Error     # if zero then display error
 
     mv a0, t5                   # Restore char position
@@ -209,7 +212,7 @@ PAC_Exit:
 
 # ---------------------------------------------
 # a0 = 0 (not handled), 1 (handled), 2 (error)
-# ] r w 25
+# ] rw 25
 # The 1st parm 'type' can be 'b' (byte) or 'w" (word)
 # The 2nd parm 'count' must be a decimal number
 # ---------------------------------------------
@@ -223,7 +226,7 @@ Process_R_Command:
     bne t0, t1, PRC_NH          # Exit if not 'r' command
 
     la a0, keyBuf
-    addi a0, a0, 2              # Move past Space, and position to 'type'
+    addi a0, a0, 1              # Move to 'type'
 
     lbu t1, 0(a0)               # Get char to check
 
@@ -268,16 +271,85 @@ PRC_Error:  # Display error message
     j PRC_Exit
 
 PRC_NH:
-    # li a0, '3'
-    # jal PrintCharCrLn
     li a0, 0                    # Not handled
 
 PRC_Exit:
-    # li a0, 'X'
-    # jal PrintCharCrLn
 
     EpilogeRa
     
+    ret
+
+# ---------------------------------------------
+# a0 = 0 (not handled), 1 (handled), 2 (error)
+# ] ww 1234abcd
+# OR
+# ] wb af
+# The 1st parm 'type' can be 'b' (byte) or 'w" (word)
+# The 2nd parm is a value
+# ---------------------------------------------
+Process_W_Command:
+    PrologRa
+
+    # The first char in the key buffer is the command
+    la t1, keyBuf
+    lbu t1, 0(t1)
+    li t0, ASCII_w
+    bne t0, t1, PWC_NH          # Exit if not 'w' command
+
+    la a0, keyBuf
+    addi a0, a0, 1              # Move to 'type'
+
+    lbu t1, 0(a0)               # Get char to check
+
+    li t0, ASCII_b
+    li t2, 0                    # Indicate byte format
+    beq t0, t1, PWC_Bytes
+
+    li t0, ASCII_w
+    li t2, 1                    # Indicate word format
+    beq t0, t1, PWC_Words
+
+    j PWC_Error
+
+PWC_Words:
+    addi a0, a0, 2              # Move to 'value' (space + char)
+    mv t5, a0                   # Backup copy
+
+    # Check the value is 4 bytes or 8 chars in length
+    jal IsHex32String
+    beq zero, a0, PWC_Error     # if zero then display error
+
+    mv a0, t5                   # Restore char position
+    jal LengthOfString          # a0 <== length
+    li a1, 8                    # Set Max with to 8 chars
+    bne a0, a1, PWC_Error
+
+    # Now write word to working address
+    la t0, working_addr         # Point to working address variable
+    lw t0, 0(t0)                # Fetch value from variable = working address
+
+    mv a0, t5                   # Restore char position
+    jal String32ToWord          # a0 = word to store
+
+    sw a0, 0(t0)                # Store it
+
+    j PWC_Exit
+
+PWC_Bytes:
+    j PWC_Exit
+
+PWC_Error:  # Display error message
+    la a0, str_w_cmd_error
+    jal PrintString
+    li a0, 2
+    j PWC_Exit
+
+PWC_NH:
+    li a0, 0                    # Not handled
+
+PWC_Exit:
+    EpilogeRa
+
     ret
 
 # ---------------------------------------------
@@ -479,10 +551,12 @@ II_Exit:
 
 # ---------------------------------------------
 # Scan each char for valid hex chars
-# a0 points to string
-# return = a0 => 0 (no), 1 (yes)
+# Input:
+#   a0 points to string
+# Output:
+#   a0 => 0 (no), 1 (yes)
 # ---------------------------------------------
-IsHexAddress:
+IsHex32String:
     PrologRa 12
     sw t1, 8(sp)
     sw t2, 12(sp)
@@ -1221,7 +1295,7 @@ str_Bye:  .string "\r\nBye\r\n"
 .balign 4
 debug_str:  .string "\r\nDEBUG\r\n"
 .balign 4
-str_w_cmd_error: .string "Invalid address\r\n"
+str_w_cmd_error: .string "Invalid parameter(s): w ('b' or 'w') value value...\r\n"
 .balign 4
 str_r_cmd_error: .string "Invalid parameter(s): r ('b' or 'w') count\r\n"
 .balign 4
@@ -1244,6 +1318,7 @@ keyBuf:
 working_addr: .word 0x00000000
 endian_order: .byte 0               # Default to readable (0 = big endian)
 # String buffer used for conversions
+.balign 4
 string_buf:  .fill 128, 1, 0        # 128*1 bytes with value 0
 string_buf2: .fill 128, 1, 0        # 128*1 bytes with value 0
 

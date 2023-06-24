@@ -12,29 +12,29 @@ STACK            0x00001000         0x00000100         w
 Linker script and memory map
 
 
-.text           0x00000000      0xa60
+.text           0x00000000      0xb14
  *(.text)
- .text          0x00000000      0xa60 /media/RAMDisk/monitor.o
+ .text          0x00000000      0xb14 /media/RAMDisk/monitor.o
                 0x00000000                _start
 
-.rodata         0x00000c00       0xa0
+.rodata         0x00000c00       0xc4
                 0x00000c00                        rom_data = .
  *(.rodata)
- .rodata        0x00000c00       0xa0 /media/RAMDisk/monitor.o
+ .rodata        0x00000c00       0xc4 /media/RAMDisk/monitor.o
 
-.rela.dyn       0x00000ca0        0x0
- .rela.text     0x00000ca0        0x0 /media/RAMDisk/monitor.o
+.rela.dyn       0x00000cc4        0x0
+ .rela.text     0x00000cc4        0x0 /media/RAMDisk/monitor.o
 
 keybuffer       0x00000d00       0x24
  *(keybuffer)
  keybuffer      0x00000d00       0x24 /media/RAMDisk/monitor.o
 
-.data           0x00000e00      0x105
+.data           0x00000e00      0x108
  *(.data)
- .data          0x00000e00      0x105 /media/RAMDisk/monitor.o
+ .data          0x00000e00      0x108 /media/RAMDisk/monitor.o
 
-.bss            0x00000f05        0x0
- .bss           0x00000f05        0x0 /media/RAMDisk/monitor.o
+.bss            0x00000f08        0x0
+ .bss           0x00000f08        0x0 /media/RAMDisk/monitor.o
 
 stack           0x00001000      0x100
  *(stack)
