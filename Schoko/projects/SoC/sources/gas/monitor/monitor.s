@@ -461,6 +461,8 @@ DW_Loop:
     jal ByteToChar
     jal PrintChar    
 
+    j 2f
+    
 1:  # Readable form
     lbu a0, 0(t1)
     jal ByteToChar
@@ -478,6 +480,7 @@ DW_Loop:
     jal ByteToChar
     jal PrintChar    
 
+2:
     jal PrintCrLn
 
     addi t1, t1, 4              # Move to next address = move Byte addressing
