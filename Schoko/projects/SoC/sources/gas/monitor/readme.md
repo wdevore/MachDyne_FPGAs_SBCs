@@ -1,3 +1,5 @@
+# bugs
+
 # Description
 A very minimal Monitor along the lines of Wozmon.
 

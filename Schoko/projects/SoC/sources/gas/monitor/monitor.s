@@ -32,6 +32,7 @@
 .set ASCII_a,           'a'
 .set ASCII_w,           'w'
 .set ASCII_r,           'r'
+.set ASCII_b,           'b'
 .set ASCII_colon,       ':'         # Colon is used to check < '9'
 .set ASCII_0,           '0'
 .set ASCII_1,           '1'
@@ -121,43 +122,28 @@ Exit:
 ProcessBuf:
     PrologRa
 
-    # la a0, string_buf2
-    # jal PrintString
-    # li a0, ASCII_CR
-    # jal PrintChar
-    # li a0, ASCII_LF
-    # jal PrintChar
-
-    # la a0, string_buf2
-    # li a1, 8
-    # jal PadLeftZerosString
-    # jal StringToWord            # returns a0 = converted Word
-    # jal PrintWordAsBinary
-
-    # la a0, string_buf2
-    # jal PrintString
-
-    # la t0, string_buf2
-    # lbu a0, 0(t0)
-    # jal HexCharToWord
-    # jal PrintWordAsBinary
-
-    # li a0, ASCII_CR
-    # jal PrintChar
-    # li a0, ASCII_LF
-    # jal PrintChar
-
+#     la a0, string_buf2
+#     jal PrintString
+#     la a0, string_buf2
+#     jal String32ToWord              # Convert count String to Word
+#     jal HexWordToString
+#     la a0, string_buf
+#     jal PrintString
+#     jal PrintCrLn
+# XXX2:
+#     li a0, 0
+#     j XXX2
 
     jal Process_A_Command
-    bgtu a0, zero, 1f
+    bgtu a0, zero, PB_EXIT          # a == 0 then process next command
 
     jal Process_R_Command
-    bgtu a0, zero, 1f
+    bgtu a0, zero, PB_EXIT
 
     la a0, str_UnknownCommand
     jal PrintString
 
-1:
+PB_EXIT:
     jal PrintCursor
 
     jal ClearKeyBuffer
@@ -183,7 +169,7 @@ Process_A_Command:
     la t1, keyBuf
     lbu t1, 0(t1)
     li t0, ASCII_a
-    bne t0, t1, 3f              # Exit if not 'a' command
+    bne t0, t1, PAC_NH          # Exit if not 'a' command
 
     # It is the 'a' command. Handle it.
     la t3, string_buf           # Pointer to buffer
@@ -194,15 +180,15 @@ Process_A_Command:
     addi a0, a0, 2              # Move past Space, and position to 1st digit
     mv t5, a0                   # Backup
     jal IsHexAddress
-    beq zero, a0, 2f            # if zero then display error
+    beq zero, a0, PAC_Error     # if zero then display error
 
     mv a0, t5                   # Restore char position
     jal LengthOfString          # a0 <== length
     li a1, 8                    # Set Max with to 8 chars
-    bgt a0, a1, 2f
+    bgt a0, a1, PAC_Error
 
     mv a0, t5                   # Restore char position
-    jal PadLeftZerosString      # Results into string_buf2
+    jal PadLeftZerosString      # Results into string_buf2 for next call
 
     # !!!!!!!! BEGIN DEBUG !!!!!!!!
     # la a0, string_buf2
@@ -213,8 +199,10 @@ Process_A_Command:
     # jal PrintChar
     # !!!!!!!! END DEBUG !!!!!!!!
 
-    jal StringToWord            # returns a0 = converted Word
+    la a0, string_buf2
+    jal String32ToWord          # returns a0 = converted Word
     # jal WritePortA
+    jal WordAlign               # a0 aligned and returned in a0
 
 
     # !!!!!!!! BEGIN DEBUG !!!!!!!!
@@ -231,27 +219,27 @@ Process_A_Command:
     sw a0, 0(t0)
     
     li a0, 1
-    j 4f                        # Exit
+    j PAC_Exit
 
-2:
-    # Display error message
+PAC_Error:  # Display error message
     la a0, str_w_cmd_error
     jal PrintString
     li a0, 2
-    j 4f
+    j PAC_Exit
 
-3:
+PAC_NH:
     li a0, 0                    # Not handled
 
-4:
+PAC_Exit:
     EpilogeRa
     
     ret
 
 # ---------------------------------------------
 # a0 = 0 (not handled), 1 (handled), 2 (error)
-# ] r 25
-# The 'count' parm 
+# ] r w 25
+# The 1st parm 'type' can be 'b' (byte) or 'w" (word)
+# The 2nd parm 'count' must be a decimal number
 # ---------------------------------------------
 Process_R_Command:
     PrologRa
@@ -260,36 +248,120 @@ Process_R_Command:
     la t1, keyBuf
     lbu t1, 0(t1)
     li t0, ASCII_r
-    bne t0, t1, 3f              # Exit if not 'r' command
-
-    # It is the 'r' command. Handle it.
-    # la t3, string_buf           # Pointer to buffer
-    # li t4, 0
+    bne t0, t1, PRC_NH          # Exit if not 'r' command
 
     la a0, keyBuf
-    addi a0, a0, 2              # Move past Space, and position to 1st digit
+    addi a0, a0, 2              # Move past Space, and position to 'type'
+
+    lbu t1, 0(a0)               # Get char to check
+
+    li t0, ASCII_b
+    li t2, 0                    # Indicate byte format
+    beq t0, t1, PRC_Bytes
+
+    li t0, ASCII_w
+    li t2, 1                    # Indicate word format
+    beq t0, t1, PRC_Words
+
+    j PRC_Error
+
+PRC_Words:
+    addi a0, a0, 2              # Move to 'count' (space + char)
+    mv t5, a0
 
     # The 'count' parm should be an Integer not Hex number
-    lbu a0, 0(a0)
-    jal IsIntDigit
-    beq zero, a0, 2f
+    jal IsInteger               # a0 = 1 = valid
+    beq zero, a0, PRC_Error
 
-    li t4, 1
-    j 4f
+    mv a0, t5                   # Reset count
 
-2:
-    # Display error message
+    jal PadLeftZerosString      # Results into string_buf2 for next call
+    la a0, string_buf2
+    jal String32ToWord          # Convert count String to Word
+
+    # li a0, 5
+    jal DumpWords               # Input a0 = count of Words to display
+    li a0, 1                    # Handled
+    j PRC_Exit
+    
+PRC_Bytes:
+    jal DumpBytes
+    li a0, 1                    # Handled
+    j PRC_Exit
+
+PRC_Error:  # Display error message
     la a0, str_r_cmd_error
     jal PrintString
     li a0, 2
-    j 4f
+    j PRC_Exit
 
-3:
+PRC_NH:
+    # li a0, '3'
+    # jal PrintCharCrLn
     li a0, 0                    # Not handled
 
-4:
+PRC_Exit:
+    # li a0, 'X'
+    # jal PrintCharCrLn
+
     EpilogeRa
     
+    ret
+
+# ---------------------------------------------
+# a0 = count of Words to display
+# ---------------------------------------------
+DumpWords:
+    PrologRa 16
+    sw t0, 8(sp)
+    sw t1, 12(sp)
+    sw t2, 16(sp)
+
+    # Format:
+    # 00000000: 12345678
+    # 00000001: 12345678
+    la t0, working_addr         # Pointer to working address
+    lw t1, 0(t0)                # Fetch value at pointer = new pointer
+    mv t2, a0                   # Capture count argument
+
+DW_Loop:
+    mv a0, t1                   # t1 points to current working address
+    jal HexWordToString         # Convert address (a0) to string
+    la a0, string_buf
+    jal PrintString             # Print address
+
+    li a0, ASCII_colon
+    jal PrintChar
+
+    li a0, ASCII_SPC
+    jal PrintChar
+
+    lw a0, 0(t1)                # Fetch value
+    jal HexWordToString         # Convert value to string
+    la a0, string_buf
+    jal PrintString             # Print value
+
+    jal PrintCrLn
+
+    addi t1, t1, 4              # Move to next address
+    addi t2, t2, -1             # Dec word count
+    bne zero, t2, DW_Loop
+
+    sw t2, 16(sp)
+    sw t1, 12(sp)
+    sw t0, 8(sp)
+    EpilogeRa 16
+
+    ret
+
+DumpBytes:
+    PrologRa
+
+    li a0, 'B'
+    jal PrintCharCrLn
+    
+    EpilogeRa
+
     ret
 
 # ---------------------------------------------
@@ -297,13 +369,16 @@ Process_R_Command:
 # return = a0 => 0 (no), 1 (yes)
 # ---------------------------------------------
 IsHexDigit:
+    PrologRa 8
+    sw t0, 8(sp)
+
     li t0, '0'                  # if a0 < '0' it isn't a digit
     bltu a0, t0, 1f
 
     li t0, 'f'                  # if a0 > 'f' it isn't a digit
     bgtu a0, t0, 1f
 
-    li t0, ':'                  # if a0 < ':' it IS a digit
+    li t0, ASCII_colon          # if a0 < ':' it IS a digit
     bltu a0, t0, 2f
     
     li t0, '`'                  # if a0 > '`' it IS a digit
@@ -311,10 +386,14 @@ IsHexDigit:
 
 1:
     li a0, 0                    # No: not valid
-    ret
+    j 3f
 
 2:
     li a0, 1                    # Yes: it valid
+
+3:
+    lw t0, 8(sp)
+    EpilogeRa 8
     ret
 
 # ---------------------------------------------
@@ -322,7 +401,9 @@ IsHexDigit:
 # return = a0 => 0 (no), 1 (yes)
 # ---------------------------------------------
 IsIntDigit:
-    
+    PrologRa 8
+    sw t0, 8(sp)
+
     li t0, '0'                  # if a0 < '0' it isn't a digit
     bltu a0, t0, 1f
 
@@ -331,10 +412,50 @@ IsIntDigit:
 
 1:
     li a0, 0                    # No: not integer
-    ret
+    j 3f
 
 2:
     li a0, 1                    # Yes: it integer
+
+3:
+    lw t0, 8(sp)
+    EpilogeRa 8
+    ret
+
+# ---------------------------------------------
+# Scan each char for valid integer chars
+# a0 points to string
+# return = a0 => 0 (no), 1 (yes)
+# ---------------------------------------------
+IsInteger:
+    PrologRa 12
+    sw t2, 8(sp)
+    sw t1, 12(sp)
+
+    mv t1, a0                   # Copy pointer
+
+II_Loop:
+    lbu t2, 0(t1)               # Fetch char
+    beq zero, t2, II_Valid      # If Null then all are valid
+
+    addi t1, t1, 1              # Else move to next char
+    mv a0, t2                   # Set argument for IsInt...
+    jal IsIntDigit              # a0 = 0 = invalid
+    beq zero, a0, II_Invalid    # Exit to invalid if a0 = 0
+    j II_Loop                   # Loop while a0 = 1
+
+II_Valid:
+    li a0, 1                    # Valid number
+    j II_Exit
+
+II_Invalid:
+    li a0, 0                    # Invalid number
+
+II_Exit:
+    lw t1, 12(sp)
+    lw t2, 8(sp)
+    EpilogeRa 12
+
     ret
 
 # ---------------------------------------------
@@ -343,29 +464,33 @@ IsIntDigit:
 # return = a0 => 0 (no), 1 (yes)
 # ---------------------------------------------
 IsHexAddress:
-    PrologRa
+    PrologRa 12
+    sw t1, 8(sp)
+    sw t2, 12(sp)
 
     mv t1, a0                   # Copy pointer
 
-1:
+IH_Loop:
     lbu t2, 0(t1)               # Fetch char
-    beq zero, t2, 1f            # Loop while not Null
+    beq zero, t2, IH_Valid      # If Null then all are valid
 
     addi t1, t1, 1              # Move to next char
     mv a0, t2                   # Pass argument to "is" check
     jal IsHexDigit
-    beq zero, a0, 2f            # Exit to invalid if a0 = 0
-    j 1b                        # Loop while a0 = 1
+    beq zero, a0, IH_Invalid    # Exit to invalid if a0 = 0
+    j IH_Loop                   # Loop while a0 = 1
 
-1:
+IH_Valid:
     li a0, 1                    # Valid address
-    j 3f
+    j IH_Exit
 
-2:
+IH_Invalid:
     li a0, 0                    # Invalid address
 
-3:
-    EpilogeRa
+IH_Exit:
+    lw t2, 12(sp)
+    lw t1, 8(sp)
+    EpilogeRa 12
 
     ret
 
@@ -374,7 +499,8 @@ IsHexAddress:
 # Moves the cursor back and then print a Space
 # ---------------------------------------------
 CheckForDEL:
-    PrologRa
+    PrologRa 8
+    sw t0, 8(sp)
 
     lbu a0, UART_RX_REG_ADDR(s3)    # Access byte just received
 
@@ -399,7 +525,8 @@ CheckForDEL:
     jal TrimLastKeyBuffer
 
 1:
-    EpilogeRa
+    lw t0, 8(sp)
+    EpilogeRa 8
 
     ret
 
@@ -410,7 +537,9 @@ CheckForDEL:
 # a0 = return value
 # ---------------------------------------------
 CheckForCR:
-    PrologRa
+    PrologRa 12
+    sw t0, 8(sp)
+    sw t1, 12(sp)
 
     # Is a0 = CR
     li t0, ASCII_CR
@@ -454,7 +583,9 @@ CheckForCR:
     li a0, 1
 
 3:
-    EpilogeRa
+    lw t1, 12(sp)
+    lw t0, 8(sp)
+    EpilogeRa 12
 
     ret
 
@@ -462,6 +593,10 @@ CheckForCR:
 # Clear key input buffer
 # ---------------------------------------------
 ClearKeyBuffer:
+    PrologRa 12
+    sw t0, 8(sp)
+    sw t1, 12(sp)
+
     # Reset offset to zero
     la t0, bufOffset
     sb zero, 0(t0)
@@ -476,6 +611,10 @@ ClearKeyBuffer:
     j 1b
 
 1:
+    lw t1, 12(sp)
+    lw t0, 8(sp)
+    EpilogeRa 12
+
     ret
 
 # ---------------------------------------------
@@ -486,6 +625,10 @@ ClearKeyBuffer:
 # last visible char.
 # ---------------------------------------------
 TrimLastKeyBuffer:
+    PrologRa 12
+    sw t0, 8(sp)
+    sw t1, 12(sp)
+
     la t0, bufOffset            # Pointer to offset
 
     # Is offset == 0?
@@ -502,6 +645,10 @@ TrimLastKeyBuffer:
     la t1, keyBuf               # Pointer to key buffer
     add t1, t1, t0              # Move pointer
     sb zero, 0(t1)              # zero = Null
+
+    lw t1, 12(sp)
+    lw t0, 8(sp)
+    EpilogeRa 12
 
     ret
 
@@ -549,9 +696,8 @@ WritePortA:
 # a0 points to start of String
 # ---------------------------------------------
 PrintString:
-    PrologRa 12
-    sw a0, 8(sp)
-    sw t0, 12(sp)
+    PrologRa 8
+    sw t0, 8(sp)
 
 1:
     lbu t0, 0(a0)               # Load t0 to what a0 is pointing at
@@ -565,9 +711,8 @@ PrintString:
     j 1b
 
 1:
-    lw t0, 12(sp)
-    lw a0, 8(sp)
-    EpilogeRa 12
+    lw t0, 8(sp)
+    EpilogeRa 8
 
     ret
 
@@ -586,11 +731,8 @@ PrintChar:
 
     ret
 
-PrintCharCrLn:
+PrintCrLn:
     PrologRa
-
-    sb a0, UART_TX_REG_ADDR(s3) # Send
-    jal PollTxBusy
 
     li a0, ASCII_CR
     sb a0, UART_TX_REG_ADDR(s3) # Send
@@ -604,32 +746,51 @@ PrintCharCrLn:
 
     ret
 
+PrintCharCrLn:
+    PrologRa
+
+    jal PrintChar
+
+    jal PrintCrLn
+
+    EpilogeRa
+
+    ret
+
 # ---------------------------------------------
 # Moves the cursor back to the begining of the line
 # and prints the working address + "]" char.
 # For example: 00001234]
 # ---------------------------------------------
 PrintCursor:
-    PrologRa
-
-    # li a0, ASCII_LF
-    # jal PrintChar
-
-    # li a0, ASCII_CR
-    # jal PrintChar
+    PrologRa 8
+    sw t0, 8(sp)
 
     # Print working address
     la t0, working_addr
     lw a0, 0(t0)                # Word value to convert
-    jal HexWordToString
-    la a0, string_buf
-    jal PrintString
+    jal PrintAddress
+    # jal HexWordToString
+    # la a0, string_buf
+    # jal PrintString
 
     li a0, ASCII_R_SQR_BRAK
     jal PrintChar
 
     li a0, ASCII_SPC
     jal PrintChar
+
+    lw t0, 8(sp)
+    EpilogeRa 8
+
+    ret
+
+PrintAddress:
+    PrologRa
+
+    jal HexWordToString
+    la a0, string_buf
+    jal PrintString
 
     EpilogeRa
 
@@ -687,12 +848,11 @@ PrintByte:
 # Print a0 Word as binary string
 # ---------------------------------------------
 PrintWordAsBinary:
-    PrologRa 24
-    sw a0, 8(sp)
-    sw t0, 12(sp)
-    sw t1, 16(sp)
-    sw t2, 20(sp)
-    sw t3, 24(sp)
+    PrologRa 20
+    sw t0, 8(sp)
+    sw t1, 12(sp)
+    sw t2, 16(sp)
+    sw t3, 20(sp)
 
     li t0, 32                   # Load Dec Counter
     mv t2, a0                   # Copy a0 for modification
@@ -715,49 +875,17 @@ PrintWordAsBinary:
     addi t0, t0, -1             # Dec counter
     bne zero, t0, 1b            # Loop while t0 > 0
 
-    lw t3, 24(sp)
-    lw t2, 20(sp)
-    lw t1, 16(sp)
-    lw t0, 12(sp)
-    lw a0, 8(sp)
-    EpilogeRa 24
+    lw t3, 20(sp)
+    lw t2, 16(sp)
+    lw t1, 12(sp)
+    lw t0, 8(sp)
+    EpilogeRa 20
 
     ret
 
 # \__/\__/\__/\__/\__/\__/\__/\__/\__/\__/\__/\__/\__/
 # Conversions
 # /--\/--\/--\/--\/--\/--\/--\/--\/--\/--\/--\/--\/--\
-
-# ---------------------------------------------
-# Converts a 32 bit value to an 8 char string.
-# The string is stored in string_buf.
-# left most nibble = LM nibble
-# a0 = word to convert
-# ---------------------------------------------
-HexWordToString:
-    la t0, string_buf           # Pointer to buffer
-    li t2, 8                    # Count 8 chars
-    li t3, ASCII_colon
-
-1:
-    srli t1, a0, 28             # Shift LM nibble to right most position
-    slli a0, a0, 4              # Update word by shifting in a new LM nibble
-                                # for next pass.
-    andi t1, t1, 0xF            # Isolate current nibble
-    addi t1, t1, '0'            # Translate to Ascii by adding '0' = 0x30
-    blt t1, t3, 2f              # See if t1 > '9' i.e. t1 > ':'
-    addi t1, t1, 39             # Else convert to 'a'-'f' chars first
-
-2:
-    sb t1, 0(t0)                # Store char in buffer
-    addi t0, t0, 1              # Move pointer
-
-    addi t2, t2, -1
-    bne zero, t2, 1b            # Loop while count > 0
-
-    sb zero, 0(t0)              # Null terminate
-
-    ret
 
 # ---------------------------------------------
 # a0 = Address of string to left-pad with '0' chars
@@ -767,7 +895,12 @@ HexWordToString:
 # 00000123
 # ---------------------------------------------
 PadLeftZerosString:
-    PrologRa
+    PrologRa 24
+    sw t1, 8(sp)
+    sw t2, 12(sp)
+    sw t3, 16(sp)
+    sw t4, 20(sp)
+    sw t5, 24(sp)
 
     la t3, string_buf2
     li t4, ASCII_0
@@ -800,7 +933,13 @@ PadLeftZerosString:
     sb zero, 0(t3)                # Null
 
 3:
-    EpilogeRa
+    sw t4, 24(sp)
+    sw t4, 20(sp)
+    sw t3, 16(sp)
+    sw t2, 12(sp)
+    sw t1, 8(sp)
+
+    EpilogeRa 24
 
     ret
 
@@ -834,22 +973,25 @@ LengthOfString:
 
 # ---------------------------------------------
 # Convert String (8 chars in string_buf2) to Word and return in a0
-# a0 = Address of string to convert
-# a0 = return = Word
-# 00000010
+# Input:
+#   a0 = address to source string buffer
+# Output:
+#   a0 = return = Word
+#
 #  28   24   20   16   12    8   4    0        <-- shift amount
 # 0000_0000_0000_0000_0000_0000_0000_0000
 # ---------------------------------------------
-StringToWord:
+String32ToWord:
     PrologRa 20
     sw t1, 8(sp)
     sw t2, 12(sp)
     sw t3, 16(sp)
     sw t4, 20(sp)
 
+    mv t4, a0                   # Copy pointer
     li t2, 28                   # Shift amount shrinks by 4 on each pass
     mv t3, zero                 # The final converted Word pre cleared
-    la t4, string_buf2          # Pointer to hex string to convert
+    # la t4, string_buf2          # Pointer to hex string to convert
 
 1:
     # li a0, '!'
@@ -901,6 +1043,51 @@ StringToWord:
     ret
 
 # ---------------------------------------------
+# Converts a 32 bit value to an 8 char string.
+# The string is stored in string_buf.
+# left most nibble = LM nibble
+# Input:
+#   a0 = word to convert
+# Output:
+#   string_buf
+# ---------------------------------------------
+HexWordToString:
+    PrologRa 20
+    sw t0, 8(sp)
+    sw t1, 12(sp)
+    sw t2, 16(sp)
+    sw t3, 20(sp)
+
+    la t0, string_buf           # Pointer to buffer
+    li t2, 8                    # Count 8 chars
+    li t3, ASCII_colon
+
+HWT_Loop:
+    srli t1, a0, 28             # Shift LM nibble to right most position
+    slli a0, a0, 4              # Update word by shifting in a new LM nibble
+                                # for next pass.
+    andi t1, t1, 0xF            # Isolate current nibble
+    addi t1, t1, '0'            # Translate to Ascii by adding '0' = 0x30
+    blt t1, t3, HWT_Store       # See if t1 > '9' i.e. t1 > ':'
+    addi t1, t1, 39             # Else convert to 'a'-'f' chars first
+
+HWT_Store:
+    sb t1, 0(t0)                # Store char in buffer
+    addi t0, t0, 1              # Move pointer
+    addi t2, t2, -1
+    bne zero, t2, HWT_Loop      # Loop while count > 0
+
+    sb zero, 0(t0)              # Null terminate
+
+    lw t3, 20(sp)
+    lw t2, 16(sp)
+    lw t1, 12(sp)
+    lw t0, 8(sp)
+    EpilogeRa 20
+
+    ret
+
+# ---------------------------------------------
 # Convert ascii char (in a0) to Word and return in a0
 # It is assumed that char is already a valid hex digit
 # ---------------------------------------------
@@ -925,6 +1112,17 @@ HexCharToWord:
 
     ret
 
+# ---------------------------------------------
+# Align by setting the lower 2 bits to zero
+# Input:
+#   a0 = word to be word aligned
+# Output:
+#   a0 = aligned
+# ---------------------------------------------
+WordAlign:
+    andi a0, a0, 0xFFFFFFFC
+    ret
+
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
 # ROM-ish
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
@@ -932,7 +1130,7 @@ HexCharToWord:
 .balign 4
 .word 0x00400000                # Port A base
 .word 0x00400100                # UART base
-str_Greet:   .string "\r\nMonitor 0.0.10 - Ranger SoC - Jun 2023\r\n"
+str_Greet:   .string "\r\nMonitor 0.0.12 - Ranger SoC - Jun 2023\r\n"
 .balign 4
 str_Bye:  .string "\r\nBye\r\n"
 .balign 4
@@ -940,7 +1138,7 @@ debug_str:  .string "\r\nDEBUG\r\n"
 .balign 4
 str_w_cmd_error: .string "Invalid address\r\n"
 .balign 4
-str_r_cmd_error: .string "Invalid 'r' format\r\n"
+str_r_cmd_error: .string "Invalid parameter(s): r ('b' or 'w') count\r\n"
 .balign 4
 str_UnknownCommand: .string "Unknown command\r\n"
 .balign 4
@@ -963,7 +1161,7 @@ working_addr: .word 0x00000000
 # String buffer used for conversions
 string_buf:  .fill 128, 1, 0      # 128*1 bytes with value 0
 # string_buf2: .fill 128, 1, 0      # 128*1 bytes with value 0
-string_buf2: .string "12345678"
+string_buf2: .string "00000055"
 
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
 # Stack. Grows towards rodata section
