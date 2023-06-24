@@ -343,7 +343,7 @@ DW_Loop:
 
     jal PrintCrLn
 
-    addi t1, t1, 4              # Move to next address
+    addi t1, t1, 4              # Move to next address = move Byte addressing
     addi t2, t2, -1             # Dec word count
     bne zero, t2, DW_Loop
 
@@ -354,6 +354,9 @@ DW_Loop:
 
     ret
 
+# ---------------------------------------------
+# a0 = count of bytes to display
+# ---------------------------------------------
 DumpBytes:
     PrologRa
 
@@ -1160,8 +1163,8 @@ working_addr: .word 0x00000000
 
 # String buffer used for conversions
 string_buf:  .fill 128, 1, 0      # 128*1 bytes with value 0
-# string_buf2: .fill 128, 1, 0      # 128*1 bytes with value 0
-string_buf2: .string "00000055"
+string_buf2: .fill 128, 1, 0      # 128*1 bytes with value 0
+# string_buf2: .string "00000055"
 
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
 # Stack. Grows towards rodata section
