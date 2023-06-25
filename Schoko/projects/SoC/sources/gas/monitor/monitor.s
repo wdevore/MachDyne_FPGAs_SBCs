@@ -27,18 +27,6 @@
 .set ASCII_LF,          '\n'        # Line feed
 .set ASCII_DEL,         0x7F        # [Del] key
 .set ASCII_BACK,        0x08        # Backspace
-.set ASCII_SPC,         0x20        # [Space] char
-.set ASCII_R_SQR_BRAK,  ']'         # Square bracket char
-.set ASCII_a,           'a'
-.set ASCII_w,           'w'
-.set ASCII_r,           'r'
-.set ASCII_b,           'b'
-.set ASCII_e,           'e'
-.set ASCII_l,           'l'
-.set ASCII_colon,       ':'         # Colon is used to check < '9'
-.set ASCII_0,           '0'
-.set ASCII_1,           '1'
-.set ASCII_BACK_TICK,    '`'
 
 # ---__------__------__------__------__------__------__---
 # Macros
@@ -47,7 +35,8 @@
 # ---------------------------------------------
 # Pushes Return address onto the stack
 # You must use this macro if your subroutine has 1 or more
-# "jal" calls present, otherwise your stack will corrupt.
+# "jal" calls present, otherwise your stack will corrupt
+# AND your program WILL crash!
 # ---------------------------------------------
 .macro PrologRa frameSize=4
     addi sp, sp, -\frameSize
@@ -171,7 +160,7 @@ Process_A_Command:
     # The first char in the key buffer is the command
     la t1, keyBuf
     lbu t1, 0(t1)
-    li t0, ASCII_a
+    li t0, 'a'
     bne t0, t1, PAC_NH          # Exit if not 'a' command
 
     la a0, keyBuf               # Pointer to buffer
@@ -179,10 +168,10 @@ Process_A_Command:
 
     lbu t1, 0(a0)               # Get char to check
 
-    li t0, ASCII_b
+    li t0, 'b'
     beq t0, t1, PAC_Bytes
 
-    li t0, ASCII_w
+    li t0, 'w'
     beq t0, t1, PAC_Words
 
     j PRC_Error
@@ -263,7 +252,7 @@ Process_E_Command:
     # The first char in the key buffer is the command
     la t1, keyBuf
     lbu t1, 0(t1)
-    li t0, ASCII_e
+    li t0, 'e'
     bne t0, t1, PEC_NH          # Exit if not 'r' command
 
     la a0, keyBuf
@@ -271,10 +260,10 @@ Process_E_Command:
 
     lbu t1, 0(a0)               # Get char to check
 
-    li t0, ASCII_b
+    li t0, 'b'
     beq t0, t1, PEC_Big
 
-    li t0, ASCII_l
+    li t0, 'l'
     beq t0, t1, PEC_Little
 
     j PRC_Error
@@ -322,7 +311,7 @@ Process_R_Command:
     # The first char in the key buffer is the command
     la t1, keyBuf
     lbu t1, 0(t1)
-    li t0, ASCII_r
+    li t0, 'r'
     bne t0, t1, PRC_NH          # Exit if not 'r' command
 
     la a0, keyBuf
@@ -330,10 +319,10 @@ Process_R_Command:
 
     lbu t1, 0(a0)               # Get char to check
 
-    li t0, ASCII_b
+    li t0, 'b'
     beq t0, t1, PRC_Bytes
 
-    li t0, ASCII_w
+    li t0, 'w'
     beq t0, t1, PRC_Words
 
     j PRC_Error
@@ -405,7 +394,7 @@ Process_W_Command:
     # The first char in the key buffer is the command
     la t1, keyBuf
     lbu t1, 0(t1)
-    li t0, ASCII_w
+    li t0, 'w'
     bne t0, t1, PWC_NH          # Exit if not 'w' command
 
     la a0, keyBuf
@@ -413,11 +402,11 @@ Process_W_Command:
 
     lbu t1, 0(a0)               # Get char to check
 
-    li t0, ASCII_b
+    li t0, 'b'
     li t2, 0                    # Indicate byte format
     beq t0, t1, PWC_Bytes
 
-    li t0, ASCII_w
+    li t0, 'w'
     li t2, 1                    # Indicate word format
     beq t0, t1, PWC_Words
 
@@ -501,10 +490,10 @@ DW_Loop:
     la a0, string_buf
     jal PrintString             # Print address
 
-    li a0, ASCII_colon
+    li a0, ':'
     jal PrintChar
 
-    li a0, ASCII_SPC
+    li a0, ' '
     jal PrintChar
 
     lw a0, 0(t1)                # Fetch value
@@ -512,9 +501,9 @@ DW_Loop:
     la a0, string_buf
     jal PrintString             # Print value
 
-    li a0, ASCII_SPC
+    li a0, ' '
     jal PrintChar
-    li a0, ASCII_SPC
+    li a0, ' '
     jal PrintChar
 
     # To match the little-endian order use a sequence "3,2,1,0"
@@ -599,10 +588,10 @@ DB_Loop_Lines:
     la a0, string_buf
     jal PrintString             # Print address
 
-    li a0, ASCII_colon
+    li a0, ':'
     jal PrintChar
 
-    li a0, ASCII_SPC
+    li a0, ' '
     jal PrintChar
 
     mv t4, t1
@@ -613,16 +602,16 @@ WRD_Loop_Bytes: # Print 3 Words of bytes
     la a0, string_buf
     jal PrintString             # Print Byte
 
-    li a0, ASCII_SPC
+    li a0, ' '
     jal PrintChar
     addi t1, t1, 1              # Move to next address = move by 1 Byte addressing
 
     addi t3, t3, -1
     bne zero, t3, WRD_Loop_Bytes
 
-    li a0, ASCII_SPC
+    li a0, ' '
     jal PrintChar
-    li a0, ASCII_SPC
+    li a0, ' '
     jal PrintChar
 
     # Print Ascii chars
@@ -663,20 +652,7 @@ WRD_Cont:
     addi t2, t2, -1             # Dec word count
     bne zero, t2, DB_Loop_Lines
 
-    # la a0, debug_str
-    # jal PrintString
-
-    # mv a0, t3
-    # jal HexWordToString
-    # la a0, string_buf
-    # jal PrintString
-    # jal PrintCrLn
-    # la a0, debug_str
-    # jal PrintString
-# XXX:
-#     li a0, 1
-#     j XXX
-
+    # Exit
     sw t4, 24(sp)
     sw t3, 20(sp)
     sw t2, 16(sp)
@@ -700,7 +676,7 @@ IsHexDigit:
     li t0, 'f'                  # if a0 > 'f' it isn't a digit
     bgtu a0, t0, 1f
 
-    li t0, ASCII_colon          # if a0 < ':' it IS a digit
+    li t0, ':'                  # if a0 < ':' it IS a digit
     bltu a0, t0, 2f
     
     li t0, '`'                  # if a0 > '`' it IS a digit
@@ -713,7 +689,7 @@ IsHexDigit:
 2:
     li a0, 1                    # Yes: it valid
 
-3:
+3:  # Exit
     lw t0, 8(sp)
     EpilogeRa 8
     ret
@@ -739,7 +715,7 @@ IsIntDigit:
 2:
     li a0, 1                    # Yes: it integer
 
-3:
+3:  # Exit
     lw t0, 8(sp)
     EpilogeRa 8
     ret
@@ -875,18 +851,18 @@ CheckForDEL:
     li a0, ASCII_BACK
     jal PrintChar
 
-    # Now erase it
-    li a0, ASCII_SPC
+    # Now erase it with a Space char
+    li a0, ' '
     jal PrintChar
 
     # Finally position the cursor back over the Space
     li a0, ASCII_BACK
     jal PrintChar
 
-    # Now update buffer
+    # Now update buffer to reflect the delete
     jal TrimLastKeyBuffer
 
-1:
+1:  # Exit
     lw t0, 8(sp)
     EpilogeRa 8
 
@@ -908,7 +884,7 @@ CheckForCR:
     bne a0, t0, 1f              # branch if not CR
     beq a0, t0, 2f
 
-1:                              # Not CR, append to buffer
+1:  # Not CR, append to buffer
     # Fetch counter offset
     la t0, bufOffset
     lbu t0, 0(t0)               # current index value
@@ -927,7 +903,7 @@ CheckForCR:
 
     j 3f
 
-2:                              # Is CR
+2:  # Is CR
     # Echo a LF back as well
     li a0, ASCII_LF
     jal PrintChar
@@ -944,7 +920,7 @@ CheckForCR:
     # Signal a CR was detected
     li a0, 1
 
-3:
+3:  # Exit
     lw t1, 12(sp)
     lw t0, 8(sp)
     EpilogeRa 12
@@ -972,7 +948,7 @@ ClearKeyBuffer:
     beq zero, t1, 1f
     j 1b
 
-1:
+1:  # Exit
     lw t1, 12(sp)
     lw t0, 8(sp)
     EpilogeRa 12
@@ -1008,6 +984,7 @@ TrimLastKeyBuffer:
     add t1, t1, t0              # Move pointer
     sb zero, 0(t1)              # zero = Null
 
+    # Exit
     lw t1, 12(sp)
     lw t0, 8(sp)
     EpilogeRa 12
@@ -1026,6 +1003,7 @@ PollTxBusy:
     andi t0, t0, MASK_CTL_TX_BUSY   # Mask
     bne zero, t0, 1b                # Loop
 
+    # Exit
     lw t0, 8(sp)
     EpilogeRa 8
     
@@ -1072,7 +1050,7 @@ PrintString:
     addi a0, a0, 1              # Next char
     j 1b
 
-1:
+1:  # Exit
     lw t0, 8(sp)
     EpilogeRa 8
 
@@ -1136,12 +1114,13 @@ PrintCursor:
     # la a0, string_buf
     # jal PrintString
 
-    li a0, ASCII_R_SQR_BRAK
+    li a0, ']'
     jal PrintChar
 
-    li a0, ASCII_SPC
+    li a0, ' '
     jal PrintChar
 
+    # Exit
     lw t0, 8(sp)
     EpilogeRa 8
 
@@ -1168,17 +1147,18 @@ PrintNibble:
 
     li t3, 10
     bltu a0, t3, 1f
-    addi t0, a0, ASCII_BACK_TICK - 9
+    addi t0, a0, '`' - 9
     j 2f
 
 1:
-    addi t0, a0, ASCII_0
+    addi t0, a0, '0'
 
 2:
     sb t0, UART_TX_REG_ADDR(s3) # Send
 
     jal PollTxBusy              # Call subroutine
 
+    # Exit
     lw t0, 12(sp)
     lw t3, 8(sp)
     EpilogeRa 12
@@ -1200,6 +1180,7 @@ PrintByte:
     slli a0, a0, 4              # Shift higher nibble to lower nibble
     jal PrintNibble
 
+    # Exit
     lw t0, 12(sp)
     lw a0, 8(sp)
     EpilogeRa 12
@@ -1224,12 +1205,12 @@ PrintWordAsBinary:
     and t1, t2, t3              # Mask in MSb
     bne zero, t1, 2f            # Test
 
-    li a0, ASCII_0
+    li a0, '0'
     jal PrintChar
     j 3f
 
 2:
-    li a0, ASCII_1
+    li a0, '1'
     jal PrintChar
 
 3:
@@ -1237,6 +1218,7 @@ PrintWordAsBinary:
     addi t0, t0, -1             # Dec counter
     bne zero, t0, 1b            # Loop while t0 > 0
 
+    # Exit
     lw t3, 20(sp)
     lw t2, 16(sp)
     lw t1, 12(sp)
@@ -1266,7 +1248,7 @@ PadLeftZerosString:
     sw t5, 24(sp)
 
     la t3, string_buf2
-    li t4, ASCII_0
+    li t4, '0'
     mv t1, a0                   # Copy address of source to t1
 
     # Is string to pad is already = to size then just copy
@@ -1331,6 +1313,7 @@ LengthOfString:
 1:
     mv a0, t0                   # Return value
 
+    # Exit
     lw t0, 12(sp)
     lw t1, 8(sp)
     EpilogeRa 12
@@ -1370,6 +1353,7 @@ String32ToWord:
 
     mv a0, t3                   # Move result to return arg
 
+    # Exit
     lw t4, 20(sp)
     lw t3, 16(sp)
     lw t2, 12(sp)
@@ -1405,6 +1389,7 @@ String8ToWord:
 
     or a0, t2, a0               # Merge together
 
+    # Exit
     lw t2, 16(sp)
     lw t3, 12(sp)
     lw t4, 8(sp)
@@ -1430,7 +1415,7 @@ HexWordToString:
 
     la t0, string_buf           # Pointer to buffer
     li t2, 8                    # Count 8 chars
-    li t3, ASCII_colon
+    li t3, ':'
 
 HWT_Loop:
     srli t1, a0, 28             # Shift LM nibble to right most position
@@ -1449,6 +1434,7 @@ HWT_Store:
 
     sb zero, 0(t0)              # Null terminate
 
+    # Exit
     lw t3, 20(sp)
     lw t2, 16(sp)
     lw t1, 12(sp)
@@ -1473,7 +1459,7 @@ ByteToChar:
 
     # If byte value < 0x20 (space), or = 7F (delete)
     # return a '.'
-    li t0, ASCII_SPC
+    li t0, ' '
     bltu a0, t0, 1f
     li t0, '~'
     bgtu a0, t0, 1f
@@ -1483,7 +1469,7 @@ ByteToChar:
     # Translate to '.'
     li a0, '.'
 
-2:
+2:  # Exit
     lw t0, 8(sp)
     EpilogeRa 8
 
@@ -1522,6 +1508,7 @@ HexByteToString:
     addi t0, t0, 1
     sb zero, 0(t0)              # Null terminate
 
+    # Exit
     lw t1, 12(sp)
     lw t0, 8(sp)
     EpilogeRa 12
@@ -1539,13 +1526,13 @@ NibbleToHexChar:
     PrologRa 8
     sw t0, 8(sp)
 
-    li t0, ASCII_colon
+    li t0, ':'
 
     addi a0, a0, '0'            # Translate to Ascii by adding '0' = 0x30
     blt a0, t0, 1f              # See if t1 > '9' i.e. t1 > ':'
     addi a0, a0, 39             # Else convert to 'a'-'f'
 
-1:
+1:  # Exit
     lw t0, 8(sp)
     EpilogeRa 8
 
@@ -1560,7 +1547,7 @@ HexCharToWord:
     PrologRa 8
     sw t3, 8(sp)
 
-    li t3, ASCII_colon          # Determine which ascii group
+    li t3, ':'                 # Determine which ascii group
     bltu a0, t3, 1f
 
     # a-f
@@ -1571,7 +1558,7 @@ HexCharToWord:
     # 0-9
     addi a0, a0, -'0'
 
-2:
+2:  # Exit
     lw t3, 8(sp)
     EpilogeRa 8
 
