@@ -33,6 +33,8 @@
 .set ASCII_w,           'w'
 .set ASCII_r,           'r'
 .set ASCII_b,           'b'
+.set ASCII_e,           'e'
+.set ASCII_l,           'l'
 .set ASCII_colon,       ':'         # Colon is used to check < '9'
 .set ASCII_0,           '0'
 .set ASCII_1,           '1'
@@ -133,6 +135,9 @@ ProcessBuf:
     bgtu a0, zero, PB_EXIT
 
     jal Process_W_Command
+    bgtu a0, zero, PB_EXIT
+
+    jal Process_E_Command
     bgtu a0, zero, PB_EXIT
 
     la a0, str_UnknownCommand
@@ -247,6 +252,65 @@ PAC_Exit:
     ret
 
 # ---------------------------------------------
+# Switch between big/little endian
+# ] eb
+# OR
+# ] el
+# ---------------------------------------------
+Process_E_Command:
+    PrologRa
+
+    # The first char in the key buffer is the command
+    la t1, keyBuf
+    lbu t1, 0(t1)
+    li t0, ASCII_e
+    bne t0, t1, PEC_NH          # Exit if not 'r' command
+
+    la a0, keyBuf
+    addi a0, a0, 1              # Move to 'type'
+
+    lbu t1, 0(a0)               # Get char to check
+
+    li t0, ASCII_b
+    beq t0, t1, PEC_Big
+
+    li t0, ASCII_l
+    beq t0, t1, PEC_Little
+
+    j PRC_Error
+
+PEC_Big:
+    # Default (readable)
+    la t1, endian_order
+    li a0, 0
+    sb a0, 0(t1)
+
+    li a0, 1                    # Handled
+    j PRC_Exit
+
+PEC_Little:
+    la t1, endian_order
+    li a0, 1                    # Also happens to be "handled" signal
+    sb a0, 0(t1)
+
+    j PRC_Exit
+
+PEC_Error:  # Display error message
+    la a0, str_e_cmd_error
+    jal PrintString
+    li a0, 2
+    j PRC_Exit
+
+PEC_NH:
+    li a0, 0                    # Not handled
+
+PEC_Exit:
+
+    EpilogeRa
+    
+    ret
+
+# ---------------------------------------------
 # a0 = 0 (not handled), 1 (handled), 2 (error)
 # ] rw 25
 # The 1st parm 'type' can be 'b' (byte) or 'w" (word)
@@ -282,18 +346,32 @@ PRC_Words:
     jal IsInteger               # a0 = 1 = valid
     beq zero, a0, PRC_Error
 
-    mv a0, t5                   # Reset count
+    mv a0, t5                   # Reset address
 
+    li a1, 8
     jal PadLeftZerosString      # Results into string_buf2 for next call
     la a0, string_buf2
-    jal String32ToWord          # Convert count String to Word
+    jal String32ToWord          # Convert count String to Word = a0
 
-    # li a0, 5
     jal DumpWords               # Input a0 = count of Words to display
     li a0, 1                    # Handled
     j PRC_Exit
     
 PRC_Bytes:
+    addi a0, a0, 2              # Move to 'count' (space + char)
+    mv t5, a0
+
+    # The 'count' parm should be an Integer not Hex number
+    jal IsInteger               # a0 = 1 = valid
+    beq zero, a0, PRC_Error
+
+    mv a0, t5                   # Reset address
+
+    li a1, 8
+    jal PadLeftZerosString      # Results into string_buf2 for next call
+    la a0, string_buf2
+    jal String32ToWord          # Convert count String to Word = a0
+
     jal DumpBytes
     li a0, 1                    # Handled
     j PRC_Exit
@@ -462,7 +540,7 @@ DW_Loop:
     jal PrintChar    
 
     j 2f
-    
+
 1:  # Readable form
     lbu a0, 0(t1)
     jal ByteToChar
@@ -481,9 +559,10 @@ DW_Loop:
     jal PrintChar    
 
 2:
-    jal PrintCrLn
 
-    addi t1, t1, 4              # Move to next address = move Byte addressing
+    jal PrintCrLn
+    
+    addi t1, t1, 4              # Move to next address = move by 4 Bytes addressing
     addi t2, t2, -1             # Dec word count
     bne zero, t2, DW_Loop
 
@@ -495,15 +574,115 @@ DW_Loop:
     ret
 
 # ---------------------------------------------
-# a0 = count of bytes to display
+# Input:
+#   a0 = count of lines to display, each 3 words + ascii
+# Output format:
+# ...] rb 1
+# 00000000: 01 02 03 04 01 02 03 04 01 02 03 04  Hello World!
 # ---------------------------------------------
 DumpBytes:
-    PrologRa
+    PrologRa 24
+    sw t0, 8(sp)
+    sw t1, 12(sp)
+    sw t2, 16(sp)
+    sw t3, 20(sp)
+    sw t4, 24(sp)
 
-    li a0, 'B'
-    jal PrintCharCrLn
-    
-    EpilogeRa
+    la t0, working_addr         # Pointer to working address
+    lw t1, 0(t0)                # Fetch value at pointer = new pointer
+    mv t2, a0                   # Capture lines-to-display argument
+
+DB_Loop_Lines:
+    li t3, 12                   # How many bytes per line
+    mv a0, t1                   # t1 points to current working address
+    jal HexWordToString         # Convert address (a0) to string
+    la a0, string_buf
+    jal PrintString             # Print address
+
+    li a0, ASCII_colon
+    jal PrintChar
+
+    li a0, ASCII_SPC
+    jal PrintChar
+
+    mv t4, t1
+
+WRD_Loop_Bytes: # Print 3 Words of bytes
+    lbu a0, 0(t1)
+    jal HexByteToString
+    la a0, string_buf
+    jal PrintString             # Print Byte
+
+    li a0, ASCII_SPC
+    jal PrintChar
+    addi t1, t1, 1              # Move to next address = move by 1 Byte addressing
+
+    addi t3, t3, -1
+    bne zero, t3, WRD_Loop_Bytes
+
+    li a0, ASCII_SPC
+    jal PrintChar
+    li a0, ASCII_SPC
+    jal PrintChar
+
+    # Print Ascii chars
+    # To match the little-endian order use a sequence "3,2,1,0"
+    # If you want it in readable form then use "0,1,2,3"
+    la t0, endian_order         # Check for readable flag
+    lbu t0, 0(t0)
+    beq zero, t0, WRD_Big
+
+    # Little endian TODO currently mirrors Big.
+    # It doesn't really make much sense as it would look strange.
+#     li t3, 12                   # How many chars per line
+# 1:
+#     lbu a0, 0(t4)
+#     jal ByteToChar
+#     jal PrintChar    
+
+#     addi t4, t4, 1
+#     addi t3, t3, -1
+#     bne zero, t3, 1b
+
+#     j WRD_Cont
+
+WRD_Big:
+    li t3, 12                   # How many chars per line
+1:
+    lbu a0, 0(t4)
+    jal ByteToChar
+    jal PrintChar    
+
+    addi t4, t4, 1
+    addi t3, t3, -1
+    bne zero, t3, 1b
+
+WRD_Cont:
+    jal PrintCrLn
+
+    addi t2, t2, -1             # Dec word count
+    bne zero, t2, DB_Loop_Lines
+
+    # la a0, debug_str
+    # jal PrintString
+
+    # mv a0, t3
+    # jal HexWordToString
+    # la a0, string_buf
+    # jal PrintString
+    # jal PrintCrLn
+    # la a0, debug_str
+    # jal PrintString
+# XXX:
+#     li a0, 1
+#     j XXX
+
+    sw t4, 24(sp)
+    sw t3, 20(sp)
+    sw t2, 16(sp)
+    sw t1, 12(sp)
+    sw t0, 8(sp)
+    EpilogeRa 24
 
     ret
 
@@ -1071,8 +1250,9 @@ PrintWordAsBinary:
 # /--\/--\/--\/--\/--\/--\/--\/--\/--\/--\/--\/--\/--\
 
 # ---------------------------------------------
-# a0 = Address of string to left-pad with '0' chars
-# a1 = output size requested, for example, 8 chars
+# Input:
+#   a0 = Address of string to left-pad with '0' chars
+#   a1 = output size requested, for example, 8 chars
 # output is put in string_buf2
 # 123.....
 # 00000123
@@ -1091,31 +1271,32 @@ PadLeftZerosString:
 
     # Is string to pad is already = to size then just copy
     jal LengthOfString          # a0 now = length
-    beq a0, a1, 2f              # Just copy src to dest
+    beq a0, a1, PLZ_Append      # Just copy src to dest
 
     # Calc difference: output_size - length => how many '0's to pad
     sub t2, a1, a0
-    blt t2, zero, 3f            # buf2 is larger than output size requested
 
-1:  # Pad destination buffer with '0's
+    blt t2, zero, PLZ_Exit      # buf2 is larger than output size requested
+
+PLZ_Loop: # Pad destination buffer with '0's
     sb t4, 0(t3)                # Write '0'
     addi t3, t3, 1              # Move pointer
     addi t2, t2, -1             # Dec count of '0's
-    bne zero, t2, 1b            # Loop
-    
-2:  # Now append source chars to new buffer
+    bne zero, t2, PLZ_Loop      # Loop
+
+PLZ_Append:  # Now append source chars to new buffer
     lbu t5, 0(t1)               # Read source char
     sb t5, 0(t3)                # Write to destination
     addi t1, t1, 1              # Inc both pointers
     addi t3, t3, 1
     addi a0, a0, -1             # Dec source length
-    bne zero, a0, 2b            # Loop while a0 != 0
+    bne zero, a0, PLZ_Append    # Loop while a0 != 0
 
     # Finally Null terminate
     addi t3, t3, 1
     sb zero, 0(t3)                # Null
 
-3:
+PLZ_Exit:
     sw t4, 24(sp)
     sw t4, 20(sp)
     sw t3, 16(sp)
@@ -1127,8 +1308,10 @@ PadLeftZerosString:
     ret
 
 # ---------------------------------------------
-# a0 = Address of string to find size of
-# a0 is overriden with size
+# Input:
+#   a0 = Address of string to find size of
+# Output:
+#   a0 is overriden with size
 # String must be Null terminated
 # ---------------------------------------------
 LengthOfString:
@@ -1322,17 +1505,17 @@ HexByteToString:
     la t0, string_buf           # Pointer to buffer
     mv t1, a0                   # Copy argument
 
-    # Convert lower Nibble
-    andi a0, a0, 0x0F           # Isolate nibble
+    # Convert upper Nibble
+    andi a0, a0, 0xF0           # Isolate nibble
+    srli a0, a0, 4              # Move nibble 4 bits for subroutine
     jal NibbleToHexChar
     sb a0, 0(t0)                # Store char in buffer
 
     addi t0, t0, 1
     mv a0, t1                   # Reset from copy
 
-    # Convert higher Nibble
-    andi a0, a0, 0xF0           # Isolate nibble
-    srli a0, a0, 4              # Move nibble 4 bits for subroutine
+    # Convert lower Nibble
+    andi a0, a0, 0x0F           # Isolate nibble
     jal NibbleToHexChar
     sb a0, 0(t0)                # Store char in buffer
 
@@ -1412,15 +1595,17 @@ WordAlign:
 .balign 4
 .word 0x00400000                # Port A base
 .word 0x00400100                # UART base
-str_Greet:   .string "\r\nMonitor 0.0.14 - Ranger SoC - Jun 2023\r\n"
+str_Greet:   .string "\r\nMonitor 0.0.15 - Ranger SoC - Jun 2023\r\n"
 .balign 4
 str_Bye:  .string "\r\nBye\r\n"
 .balign 4
 debug_str:  .string "\r\nDEBUG\r\n"
 .balign 4
-str_w_cmd_error: .string "Invalid parameter(s): w ('b' or 'w') value value...\r\n"
+str_w_cmd_error: .string "Invalid parameter(s): w('b' or 'w') value value...\r\n"
 .balign 4
-str_r_cmd_error: .string "Invalid parameter(s): r ('b' or 'w') count\r\n"
+str_r_cmd_error: .string "Invalid parameter(s): r('b' or 'w') count\r\n"
+.balign 4
+str_e_cmd_error: .string "Invalid parameter(s): e('b' or 'l')\r\n"
 .balign 4
 str_UnknownCommand: .string "Unknown command\r\n"
 .balign 4
