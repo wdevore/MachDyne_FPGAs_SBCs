@@ -303,7 +303,8 @@ PEC_Exit:
 # a0 = 0 (not handled), 1 (handled), 2 (error)
 # ] rw 25
 # The 1st parm 'type' can be 'b' (byte) or 'w" (word)
-# The 2nd parm 'count' must be a decimal number
+# The 2nd parm 'count' must be a decimal number. It can
+# mean either word-count or lines-to-display
 # ---------------------------------------------
 Process_R_Command:
     PrologRa
@@ -385,22 +386,24 @@ PRC_Exit:
 # ] ww 1234abcd
 # OR
 # ] wb af
+# OR
+# ] wb 01 02 ff ef...
 # The 1st parm 'type' can be 'b' (byte) or 'w" (word)
 # The 2nd parm is a value
 # ---------------------------------------------
 Process_W_Command:
     PrologRa
-
+    
     # The first char in the key buffer is the command
     la t1, keyBuf
     lbu t1, 0(t1)
     li t0, 'w'
     bne t0, t1, PWC_NH          # Exit if not 'w' command
 
-    la a0, keyBuf
-    addi a0, a0, 1              # Move to 'type'
+    la t4, keyBuf               # t4 Points to input buffer
+    addi t4, t4, 1              # Move to 'type'
 
-    lbu t1, 0(a0)               # Get char to check
+    lbu t1, 0(t4)               # Get char to check
 
     li t0, 'b'
     li t2, 0                    # Indicate byte format
@@ -413,14 +416,14 @@ Process_W_Command:
     j PWC_Error
 
 PWC_Words:
-    addi a0, a0, 2              # Move to 'value' (space + char)
-    mv t5, a0                   # Backup copy
+    addi t4, t4, 2              # Move to 'value' (space + char)
 
     # Check the value is 4 bytes or 8 chars in length
+    mv a0, t4
     jal IsHex32String
     beq zero, a0, PWC_Error     # if zero then display error
 
-    mv a0, t5                   # Restore char position
+    mv a0, t4
     jal LengthOfString          # a0 <== length
     li a1, 8                    # Set Max with to 8 chars
     bne a0, a1, PWC_Error
@@ -429,7 +432,7 @@ PWC_Words:
     la t0, working_addr         # Point to working address variable
     lw t0, 0(t0)                # Fetch value from variable = working address
 
-    mv a0, t5                   # Restore char position
+    mv a0, t4
     jal String32ToWord          # a0 = word to store
 
     sw a0, 0(t0)                # Store it
@@ -437,21 +440,36 @@ PWC_Words:
     j PWC_Exit
 
 PWC_Bytes:
-    addi a0, a0, 2              # Move to 'value' (space + char)
-    mv t5, a0                   # Backup copy
+    addi t4, t4, 2              # Move to 'value' (space + char)
 
+    mv a0, t4
     jal IsHexByte               # a0 = 0 if invalid hex
     beq zero, a0, PWC_Error
 
-    # Now write word to working address
+    # Fetch the location where bytes will be stored
     la t0, working_addr         # Point to working address variable
     lw t0, 0(t0)                # Fetch value from variable = working address
 
-    mv a0, t5                   # Restore char position
+PWC_BLoop: # Scan for 2 char bytes and repeat until Null reached
+    mv a0, t4
     jal String8ToWord           # a0 = word (i.e. byte) to store
-
     sb a0, 0(t0)
 
+    addi t4, t4, 2              # Move source pointer 2 bytes. We will
+                                # be at Space or Null
+
+    lbu t3, 0(t4)               # Fetch it
+    beq zero, t3, 1f            # If Null exit
+
+    addi t4, t4, 1              # Move to next hex char
+    mv a0, t4
+    jal IsHexByte               # a0 = 0 if invalid hex
+    beq zero, a0, PWC_Error
+    
+    addi t0, t0, 1              # Move destination pointer
+    j PWC_BLoop
+
+1:  
     j PWC_Exit
 
 PWC_Error:  # Display error message
@@ -802,9 +820,8 @@ IH_Exit:
 #   a0 => 0 (no), 1 (yes)
 # ---------------------------------------------
 IsHexByte:
-    PrologRa 12
+    PrologRa 8
     sw t1, 8(sp)
-    sw t2, 12(sp)
 
     mv t1, a0                   # Copy pointer a0 will be destroyed
 
@@ -825,9 +842,8 @@ IHB_Invalid:
     li a0, 0                    # Invalid address
 
 IHB_Exit:
-    lw t2, 12(sp)
     lw t1, 8(sp)
-    EpilogeRa 12
+    EpilogeRa 8
 
     ret
 
@@ -1033,7 +1049,8 @@ WritePortA:
 
 # ---------------------------------------------
 # Print a Null terminated String
-# a0 points to start of String
+# Input:
+#   a0 points to start of String
 # ---------------------------------------------
 PrintString:
     PrologRa 8
@@ -1364,19 +1381,18 @@ String32ToWord:
 
 # ---------------------------------------------
 # Convert String (2 chars) to Word and return in a0
+# It only looks at two chars. It doesn't check for Null.
 # Input:
 #   a0 = address to source string buffer
 # Output:
 #   a0 = LSB of Word
 # ---------------------------------------------
 String8ToWord:
-    PrologRa 16
+    PrologRa 12
     sw t4, 8(sp)
-    sw t3, 12(sp)
-    sw t2, 16(sp)
+    sw t2, 12(sp)
 
     mv t4, a0                   # Copy pointer
-    mv t3, zero                 # The final converted Word pre cleared
 
     lbu a0, 0(t4)               # Get ascii char (upper nibble)
     jal HexCharToWord           # Convert to number in a0
@@ -1390,10 +1406,9 @@ String8ToWord:
     or a0, t2, a0               # Merge together
 
     # Exit
-    lw t2, 16(sp)
-    lw t3, 12(sp)
+    lw t2, 12(sp)
     lw t4, 8(sp)
-    EpilogeRa 16
+    EpilogeRa 12
 
     ret
 

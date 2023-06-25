@@ -19,29 +19,28 @@ Monitor 0.0.1 May 2023
 # Commands
 | Command | Description            | Example  |
 |   ---   |   ---                  |  ---     |
-| **a** addr      | set working address | ] a 03ff |
-| **w** value      | write to working address | ] w ff |
-| **w** value value2 ...      | write to several locations starting at working address | ] w ff 44 |
-| **r** type count      | read "count" of "type" memory locations starting at working address | ] r b 50 |
+| **a(w or b)** addr      | set working address | ] aw 03ff |
+| **w(w or b)** value      | write to working address | ] wb ff |
+| **w(w or b)** value value2 ...      | write to several locations starting at working address | ] wb ff 44 |
+| **r(w or b)** type count      | read "count" of "type" memory locations starting at working address | ] rb 50 |
 
 ## Command "a"
 **a** sets the working address that other commands reference.
 
 ## Command "w"
-The **w** command can be given one or more values. The *width* of the value determines its type, for example, ff = byte, ffff = hword, ffffffff = word.
 
 ### Example 1
-- ```00000001] w ff``` Writes a byte to address 0x00000001
-- ```00400100] w ff ab 32``` Writes 3 bytes starting at working address
-- ```00000001] w 1234abcd``` Writes a word at address 0x00000001. The address must be word aligned.
+- ```00000001] wb ff``` Writes a byte to address 0x00000001
+- ```00400100] wb ff ab 32``` Writes 3 bytes starting at working address
+- ```00000001] ww 1234abcd``` Writes a word at address 0x00000001. The address must be word aligned.
 
 ## Command "r"
 The **r** command can be given a *type* and *count*. The *count* is how many *types* to read.
 
 ### Example 1
-- ```00000001] r b 5``` Read 5 bytes starting at address 0x00000001
-- ```00000001] r b 25``` Read 25 bytes starting at address 0x00000001
-- ```00400100] r w 5``` Read 5 words starting at address 0x00400100
+- ```00000001] rb 5``` Read 5 bytes starting at address 0x00000001
+- ```00000001] rb 25``` Read 25 bytes starting at address 0x00000001
+- ```00400100] rw 5``` Read 5 words starting at address 0x00400100
 
 The output format of example #1 is:
 ```
