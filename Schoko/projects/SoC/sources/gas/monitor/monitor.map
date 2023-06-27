@@ -3,42 +3,43 @@ Memory Configuration
 
 Name             Origin             Length             Attributes
 BRAM             0x00000000         0x00001000         xw
-ROM              0x00001000         0x00000100
-KEYBUFF          0x00001100         0x00000100
-DATA             0x00001200         0x00000200
-STACK            0x00001400         0x00000100         w
+CODE             0x00001000         0x00000400         x
+ROM              0x00001400         0x00000200
+KEYBUFF          0x00001600         0x00000100
+DATA             0x00001700         0x00000200
+STACK            0x00001900         0x00000100         w
 *default*        0x00000000         0xffffffff
 
 Linker script and memory map
 
 
-.text           0x00000000      0xdd4
+.text           0x00000000      0xeec
  *(.text)
- .text          0x00000000      0xdd4 /media/RAMDisk/monitor.o
+ .text          0x00000000      0xeec /media/RAMDisk/monitor.o
                 0x00000000                _start
 
-.rodata         0x00001000       0xe8
-                0x00001000                        rom_data = .
+.rodata         0x00001400      0x164
+                0x00001400                        rom_data = .
  *(.rodata)
- .rodata        0x00001000       0xe8 /media/RAMDisk/monitor.o
+ .rodata        0x00001400      0x164 /media/RAMDisk/monitor.o
 
-.rela.dyn       0x000010e8        0x0
- .rela.text     0x000010e8        0x0 /media/RAMDisk/monitor.o
+.rela.dyn       0x00001564        0x0
+ .rela.text     0x00001564        0x0 /media/RAMDisk/monitor.o
 
-keybuffer       0x00001100       0x24
+keybuffer       0x00001600       0x24
  *(keybuffer)
- keybuffer      0x00001100       0x24 /media/RAMDisk/monitor.o
+ keybuffer      0x00001600       0x24 /media/RAMDisk/monitor.o
 
-.data           0x00001200      0x108
+.data           0x00001700      0x108
  *(.data)
- .data          0x00001200      0x108 /media/RAMDisk/monitor.o
+ .data          0x00001700      0x108 /media/RAMDisk/monitor.o
 
-.bss            0x00001308        0x0
- .bss           0x00001308        0x0 /media/RAMDisk/monitor.o
+.bss            0x00001808        0x0
+ .bss           0x00001808        0x0 /media/RAMDisk/monitor.o
 
-stack           0x00001400      0x100
+stack           0x00001900      0x100
  *(stack)
- stack          0x00001400      0x100 /media/RAMDisk/monitor.o
-                0x00001500                        stack_bottom = .
+ stack          0x00001900      0x100 /media/RAMDisk/monitor.o
+                0x00001a00                        stack_bottom = .
 LOAD /media/RAMDisk/monitor.o
 OUTPUT(/media/RAMDisk/monitor elf32-littleriscv)

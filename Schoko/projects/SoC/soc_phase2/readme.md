@@ -126,6 +126,7 @@ It is a binary editor.
 # Terminals
 ```screen /dev/ttyUSB1 115200```  "Ctrl-a \" to exit
 
+**NOTE**: minicom allows a Go program to open a connection but **screen** does not.
 ```minicom -b 115200 -o -D /dev/ttyUSB2``` "Ctrl-a Crtl-z x"
 
 ## Screen

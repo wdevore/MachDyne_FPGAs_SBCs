@@ -28,6 +28,13 @@
 .set ASCII_DEL,         0x7F        # [Del] key
 .set ASCII_BACK,        0x08        # Backspace
 
+# **__**__**__**__**__**__**__**__**__**__**__**__**__**__
+# Unidirectional signals
+# **__**__**__**__**__**__**__**__**__**__**__**__**__**__
+.set SIGNAL_SOT,        0x01        # Start of transmission
+.set SIGNAL_DAT,        0x02        # End of Transmission
+.set SIGNAL_EOT,        0x03        # End of Transmission
+
 # ---__------__------__------__------__------__------__---
 # Macros
 # ---__------__------__------__------__------__------__---
@@ -127,6 +134,9 @@ ProcessBuf:
     bgtu a0, zero, PB_EXIT
 
     jal Process_E_Command
+    bgtu a0, zero, PB_EXIT
+
+    jal Process_U_Command
     bgtu a0, zero, PB_EXIT
 
     la a0, str_UnknownCommand
@@ -482,6 +492,118 @@ PWC_NH:
     li a0, 0                    # Not handled
 
 PWC_Exit:
+    EpilogeRa
+
+    ret
+
+# ---------------------------------------------
+# Causes the monitor to wait for bytes from UART.
+# The bytes are stored starting at working address which is
+# typically at 0x00001000.
+# A simple unidirectional protocol is used:
+# SoT data Signal data Signal data Signal data...EoT
+# 
+# Need to add Timer component as a "watch dog".
+#
+# Output:
+#   a0 = 0 (not handled), 1 (handled), 2 (error)
+# ---------------------------------------------
+Process_U_Command:
+    PrologRa
+
+    # The first char in the key buffer is the command
+    la t1, keyBuf
+    lbu t1, 0(t1)
+    li t0, 'u'
+    bne t0, t1, PUC_NH          # Exit if not 'u' command
+
+    la a0, str_u_load_Wait
+    jal PrintString
+
+    # Begin waiting for a signal byte
+    jal PollRxAvail                 # Blocks until byte arrives
+    lbu t0, UART_RX_REG_ADDR(s3)    # Access byte just received
+
+    li t1, SIGNAL_SOT               # Check SoT
+    bne t0, t1, PUC_LError          # Terminate
+
+    la a0, str_u_loading
+    jal PrintString
+
+    la t2, working_addr         # Point to working address variable
+    lw t2, 0(t2)                # Fetch value from variable = working address
+    
+# 24 16  8  0
+# 00_00_00_00
+
+# Loops while != EoT
+PUC_Load_Loop:
+    # Each byte that arrives is shifted into byte position within a Word
+    mv t3, zero                     # Reset byte accumulator
+    mv t4, zero                     # Reset shift amount
+    li t5, 4                        # A word is four bytes
+
+    # li a0, '_'
+    # jal PrintCharCrLn
+
+PUC_Get_Byte:
+    # Wait for DAT or EOT
+    jal PollRxAvail                 # Block until a byte arrives
+    lbu t0, UART_RX_REG_ADDR(s3)    # Fetch data byte
+
+    li t1, SIGNAL_EOT
+    beq t0, t1, PUC_End             # Finish if EoT
+
+    li t1, SIGNAL_DAT
+    bne t0, t1, PUC_Data_Error      # Error if not DAT
+
+    jal PollRxAvail                 # Wait for Byte
+    lbu t0, UART_RX_REG_ADDR(s3)    # Fetch byte
+
+    sll t0, t0, t4                  # Shift byte into position
+    or t3, t3, t0                   # Merge into accumulator
+
+    # !!!!!!!!!!!!!!!!!!!!!
+    # mv a0, t3
+    # jal HexWordToString
+    # la a0, string_buf
+    # jal PrintString
+    # jal PrintCrLn
+
+    addi t4, t4, 8                  # Inc shift amount by 8 bits
+
+    addi t5, t5, -1                 # Dec byte counter
+    bne zero, t5, PUC_Get_Byte
+
+    # Store accumulator into memory
+    sw t3, 0(t2)                    # Store it
+    addi t2, t2, 4                  # Move to next destination Word location
+
+    j PUC_Load_Loop
+
+PUC_End:
+    li a0, 1                    # Handled
+    j PUC_Exit
+
+PUC_Data_Error:
+    la a0, str_u_data_error
+    jal PrintString
+    li a0, 2
+    j PUC_Exit
+
+PUC_LError:
+    la a0, str_u_load_error
+    jal PrintString
+    li a0, 2
+    j PUC_Exit
+
+PUC_NH:
+    li a0, 0                    # Not handled
+
+PUC_Exit:
+    la a0, str_u_load_complete
+    jal PrintString
+
     EpilogeRa
 
     ret
@@ -1030,12 +1152,20 @@ PollTxBusy:
 # has arrived.
 # ----------------------------------------------------------
 PollRxAvail:
+    PrologRa 12
+    sw t1, 8(sp)
+    sw t0, 12(sp)
+
     li t1, MASK_CTL_RX_AVAL         # Rx-Byte-Available mask
 
 1:
     lbu t0, UART_CTRL_REG_ADDR(s3)  # Read UART Control reg
     and t0, t0, t1                  # Apply Mask
     bne t1, t0, 1b                  # Loop
+
+    lw t0, 12(sp)
+    lw t1, 8(sp)
+    EpilogeRa 12
 
     ret
 
@@ -1553,7 +1683,6 @@ NibbleToHexChar:
 
     ret
 
-
 # ---------------------------------------------
 # Convert ascii char (in a0) to Word and return in a0
 # It is assumed that char is already a valid hex digit
@@ -1597,7 +1726,7 @@ WordAlign:
 .balign 4
 .word 0x00400000                # Port A base
 .word 0x00400100                # UART base
-str_Greet:   .string "\r\nMonitor 0.0.15 - Ranger SoC - Jun 2023\r\n"
+str_Greet:   .string "\r\nMonitor 0.0.16 - Ranger Retro - Jun 2023\r\n"
 .balign 4
 str_Bye:  .string "\r\nBye\r\n"
 .balign 4
@@ -1608,6 +1737,16 @@ str_w_cmd_error: .string "Invalid parameter(s): w('b' or 'w') value value...\r\n
 str_r_cmd_error: .string "Invalid parameter(s): r('b' or 'w') count\r\n"
 .balign 4
 str_e_cmd_error: .string "Invalid parameter(s): e('b' or 'l')\r\n"
+.balign 4
+str_u_load_error: .string "SoT signal not detected\r\n"
+.balign 4
+str_u_data_error: .string "DAT signal not detected\r\n"
+.balign 4
+str_u_loading:    .string "Loading...\r\n"
+.balign 4
+str_u_load_Wait:    .string "Waiting for SoT signal...\r\n"
+.balign 4
+str_u_load_complete: .string "Loading complete.\r\n"
 .balign 4
 str_UnknownCommand: .string "Unknown command\r\n"
 .balign 4
