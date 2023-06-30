@@ -13,18 +13,18 @@ CODE             0x00001e00         0x00000400         x
 Linker script and memory map
 
 
-.text           0x00000000     0x1028
+.text           0x00000000      0xf20
  *(.text)
- .text          0x00000000     0x1028 /media/RAMDisk/monitor.o
+ .text          0x00000000      0xf20 /media/RAMDisk/monitor.o
                 0x00000000                _start
 
-.rodata         0x00001400      0x164
+.rodata         0x00001400      0x1a8
                 0x00001400                        rom_data = .
  *(.rodata)
- .rodata        0x00001400      0x164 /media/RAMDisk/monitor.o
+ .rodata        0x00001400      0x1a8 /media/RAMDisk/monitor.o
 
-.rela.dyn       0x00001564        0x0
- .rela.text     0x00001564        0x0 /media/RAMDisk/monitor.o
+.rela.dyn       0x000015a8        0x0
+ .rela.text     0x000015a8        0x0 /media/RAMDisk/monitor.o
 
 keybuffer       0x00001a00       0x24
  *(keybuffer)
