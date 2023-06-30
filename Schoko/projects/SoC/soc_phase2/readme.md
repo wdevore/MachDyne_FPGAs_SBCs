@@ -129,6 +129,9 @@ It is a binary editor.
 **NOTE**: minicom allows a Go program to open a connection but **screen** does not.
 ```minicom -b 115200 -o -D /dev/ttyUSB2``` "Ctrl-a Crtl-z x"
 
+- Make sure you turn off *flow control*: ```Ctrl-A Z O "serial port setup" F```
+- Also change "Backspace key sends" to **DEL**: ```Ctrl-A T B B```
+
 ## Screen
 - C-a C              (clear)           Clear the screen.
 - C-a \              (quit)            Kill all windows and terminate screen.
