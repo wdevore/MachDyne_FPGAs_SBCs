@@ -5,13 +5,15 @@ A very minimal Monitor along the lines of Wozmon.
 There is two areas you need to run tools from:
 
 ## Programs to load
-Via the monitor's "u" command. You write your code in assembly and then assemble it with the two make targets:
+Via the monitor's "u" command.
+
+The folder from ```/.../Hardware/MachDyne_FPGAs_SBCs/Schoko/projects/SoC/sources/programs``` should have sub folders for each program. Each program has a *.s* file and *.ld* file.
+
+You write your code in assembly and then assemble it with the two make targets:
 1) make
 2) make out2verilog
 
 This produces a *.hex* file that can be uploaded via the Monitor.
-
-The folder from ```/.../Hardware/MachDyne_FPGAs_SBCs/Schoko/projects/SoC/sources/programs``` should have sub folders for each program. Each program has a *.s* file and *.ld* file.
 
 ## Building the Monitor
 1) cd to ```.../Hardware/MachDyne_FPGAs_SBCs/Schoko/projects/SoC/sources/gas/monitor``` and run *make*
