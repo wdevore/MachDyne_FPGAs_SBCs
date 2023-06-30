@@ -3,7 +3,8 @@ ENTRY(_start)
 
 MEMORY
 {
-    BRAM(wx) :ORIGIN =0x00000000,LENGTH =1K
+    /* The address specified is in byte-address form = 4K Words */
+    BRAM(wx) :ORIGIN =0x00001E00,LENGTH =4K
 }
 
 SECTIONS

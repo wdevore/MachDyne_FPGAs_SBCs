@@ -3,12 +3,13 @@ ENTRY(_start)
 
 MEMORY
 {
-    BRAM(wx) :ORIGIN =0x00000000,LENGTH =4K
-    CODE(x)  :ORIGIN =0x00001000,LENGTH =1K
+    /* The addresses specified are in byte-address form */
+    BRAM(wx) :ORIGIN =0x00000000,LENGTH =5K
     ROM      :ORIGIN =0x00001400,LENGTH =512
-    KEYBUFF  :ORIGIN =0x00001600,LENGTH =256
-    DATA     :ORIGIN =0x00001700,LENGTH =512
-    STACK(w) :ORIGIN =0x00001900,LENGTH =256
+    KEYBUFF  :ORIGIN =0x00001A00,LENGTH =256
+    DATA     :ORIGIN =0x00001B00,LENGTH =512
+    STACK(w) :ORIGIN =0x00001D00,LENGTH =256
+    CODE(x)  :ORIGIN =0x00001E00,LENGTH =1K
 }
 
 SECTIONS
@@ -32,6 +33,6 @@ SECTIONS
 
     stack : {
         *(stack)
-        stack_bottom = .;
+        stack_bottom = . + 256;
     }> STACK
 }

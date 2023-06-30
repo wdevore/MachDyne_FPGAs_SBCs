@@ -1,7 +1,23 @@
-# bugs
-
 # Description
 A very minimal Monitor along the lines of Wozmon.
+
+# Development
+There is two areas you need to run tools from:
+
+## Programs to load
+Via the monitor's "u" command. You write your code in assembly and then assemble it with the two make targets:
+1) make
+2) make out2verilog
+
+This produces a *.hex* file that can be uploaded via the Monitor.
+
+The folder from ```/.../Hardware/MachDyne_FPGAs_SBCs/Schoko/projects/SoC/sources/programs``` should have sub folders for each program. Each program has a *.s* file and *.ld* file.
+
+## Building the Monitor
+1) cd to ```.../Hardware/MachDyne_FPGAs_SBCs/Schoko/projects/SoC/sources/gas/monitor``` and run *make*
+2) cd to ```.../Hardware/MachDyne_FPGAs_SBCs/Schoko/projects/SoC/soc_phase2``` and run *make*
+3) In the Monitor type the **u** command. This makes the Monitor wait for bytes.
+4) cd to ```.../Hardware/MachDyne_FPGAs_SBCs/Schoko/projects/SoC/sources/uploader``` and run *go run . /media/RAMDisk/filename.hex*
 
 # Requirements
 - Read a memory location
@@ -63,6 +79,8 @@ The output format of ```rw 5``` is:
 - [x] Modify a memory location
 - [x] Dump a block of memory
 - [ ] Upload a block of memory
+
+s0 and t6 don't seem to work??
 
 # Example Monitors
 

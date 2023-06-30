@@ -22,17 +22,27 @@ import (
 // @00000000 00A00513
 // @00000001 00100073
 // ...
+// OR
+// @00000000
+// 00A00513 00000001 00000001 00000001
+// @00000001
+// 00100073 00A00513 00000001 00000001
+// 00A00513 00000001 00000001 00000001
+// 00A00513 00000001 00000001 00000001
+// 00A00513 00000001 00000001 00000001
+// ...
 
-// go run . ../../binaries/app.hex
+// go run . /media/RAMDisk/filename.hex
 
 const (
 	SOT_Signal byte = 0x01
 	DAT_Signal byte = 0x02
 	EOT_Signal byte = 0x03
+	ADR_Signal byte = 0x04
 )
 
 // Anything < 10 is too small of a delay between bytes
-var interByteDelay = 20
+var interByteDelay = 1500
 
 func main() {
 	args := os.Args[1:]
@@ -66,7 +76,8 @@ func main() {
 
 	scanner := bufio.NewScanner(appfile)
 
-	instrExpr, _ := regexp.Compile(`@([0-9a-zA-Z]+) (([0-9a-zA-Z]{2,2})([0-9a-zA-Z]{2,2})([0-9a-zA-Z]{2,2})([0-9a-zA-Z]{2,2}))`)
+	addrExpr, _ := regexp.Compile(`@(([0-9a-zA-Z]{2,2})([0-9a-zA-Z]{2,2})([0-9a-zA-Z]{2,2})([0-9a-zA-Z]{2,2}))`)
+	instrExpr, _ := regexp.Compile(`(([0-9a-zA-Z]{2,2})([0-9a-zA-Z]{2,2})([0-9a-zA-Z]{2,2})([0-9a-zA-Z]{2,2}))`)
 
 	// First send signal SoT. These signals are defined in monitor.s
 	uartSend(SOT_Signal, port)
@@ -74,7 +85,16 @@ func main() {
 	// Give target time to process byte
 	time.Sleep(time.Microsecond * time.Duration(interByteDelay))
 
-	// uartSend(DAT_Signal, port)
+	// The address is in word-addressing format.
+	// For example,
+	// --- Word addressing little-endian format ---
+	// @00000400
+	// 00A00513 00500593 00B502B3 00100073
+
+	// Verses byte-addressing form
+	// --- Byte addressing big-endian format ---
+	// @00001000
+	// 13 05 A0 00 93 05 50 00 B3 02 B5 00 73 00 10 00
 
 	// Start scanning instructions
 	for scanner.Scan() {
@@ -83,25 +103,45 @@ func main() {
 			continue
 		}
 
-		fields := instrExpr.FindStringSubmatch(line)
-		if len(fields) == 0 {
-			continue
+		fields := addrExpr.FindStringSubmatch(line)
+		if len(fields) > 0 {
+			fmt.Println("Address")
+			// We hit an address
+			uartSend(ADR_Signal, port)
+			time.Sleep(time.Microsecond * time.Duration(interByteDelay))
+
+			sendData(fields[5], port)
+			time.Sleep(time.Microsecond * time.Duration(interByteDelay))
+
+			sendData(fields[4], port)
+			time.Sleep(time.Microsecond * time.Duration(interByteDelay))
+
+			sendData(fields[3], port)
+			time.Sleep(time.Microsecond * time.Duration(interByteDelay))
+
+			sendData(fields[2], port)
+			time.Sleep(time.Microsecond * time.Duration(interByteDelay))
+		} else {
+			// If the Makefile's objcopy parm verilog-data-width is
+			// set to 4 then each line has 4 words on it.
+			words := strings.Split(line, " ")
+			for _, word := range words {
+				fields = instrExpr.FindStringSubmatch(word)
+				if len(fields) == 0 {
+					continue
+				}
+				// Group 1 is address
+				// Group 3,4,5,6 are the bytes
+
+				sendData(fields[5], port) // MSB
+				sendData(fields[4], port)
+				sendData(fields[3], port)
+				sendData(fields[2], port) // LSB
+			}
 		}
-
-		// Group 1 is address
-		// Group 3,4,5,6 are the bytes
-		// address, err := StringHexToInt(fields[1])
-		// if err != nil {
-		// 	fmt.Println(err)
-		// 	os.Exit(-3)
-		// }
-
-		sendByte(fields[6], port) // MSB
-		sendByte(fields[5], port)
-		sendByte(fields[4], port)
-		sendByte(fields[3], port) // LSB
-
 	}
+
+	fmt.Println("EOT")
 
 	uartSend(EOT_Signal, port)
 
@@ -118,18 +158,18 @@ func uartSend(data byte, port serial.Port) {
 	}
 }
 
-func sendByte(b string, port serial.Port) {
+func sendData(b string, port serial.Port) {
 	byte4, err := StringHexToInt(b)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(-4)
 	}
 
-	// hex := UintToHexString(uint64(byte4), true)
-	// fmt.Printf("%s\n", hex)
-
 	uartSend(DAT_Signal, port)
 	time.Sleep(time.Microsecond * time.Duration(interByteDelay))
+
+	hex := UintToHexString(uint64(byte4), true)
+	fmt.Printf("Byte: %s\n", hex)
 
 	uartSend(byte(byte4), port)
 	time.Sleep(time.Microsecond * time.Duration(interByteDelay))

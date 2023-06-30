@@ -2,21 +2,21 @@
 Memory Configuration
 
 Name             Origin             Length             Attributes
-BRAM             0x00000000         0x00000400         xw
+BRAM             0x00001e00         0x00001000         xw
 *default*        0x00000000         0xffffffff
 
 Linker script and memory map
 
 
-.text           0x00000000        0x8
+.text           0x00001e00       0x10
  *(.text)
- .text          0x00000000        0x8 /media/RAMDisk/program.o
-                0x00000000                _start
+ .text          0x00001e00       0x10 /media/RAMDisk/program.o
+                0x00001e00                _start
 LOAD /media/RAMDisk/program.o
 OUTPUT(/media/RAMDisk/program elf32-littleriscv)
 
-.data           0x00000008        0x0
- .data          0x00000008        0x0 /media/RAMDisk/program.o
+.data           0x00001e10        0x0
+ .data          0x00001e10        0x0 /media/RAMDisk/program.o
 
-.bss            0x00000008        0x0
- .bss           0x00000008        0x0 /media/RAMDisk/program.o
+.bss            0x00001e10        0x0
+ .bss           0x00001e10        0x0 /media/RAMDisk/program.o

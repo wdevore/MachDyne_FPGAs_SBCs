@@ -2,6 +2,7 @@ RISCV_TOOLCHAIN := /opt/riscv/bin/
 GAS := riscv64-unknown-linux-gnu-as
 LD  := riscv64-unknown-linux-gnu-ld
 DUMP := riscv64-unknown-linux-gnu-objdump
+COPY := riscv64-unknown-linux-gnu-objcopy
 
 BINARY_MODULE := program
 FIRMWARE := app
@@ -76,11 +77,24 @@ clean:
 		$(BUILD_BIN)/*.out \
 		$(BUILD_BIN)/$(BINARY_MODULE)
 
+# Note:
+# The "verilog-data-width" parameter can implicitly switch the address
+# outputs from byte-address form to word-address form depending on the
+# value passed, for example, a "1" generates byte-address form and the data
+# is in big-endian format. However, a value of "4" generates word-address
+# form and the data is in little-endian format.
+# For example: a "1" generates:
+# @00001000
+# 13 05 A0 00 93 05 50 00 B3 02 B5 00 73 00 10 00
+#
+# and a "4" generates:
+# @00000400
+# 00A00513 00500593 00B502B3 00100073
+
 .PHONY: out2verlog
 out2verlog: $(BUILD_BIN)/$(BINARY_MODULE)
-	riscv64-unknown-linux-gnu-objcopy \
+	@$(RISCV_TOOLCHAIN)$(COPY) \
 	-O verilog \
 	--verilog-data-width 4 \
 	$(BUILD_BIN)/$(BINARY_MODULE) $(BUILD_BIN)/filename.hex
 
-# @([0-9a-zA-Z]+) ([0-9a-zA-Z]+)

@@ -32,8 +32,9 @@
 # Unidirectional signals
 # **__**__**__**__**__**__**__**__**__**__**__**__**__**__
 .set SIGNAL_SOT,        0x01        # Start of transmission
-.set SIGNAL_DAT,        0x02        # End of Transmission
+.set SIGNAL_DAT,        0x02        # Byte of data
 .set SIGNAL_EOT,        0x03        # End of Transmission
+.set SIGNAL_ADR,        0x04        # Address value
 
 # ---__------__------__------__------__------__------__---
 # Macros
@@ -504,7 +505,11 @@ PWC_Exit:
 # SoT data Signal data Signal data Signal data...EoT
 # 
 # Need to add Timer component as a "watch dog".
-#
+# 
+# t6 = ADR tracking flag. It is set on the first appearence of
+# the ADR signal.
+# s0 is set/cleared on each incoming byte.
+# 
 # Output:
 #   a0 = 0 (not handled), 1 (handled), 2 (error)
 # ---------------------------------------------
@@ -515,7 +520,7 @@ Process_U_Command:
     la t1, keyBuf
     lbu t1, 0(t1)
     li t0, 'u'
-    bne t0, t1, PUC_NH          # Exit if not 'u' command
+    bne t0, t1, PUC_NH              # Exit if not 'u' command
 
     la a0, str_u_load_Wait
     jal PrintString
@@ -533,55 +538,152 @@ Process_U_Command:
     la t2, working_addr         # Point to working address variable
     lw t2, 0(t2)                # Fetch value from variable = working address
     
-# 24 16  8  0
-# 00_00_00_00
-
 # Loops while != EoT
 PUC_Load_Loop:
+    # !!!!!!!!!!!!!!!!!!!!!
+    li a0, 'R'
+    jal PrintCharCrLn
+    # !!!!!!!!!!!!!!!!!!!!!
+
     # Each byte that arrives is shifted into byte position within a Word
     mv t3, zero                     # Reset byte accumulator
     mv t4, zero                     # Reset shift amount
     li t5, 4                        # A word is four bytes
 
-    # li a0, '_'
-    # jal PrintCharCrLn
-
-PUC_Get_Byte:
-    # Wait for DAT or EOT
+PUC_Accum_Word:
+    # Wait for DAT, EOT or ADR
     jal PollRxAvail                 # Block until a byte arrives
     lbu t0, UART_RX_REG_ADDR(s3)    # Fetch data byte
+
+    # !!!!!!!!!!!!!!!!!!!!!
+    li a0, '{'
+    jal PrintChar
+    mv a0, t0
+    jal HexByteToString
+    la a0, string_buf
+    jal PrintString
+    jal PrintCrLn
+    # !!!!!!!!!!!!!!!!!!!!!
 
     li t1, SIGNAL_EOT
     beq t0, t1, PUC_End             # Finish if EoT
 
     li t1, SIGNAL_DAT
-    bne t0, t1, PUC_Data_Error      # Error if not DAT
+    beq t0, t1, PUC_Adr_Skip        # Skip flag check
+
+    # !!!!!!!!!!!!!!!!!!!!!
+    li a0, 'T'
+    jal PrintChar
+    mv a0, t6
+    jal HexByteToString
+    la a0, string_buf
+    jal PrintString
+    jal PrintCrLn
+    # !!!!!!!!!!!!!!!!!!!!!
+
+    bne zero, t6, PUC_Adr_Skip      # If flag set then skip
+    li t1, SIGNAL_ADR
+    sub t1, t1, t0                  # (SIGNAL_ADR - incoming_signal)
+    seqz t6, t1                     # Set flag
+    # !!!!!!!!!!!!!!!!!!!!!
+    li a0, 'G'
+    jal PrintChar
+    mv a0, t6
+    jal HexByteToString
+    la a0, string_buf
+    jal PrintString
+    jal PrintCrLn
+    # !!!!!!!!!!!!!!!!!!!!!
+    j PUC_Load_Loop                 # Now Restart loop for Data bytes
+
+PUC_Adr_Skip:
+    # !!!!!!!!!!!!!!!!!!!!!
+    li a0, 'K'
+    jal PrintCharCrLn
+    # !!!!!!!!!!!!!!!!!!!!!
 
     jal PollRxAvail                 # Wait for Byte
     lbu t0, UART_RX_REG_ADDR(s3)    # Fetch byte
+
+    # !!!!!!!!!!!!!!!!!!!!!
+    li a0, ':'
+    jal PrintChar
+    mv a0, t0
+    jal HexByteToString
+    la a0, string_buf
+    jal PrintString
+    jal PrintCrLn
+    # !!!!!!!!!!!!!!!!!!!!!
 
     sll t0, t0, t4                  # Shift byte into position
     or t3, t3, t0                   # Merge into accumulator
 
     # !!!!!!!!!!!!!!!!!!!!!
-    # mv a0, t3
-    # jal HexWordToString
-    # la a0, string_buf
-    # jal PrintString
-    # jal PrintCrLn
+    li a0, 'O'
+    jal PrintCharCrLn
+    mv a0, t3
+    jal HexWordToString
+    la a0, string_buf
+    jal PrintString
+    jal PrintCrLn
+    # !!!!!!!!!!!!!!!!!!!!!
 
     addi t4, t4, 8                  # Inc shift amount by 8 bits
-
     addi t5, t5, -1                 # Dec byte counter
-    bne zero, t5, PUC_Get_Byte
+    bne zero, t5, PUC_Accum_Word
 
-    # Store accumulator into memory
-    sw t3, 0(t2)                    # Store it
-    addi t2, t2, 4                  # Move to next destination Word location
+    # All bytes received for Word.
+    # !!!!!!!!!!!!!!!!!!!!!
+    li a0, 'F'
+    jal PrintChar
+    mv a0, t6
+    jal HexByteToString
+    la a0, string_buf
+    jal PrintString
+    jal PrintCrLn
+    # !!!!!!!!!!!!!!!!!!!!!
+
+    beq zero, t6, PUC_Store         # Storing or Updating?
+    # !!!!!!!!!!!!!!!!!!!!!
+    li a0, 'U'
+    jal PrintChar
+    # !!!!!!!!!!!!!!!!!!!!!
+
+    # Else: update working addr variable
+    la t2, working_addr             # Point to working address variable
+    slli t3, t3, 2                  # Convert Addr from Word to Byte addressing
+    sw t3, 0(t2)                    # Update address variable
+    mv t2, t3                       # Use new working address
+    mv t6, zero                     # Reset ADR tracking flag
+
+    # !!!!!!!!!!!!!!!!!!!!!
+    mv a0, t2
+    jal HexWordToString
+    la a0, string_buf
+    jal PrintString
+    jal PrintCrLn
+    # !!!!!!!!!!!!!!!!!!!!!
 
     j PUC_Load_Loop
 
+PUC_Store:  # Store accumulator into memory
+    # !!!!!!!!!!!!!!!!!!!!!
+    li a0, 'S'
+    jal PrintCharCrLn
+    # !!!!!!!!!!!!!!!!!!!!!
+    sw t3, 0(t2)                    # Store it
+
+    addi t2, t2, 4                  # Move to next destination Word location
+    j PUC_Load_Loop
+
+# PUC_Loop:
+    j PUC_Load_Loop
+
 PUC_End:
+    # !!!!!!!!!!!!!!!!!!!!!
+    li a0, 'E'
+    jal PrintCharCrLn
+    # !!!!!!!!!!!!!!!!!!!!!
     li a0, 1                    # Handled
     j PUC_Exit
 
@@ -599,11 +701,15 @@ PUC_LError:
 
 PUC_NH:
     li a0, 0                    # Not handled
+    j 1f
 
 PUC_Exit:
     la a0, str_u_load_complete
     jal PrintString
+    li a0, 'X'
+    jal PrintCharCrLn
 
+1:
     EpilogeRa
 
     ret
