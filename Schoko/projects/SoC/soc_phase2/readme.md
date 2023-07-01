@@ -7,6 +7,9 @@ Open 4 Terminals laid out in quadrants.
 - The bottome left runs: ```make``` from */media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Schoko/projects/SoC/soc_phase2*
 - The upper right runs the simple Go program to send a byte: ```go run . 0x34``` from */media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Schoko/go_clients/basic*
 
+### Using the Uploader
+The uploader is used with the Monitor's **u** command. First you issue the **u** command using the Monitor. Then run the uploader as follows: ```go run . /media/RAMDisk/filename.hex```. The *.hex* file is generated from a program within the ```/media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Schoko/projects/SoC/sources/programs``` folder, for example, *simple* program will generate a *.hex* file in the RAMDisk.
+
 ### Using custom assembler
 - The lower right runs the assembler: ```go run . /media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Schoko/projects/SoC/sources/config.json``` from */media/iposthuman/Nihongo/Hardware/RISC-V/RISC-V-Assemblers/basic*
 

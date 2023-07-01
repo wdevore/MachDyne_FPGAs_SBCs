@@ -1,7 +1,14 @@
 RISCV_TOOLCHAIN := /opt/riscv/bin/
-GAS := riscv64-unknown-linux-gnu-as
-LD  := riscv64-unknown-linux-gnu-ld
-DUMP := riscv64-unknown-linux-gnu-objdump
+# "linux-gnu" or "elf"
+BUILD_TYPE := elf
+GAS := riscv64-unknown-$(BUILD_TYPE)-as
+LD  := riscv64-unknown-$(BUILD_TYPE)-ld
+DUMP := riscv64-unknown-$(BUILD_TYPE)-objdump
+COPY := riscv64-unknown-$(BUILD_TYPE)-objcopy
+
+# Emulations:
+# "elf32lriscv_ilp32" or "elf32lriscv"
+EMULATION := elf32lriscv
 
 BINARY_MODULE := monitor
 FIRMWARE := firmware
@@ -32,7 +39,7 @@ assemble: $(MODULES_FILES)
 link: $(BUILD_BIN)/$(BINARY_MODULE).o
 	@echo "############### Linking... ##################"
 	@$(RISCV_TOOLCHAIN)$(LD) \
-	-m elf32lriscv_ilp32 \
+	-m $(EMULATION) \
 	-o $(BUILD_BIN)/$(BINARY_MODULE) \
 	-O 0 \
 	-Map $(BINARY_MODULE).map \
@@ -78,7 +85,7 @@ clean:
 
 .PHONY: out2verlog
 out2verlog: $(BUILD_BIN)/$(BINARY_MODULE)
-	riscv64-unknown-linux-gnu-objcopy \
+	@$(RISCV_TOOLCHAIN)$(COPY) \
 	-O verilog \
 	--verilog-data-width 4 \
 	$(BUILD_BIN)/$(BINARY_MODULE) $(BUILD_BIN)/filename.hex
