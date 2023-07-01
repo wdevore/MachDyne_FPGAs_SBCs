@@ -65,7 +65,7 @@ func main() {
 		BaudRate: 115200,
 	}
 
-	port, err := serial.Open("/dev/ttyUSB2", mode)
+	port, err := serial.Open("/dev/ttyUSB1", mode)
 	if err != nil {
 		fmt.Println("Difficulty opening serial port")
 		log.Fatal(err)

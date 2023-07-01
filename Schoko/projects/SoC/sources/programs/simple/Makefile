@@ -1,6 +1,11 @@
 RISCV_TOOLCHAIN := /opt/riscv/bin/
+
+# The build type depends on how you installed the GNU toolchain.
+# If you compiled you will get a "elf" type and if you used a
+# package manager you may get a "linux-gnu" type.
 # "linux-gnu" or "elf"
 BUILD_TYPE := elf
+
 GAS := riscv64-unknown-$(BUILD_TYPE)-as
 LD  := riscv64-unknown-$(BUILD_TYPE)-ld
 DUMP := riscv64-unknown-$(BUILD_TYPE)-objdump
@@ -74,8 +79,8 @@ dump: $(BUILD_BIN)/${BINARY_MODULE}
 .PHONY: out2hex
 out2hex: $(BUILD_BIN)/$(FIRMWARE).out
 	@echo "############### Generating hex firmware... ##################"
-	@cd ../gas/out2hex; \
-	go run . $(BUILD_BIN)/$(FIRMWARE).out ../../../binaries/$(FIRMWARE).hex
+	@cd ../../gas/out2hex; \
+	go run . $(BUILD_BIN)/$(FIRMWARE).out $(BUILD_BIN)/$(FIRMWARE).hex
 
 .PHONY: clean
 clean:
@@ -99,6 +104,7 @@ clean:
 
 .PHONY: out2verlog
 out2verlog: $(BUILD_BIN)/$(BINARY_MODULE)
+	@echo "############### Generating hex program... ##################"
 	@$(RISCV_TOOLCHAIN)$(COPY) \
 	-O verilog \
 	--verilog-data-width 4 \
