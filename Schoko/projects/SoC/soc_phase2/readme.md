@@ -7,13 +7,28 @@ Open 4 Terminals laid out in quadrants.
 - The bottome left runs: ```make``` from */media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Schoko/projects/SoC/soc_phase2*
 - The upper right runs the simple Go program to send a byte: ```go run . 0x34``` from */media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Schoko/go_clients/basic*
 
-### Using the Uploader
+## Using the Uploader
 The uploader is used with the Monitor's **u** command. First you issue the **u** command using the Monitor. Then run the uploader as follows: ```go run . /media/RAMDisk/filename.hex```. The *.hex* file is generated from a program within the ```/media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Schoko/projects/SoC/sources/programs``` folder, for example, *simple* program will generate a *.hex* file in the RAMDisk.
 
-### Using custom assembler
+## Using custom assembler (Deprecated)
 - The lower right runs the assembler: ```go run . /media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Schoko/projects/SoC/sources/config.json``` from */media/iposthuman/Nihongo/Hardware/RISC-V/RISC-V-Assemblers/basic*
 
-### Using Gas
+## Writing micro programs
+Micro programs are small programs that can be loaded into *micro_code* section just after the *stack*.
+
+Each program must follow a specific Prolog/Epilog such that the program can run and exit properly. A program is made from two files: *.s* file and *.ld* file. Each program must completely fit within 2K including its own stack.
+
+The program can exit in one of two ways:
+
+1) via a Exit label or
+2) via a Ctrl-C interrupt.
+
+An example hello world
+```s
+
+```
+
+## Using Gas
 - The lower right runs the assembler: ```make``` from */media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Schoko/projects/SoC/sources/gas/monitor*
 
 # Gas assembler

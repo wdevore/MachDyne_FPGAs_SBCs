@@ -11,6 +11,8 @@ LD  := riscv64-unknown-$(BUILD_TYPE)-ld
 DUMP := riscv64-unknown-$(BUILD_TYPE)-objdump
 COPY := riscv64-unknown-$(BUILD_TYPE)-objcopy
 
+INCLUDES := ".."
+
 # Emulations:
 # "elf32lriscv_ilp32" or "elf32lriscv"
 EMULATION := elf32lriscv
@@ -20,7 +22,7 @@ FIRMWARE := app
 HEX_FIRMWARE := $(FIRMWARE).hex
 
 MODULES_FILES = \
-	add.s
+	hello.s
 
 BUILD_BIN = /media/RAMDisk
 
@@ -36,6 +38,7 @@ assemble: $(MODULES_FILES)
 	-mno-relax \
 	-mno-arch-attr \
 	-fno-pic \
+	-I $(INCLUDES) \
 	-o $(BUILD_BIN)/$(BINARY_MODULE).o $(MODULES_FILES)
 
 # -T linker_script.ld
@@ -69,12 +72,9 @@ dump: $(BUILD_BIN)/${BINARY_MODULE}
 	-w \
 	--insn-width=4 \
 	--section=.text \
-	--section=.data \
-	--section=.rodata \
-	--section=keybuffer \
-	--section=stack \
 	$(BUILD_BIN)/$(BINARY_MODULE) \
 	>$(BUILD_BIN)/$(FIRMWARE).out
+
 
 .PHONY: out2hex
 out2hex: $(BUILD_BIN)/$(FIRMWARE).out
@@ -82,11 +82,6 @@ out2hex: $(BUILD_BIN)/$(FIRMWARE).out
 	@cd ../../gas/out2hex; \
 	go run . $(BUILD_BIN)/$(FIRMWARE).out $(BUILD_BIN)/$(FIRMWARE).hex
 
-.PHONY: clean
-clean:
-	@rm	$(BUILD_BIN)/*.o \
-		$(BUILD_BIN)/*.out \
-		$(BUILD_BIN)/$(BINARY_MODULE)
 
 # Note:
 # The "verilog-data-width" parameter can implicitly switch the address
@@ -109,4 +104,10 @@ out2verlog: $(BUILD_BIN)/$(BINARY_MODULE)
 	-O verilog \
 	--verilog-data-width 4 \
 	$(BUILD_BIN)/$(BINARY_MODULE) $(BUILD_BIN)/filename.hex
+
+.PHONY: clean
+clean:
+	@rm	$(BUILD_BIN)/*.o \
+		$(BUILD_BIN)/*.out \
+		$(BUILD_BIN)/$(BINARY_MODULE)
 

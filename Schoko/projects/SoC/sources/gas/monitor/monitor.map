@@ -7,24 +7,24 @@ ROM              0x00001400         0x00000200
 KEYBUFF          0x00001a00         0x00000100
 DATA             0x00001b00         0x00000200
 STACK            0x00001d00         0x00000100         w
-CODE             0x00001e00         0x00000400         x
+CODE             0x00001e00         0x00000800         x
 *default*        0x00000000         0xffffffff
 
 Linker script and memory map
 
 
-.text           0x00000000      0xf20
+.text           0x00000000      0xf88
  *(.text)
- .text          0x00000000      0xf20 /media/RAMDisk/monitor.o
+ .text          0x00000000      0xf88 /media/RAMDisk/monitor.o
                 0x00000000                _start
 
-.rodata         0x00001400      0x1a8
+.rodata         0x00001400      0x1b8
                 0x00001400                        rom_data = .
  *(.rodata)
- .rodata        0x00001400      0x1a8 /media/RAMDisk/monitor.o
+ .rodata        0x00001400      0x1b8 /media/RAMDisk/monitor.o
 
-.rela.dyn       0x000015a8        0x0
- .rela.text     0x000015a8        0x0 /media/RAMDisk/monitor.o
+.rela.dyn       0x000015b8        0x0
+ .rela.text     0x000015b8        0x0 /media/RAMDisk/monitor.o
 
 keybuffer       0x00001a00       0x24
  *(keybuffer)
@@ -41,5 +41,9 @@ stack           0x00001d00      0x100
  *(stack)
  stack          0x00001d00      0x100 /media/RAMDisk/monitor.o
                 0x00001f00                        stack_bottom = (. + 0x100)
+
+micro_code      0x00001e00      0x800
+ *(micro_code)
+ micro_code     0x00001e00      0x800 /media/RAMDisk/monitor.o
 LOAD /media/RAMDisk/monitor.o
 OUTPUT(/media/RAMDisk/monitor elf32-littleriscv)

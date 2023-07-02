@@ -2,6 +2,7 @@
 
 .set KEY_BUFFER_SIZE, 32
 .set STACK_SIZE, 256
+.set MICROCODE_SIZE, 2048
 
 # **__**__**__**__**__**__**__**__**__**__**__**__**__**__
 # Port A
@@ -120,6 +121,7 @@ Exit:
     ebreak
 
 # ---------------------------------------------
+# @note Processbuf
 # Process what was placed into the buffer
 # ---------------------------------------------
 ProcessBuf:
@@ -140,6 +142,9 @@ ProcessBuf:
     jal Process_U_Command
     bgtu a0, zero, PB_EXIT
 
+    jal Process_X_Command
+    bgtu a0, zero, PB_EXIT
+
     la a0, str_UnknownCommand
     jal PrintString
 
@@ -153,6 +158,7 @@ PB_EXIT:
     ret
 
 # ---------------------------------------------
+# @note Process_A_Command
 # 'a' Command
 # a0 = 0 (not handled), 1 (handled), 2 (error)
 # ] aw word-address Word aligned
@@ -252,6 +258,7 @@ PAC_Exit:
     ret
 
 # ---------------------------------------------
+# @note Process_E_Command
 # Switch between big/little endian
 # ] eb
 # OR
@@ -311,6 +318,7 @@ PEC_Exit:
     ret
 
 # ---------------------------------------------
+# @note Process_R_Command
 # a0 = 0 (not handled), 1 (handled), 2 (error)
 # ] rw 25
 # The 1st parm 'type' can be 'b' (byte) or 'w" (word)
@@ -393,6 +401,7 @@ PRC_Exit:
     ret
 
 # ---------------------------------------------
+# @note Process_W_Command
 # a0 = 0 (not handled), 1 (handled), 2 (error)
 # ] ww 1234abcd
 # OR
@@ -498,6 +507,7 @@ PWC_Exit:
     ret
 
 # ---------------------------------------------
+# @note Process_U_Command
 # Causes the monitor to wait for bytes from UART.
 # The bytes are stored starting at working address which is
 # typically at 0x00001000.
@@ -717,6 +727,46 @@ PUC_Exit:
     ret
 
 # ---------------------------------------------
+# @note Process_X_Command
+# Run code at working address that was set prior.
+# ---------------------------------------------
+Process_X_Command:
+    PrologRa 8                  # 8 because of pushing (sp)
+    
+    # The first char in the key buffer is the command
+    la t1, keyBuf
+    lbu t1, 0(t1)
+    li t0, 'x'
+    bne t0, t1, PXC_NH          # Exit if not 'x' command
+
+    # Preserve Monitor stack, Micro code will use its own stack
+    sw sp, 8(sp)
+    jal micro_code              # Run the micro program
+    lw sp, 8(sp)                # Restore BEFORE continuing
+
+    # a0 has return code from micro program
+    mv t0, a0                   # backup prior to printing
+    la a0, str_return_msg
+    jal PrintString
+    mv a0, t0                   # Restore for conversion
+    jal HexByteToString
+    li a0, ')'
+    jal PrintCharCrLn
+
+    li a0, 1                    # Indicate: handled
+
+    j PXC_Exit
+
+PXC_NH:
+    li a0, 0                    # Not handled
+
+# Technically this won't be reached
+PXC_Exit:
+    EpilogeRa 8
+    ret
+
+# ---------------------------------------------
+# @note DumpWords
 # a0 = count of Words to display
 # ---------------------------------------------
 DumpWords:
@@ -803,14 +853,15 @@ DW_Loop:
     addi t2, t2, -1             # Dec word count
     bne zero, t2, DW_Loop
 
-    sw t2, 16(sp)
-    sw t1, 12(sp)
-    sw t0, 8(sp)
+    lw t2, 16(sp)
+    lw t1, 12(sp)
+    lw t0, 8(sp)
     EpilogeRa 16
 
     ret
 
 # ---------------------------------------------
+# @note DumpBytes
 # Input:
 #   a0 = count of lines to display, each 3 words + ascii
 # Output format:
@@ -901,16 +952,17 @@ WRD_Cont:
     bne zero, t2, DB_Loop_Lines
 
     # Exit
-    sw t4, 24(sp)
-    sw t3, 20(sp)
-    sw t2, 16(sp)
-    sw t1, 12(sp)
-    sw t0, 8(sp)
+    lw t4, 24(sp)
+    lw t3, 20(sp)
+    lw t2, 16(sp)
+    lw t1, 12(sp)
+    lw t0, 8(sp)
     EpilogeRa 24
 
     ret
 
 # ---------------------------------------------
+# @note IsHexDigit
 # Check if a0 (char) is a hex digit: 0-9 or a-f
 # return = a0 => 0 (no), 1 (yes)
 # ---------------------------------------------
@@ -943,6 +995,7 @@ IsHexDigit:
     ret
 
 # ---------------------------------------------
+# @note IsIntDigit
 # Check if a0 (char) is a integer digit: 0-9
 # return = a0 => 0 (no), 1 (yes)
 # ---------------------------------------------
@@ -969,6 +1022,7 @@ IsIntDigit:
     ret
 
 # ---------------------------------------------
+# @note IsInteger
 # Scan each char for valid integer chars
 # a0 points to string
 # return = a0 => 0 (no), 1 (yes)
@@ -1005,6 +1059,7 @@ II_Exit:
     ret
 
 # ---------------------------------------------
+# @note IsHex32String
 # Scan each char for valid hex chars
 # Input:
 #   a0 points to string
@@ -1043,6 +1098,7 @@ IH_Exit:
     ret
 
 # ---------------------------------------------
+# @note IsHexByte
 # Scan 2 chars for valid hex chars
 # Input:
 #   a0 points to string
@@ -1079,6 +1135,7 @@ IHB_Exit:
 
 
 # ---------------------------------------------
+# @note CheckForDEL
 # Check for Backspace/Delete
 # Moves the cursor back and then print a Space
 # ---------------------------------------------
@@ -1115,6 +1172,7 @@ CheckForDEL:
     ret
 
 # ---------------------------------------------
+# @note CheckForCR
 # Check for Carriage return
 # If it isn't CR then place into buffer
 # a0 = key to check
@@ -1174,6 +1232,7 @@ CheckForCR:
     ret
 
 # ---------------------------------------------
+# @note ClearKeyBuffer
 # Clear key input buffer
 # ---------------------------------------------
 ClearKeyBuffer:
@@ -1202,6 +1261,7 @@ ClearKeyBuffer:
     ret
 
 # ---------------------------------------------
+# @note TrimLastKeyBuffer
 # Trim off the last character in the key buffer.
 # If the offset index is == 0 then just put a Null
 # and return, otherwise, put a Null and dec the offset.
@@ -1238,6 +1298,7 @@ TrimLastKeyBuffer:
     ret
 
 # ---------------------------------------------
+# @note PollTxBusy
 # Wait for the Tx busy bit to Clear
 # ---------------------------------------------
 PollTxBusy:
@@ -1256,6 +1317,7 @@ PollTxBusy:
     ret
 
 # ----------------------------------------------------------
+# @note PollRxAvail
 # Wait for the Rx byte available bit to Set when a byte
 # has arrived.
 # ----------------------------------------------------------
@@ -1278,7 +1340,9 @@ PollRxAvail:
     ret
 
 # ---------------------------------------------
-# a0 is byte to write to port
+# @note WritePortA
+# Input:
+#   a0 is byte to write to port
 # ---------------------------------------------
 WritePortA:
     sb a0, PORT_A_REG(s2)
@@ -1286,6 +1350,7 @@ WritePortA:
     ret
 
 # ---------------------------------------------
+# @note PrintString
 # Print a Null terminated String
 # Input:
 #   a0 points to start of String
@@ -1312,6 +1377,7 @@ PrintString:
     ret
 
 # ---------------------------------------------
+# @note PrintChar
 # Print a single character
 # a0 = char
 # ---------------------------------------------
@@ -1353,6 +1419,7 @@ PrintCharCrLn:
     ret
 
 # ---------------------------------------------
+# @note PrintCursor
 # Moves the cursor back to the begining of the line
 # and prints the working address + "]" char.
 # For example: 00001234]
@@ -1393,6 +1460,7 @@ PrintAddress:
     ret
 
 # ---------------------------------------------
+# @note PrintNibble
 # Print a0's LS nibble
 # ---------------------------------------------
 PrintNibble:
@@ -1421,6 +1489,7 @@ PrintNibble:
     ret
 
 # ---------------------------------------------
+# @note PrintNibble
 # Print a0's LSB
 # ---------------------------------------------
 PrintByte:
@@ -1443,6 +1512,7 @@ PrintByte:
     ret
 
 # ---------------------------------------------
+# @note PrintWordAsBinary
 # Print a0 Word as binary string
 # ---------------------------------------------
 PrintWordAsBinary:
@@ -1487,6 +1557,7 @@ PrintWordAsBinary:
 # /--\/--\/--\/--\/--\/--\/--\/--\/--\/--\/--\/--\/--\
 
 # ---------------------------------------------
+# @note PadLeftZerosString
 # Input:
 #   a0 = Address of string to left-pad with '0' chars
 #   a1 = output size requested, for example, 8 chars
@@ -1534,17 +1605,18 @@ PLZ_Append:  # Now append source chars to new buffer
     sb zero, 0(t3)                # Null
 
 PLZ_Exit:
-    sw t4, 24(sp)
-    sw t4, 20(sp)
-    sw t3, 16(sp)
-    sw t2, 12(sp)
-    sw t1, 8(sp)
+    lw t4, 24(sp)
+    lw t4, 20(sp)
+    lw t3, 16(sp)
+    lw t2, 12(sp)
+    lw t1, 8(sp)
 
     EpilogeRa 24
 
     ret
 
 # ---------------------------------------------
+# @note LengthOfString
 # Input:
 #   a0 = Address of string to find size of
 # Output:
@@ -1576,6 +1648,7 @@ LengthOfString:
     ret
 
 # ---------------------------------------------
+# @note String32ToWord
 # Convert String (8 chars) to Word and return in a0
 # Input:
 #   a0 = address to source string buffer
@@ -1618,6 +1691,7 @@ String32ToWord:
     ret
 
 # ---------------------------------------------
+# @note String8ToWord
 # Convert String (2 chars) to Word and return in a0
 # It only looks at two chars. It doesn't check for Null.
 # Input:
@@ -1651,6 +1725,7 @@ String8ToWord:
     ret
 
 # ---------------------------------------------
+# @note HexWordToString
 # Converts a 32 bit value to an 8 char string.
 # The string is stored in string_buf.
 # left most nibble = LM nibble
@@ -1697,6 +1772,7 @@ HWT_Store:
     ret
 
 # ---------------------------------------------
+# @note ByteToChar
 # Converts a byte value to an ascii char.
 # The string is stored in string_buf.
 # Visible characters start at ' ' -> '~' otherwise
@@ -1729,6 +1805,7 @@ ByteToChar:
     ret
 
 # ---------------------------------------------
+# @note HexByteToString
 # Converts a 8 bit value to an 2 char hex string.
 # The string is stored in string_buf.
 # Input:
@@ -1769,6 +1846,7 @@ HexByteToString:
     ret
 
 # ---------------------------------------------
+# @note NibbleToHexChar
 # Converts a Nibble to a char.
 # Input:
 #   a0 = word with the Nibble
@@ -1792,6 +1870,7 @@ NibbleToHexChar:
     ret
 
 # ---------------------------------------------
+# @note HexCharToWord
 # Convert ascii char (in a0) to Word and return in a0
 # It is assumed that char is already a valid hex digit
 # ---------------------------------------------
@@ -1817,6 +1896,7 @@ HexCharToWord:
     ret
 
 # ---------------------------------------------
+# @note WordAlign
 # Align by setting the lower 2 bits to zero
 # Input:
 #   a0 = word to be word aligned
@@ -1860,6 +1940,8 @@ str_u_load_complete: .string "Loading complete.\r\n"
 .balign 4
 str_UnknownCommand: .string "Unknown command\r\n"
 .balign 4
+str_return_msg: .string "Exit code: ("
+.balign 4
 
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
 # Incoming data buffer
@@ -1887,3 +1969,10 @@ string_buf2: .fill 128, 1, 0        # 128*1 bytes with value 0
 .section stack, "w", @nobits
 .balign 4
 .skip STACK_SIZE
+
+# __++__++__++__++__++__++__++__++__++__++__++__++__++
+# Micro code program area
+# __++__++__++__++__++__++__++__++__++__++__++__++__++
+.section micro_code, "wx", @nobits
+.balign 4
+.skip MICROCODE_SIZE

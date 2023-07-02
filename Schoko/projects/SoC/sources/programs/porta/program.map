@@ -1,0 +1,37 @@
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+BRAM             0x00001e00         0x00000500         xw
+ROM              0x00002300         0x00000200
+STACK            0x00002800         0x00000100         w
+*default*        0x00000000         0xffffffff
+
+Linker script and memory map
+
+
+.text           0x00001e00       0x4c
+ *(.text)
+ .text          0x00001e00       0x4c /media/RAMDisk/program.o
+                0x00001e00                _start
+
+.rodata         0x00002300        0x4
+                0x00002300                        rom_data = .
+ *(.rodata)
+ .rodata        0x00002300        0x4 /media/RAMDisk/program.o
+
+.rela.dyn       0x00002304        0x0
+ .rela.text     0x00002304        0x0 /media/RAMDisk/program.o
+
+.data           0x00002304        0x0
+ .data          0x00002304        0x0 /media/RAMDisk/program.o
+
+.bss            0x00002304        0x0
+ .bss           0x00002304        0x0 /media/RAMDisk/program.o
+
+stack           0x00002800      0x100
+ *(stack)
+ stack          0x00002800      0x100 /media/RAMDisk/program.o
+                0x00002a00                        stack_bottom = (. + 0x100)
+LOAD /media/RAMDisk/program.o
+OUTPUT(/media/RAMDisk/program elf32-littleriscv)
