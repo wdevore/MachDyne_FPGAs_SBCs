@@ -68,6 +68,7 @@ dump: $(BUILD_BIN)/${BINARY_MODULE}
 	--section=.rodata \
 	--section=keybuffer \
 	--section=stack \
+	--section=micro_code \
 	$(BUILD_BIN)/$(BINARY_MODULE) \
 	>$(BUILD_BIN)/$(FIRMWARE).out
 

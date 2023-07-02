@@ -714,7 +714,7 @@ PUC_NH:
     j 1f
 
 PUC_Exit:
-    la a0, str_u_load_complete
+    la a0, str_u_load_cmplt
     jal PrintString
     # # !!!!!!!!!!!!!!!!!!!!!
     # li a0, 'X'
@@ -731,7 +731,7 @@ PUC_Exit:
 # Run code at working address that was set prior.
 # ---------------------------------------------
 Process_X_Command:
-    PrologRa 8                  # 8 because of pushing (sp)
+    PrologRa
     
     # The first char in the key buffer is the command
     la t1, keyBuf
@@ -739,10 +739,20 @@ Process_X_Command:
     li t0, 'x'
     bne t0, t1, PXC_NH          # Exit if not 'x' command
 
+    la a0, str_running_msg
+    jal PrintString
+
     # Preserve Monitor stack, Micro code will use its own stack
-    sw sp, 8(sp)
+    # Note! We don't use (sp) because the micro program will
+    # overwrite (sp) thus destroying the Monitor's restore ability.
+    # So we use a memory location instead.
+    la t0, stack_backup
+    sw sp, 0(t0)
+
     jal micro_code              # Run the micro program
-    lw sp, 8(sp)                # Restore BEFORE continuing
+
+    la t0, stack_backup
+    lw sp, 0(t0)
 
     # a0 has return code from micro program
     mv t0, a0                   # backup prior to printing
@@ -750,6 +760,8 @@ Process_X_Command:
     jal PrintString
     mv a0, t0                   # Restore for conversion
     jal HexByteToString
+    la a0, string_buf
+    jal PrintString
     li a0, ')'
     jal PrintCharCrLn
 
@@ -762,7 +774,7 @@ PXC_NH:
 
 # Technically this won't be reached
 PXC_Exit:
-    EpilogeRa 8
+    EpilogeRa
     ret
 
 # ---------------------------------------------
@@ -1489,8 +1501,10 @@ PrintNibble:
     ret
 
 # ---------------------------------------------
-# @note PrintNibble
+# @note PrintByte
 # Print a0's LSB
+# Input:
+#   a0 = byte to print
 # ---------------------------------------------
 PrintByte:
     PrologRa 12
@@ -1916,31 +1930,31 @@ WordAlign:
 .word 0x00400100                # UART base
 str_Greet:   .string "\r\nMonitor 0.0.16 - Ranger Retro - Jun 2023\r\n"
 .balign 4
-str_Bye:  .string "\r\nBye\r\n"
+str_Bye:            .string "\r\nBye\r\n"
 .balign 4
-debug_str:  .string "\r\nDEBUG\r\n"
+str_a_cmd_error:    .string "A: Invalid parameter(s): a('b' or 'w') address\r\n"
 .balign 4
-str_a_cmd_error: .string "A: Invalid parameter(s): a('b' or 'w') address\r\n"
+str_w_cmd_error:    .string "W: Invalid parameter(s): w('b' or 'w') value value...\r\n"
 .balign 4
-str_w_cmd_error: .string "W: Invalid parameter(s): w('b' or 'w') value value...\r\n"
+str_r_cmd_error:    .string "R: Invalid parameter(s): r('b' or 'w') count\r\n"
 .balign 4
-str_r_cmd_error: .string "R: Invalid parameter(s): r('b' or 'w') count\r\n"
+str_e_cmd_error:    .string "E: Invalid parameter(s): e('b' or 'l')\r\n"
 .balign 4
-str_e_cmd_error: .string "E: Invalid parameter(s): e('b' or 'l')\r\n"
+str_u_load_error:   .string "U: SoT signal not detected\r\n"
 .balign 4
-str_u_load_error: .string "U: SoT signal not detected\r\n"
+str_u_data_error:   .string "U: DAT signal not detected\r\n"
 .balign 4
-str_u_data_error: .string "U: DAT signal not detected\r\n"
-.balign 4
-str_u_loading:    .string "Loading...\r\n"
+str_u_loading:      .string "Loading...\r\n"
 .balign 4
 str_u_load_Wait:    .string "Waiting for SoT signal...\r\n"
 .balign 4
-str_u_load_complete: .string "Loading complete.\r\n"
+str_u_load_cmplt:   .string "Loading complete.\r\n"
 .balign 4
 str_UnknownCommand: .string "Unknown command\r\n"
 .balign 4
-str_return_msg: .string "Exit code: ("
+str_return_msg:     .string "Exit code: ("
+.balign 4
+str_running_msg:    .string "Running micro program\r\n"
 .balign 4
 
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
@@ -1957,6 +1971,7 @@ keyBuf:
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
 .section .data
 working_addr: .word 0x00000000
+stack_backup: .word 0x00000000
 endian_order: .byte 0               # Default to readable (0 = big endian)
 # String buffer used for conversions
 .balign 4

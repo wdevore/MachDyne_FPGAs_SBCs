@@ -42,7 +42,7 @@ const (
 )
 
 // Anything < 10 is too small of a delay between bytes
-var interByteDelay = 1500
+var interByteDelay = 2000
 
 func main() {
 	args := os.Args[1:]
@@ -65,7 +65,7 @@ func main() {
 		BaudRate: 115200,
 	}
 
-	port, err := serial.Open("/dev/ttyUSB1", mode)
+	port, err := serial.Open("/dev/ttyUSB2", mode)
 	if err != nil {
 		fmt.Println("Difficulty opening serial port")
 		log.Fatal(err)
@@ -105,7 +105,7 @@ func main() {
 
 		fields := addrExpr.FindStringSubmatch(line)
 		if len(fields) > 0 {
-			fmt.Println("Address")
+			// fmt.Println("Address")
 			// We hit an address
 			uartSend(ADR_Signal, port)
 			time.Sleep(time.Microsecond * time.Duration(interByteDelay))
@@ -141,7 +141,7 @@ func main() {
 		}
 	}
 
-	fmt.Println("EOT")
+	fmt.Println("Sending EOT")
 
 	uartSend(EOT_Signal, port)
 
@@ -168,8 +168,8 @@ func sendData(b string, port serial.Port) {
 	uartSend(DAT_Signal, port)
 	time.Sleep(time.Microsecond * time.Duration(interByteDelay))
 
-	hex := UintToHexString(uint64(byte4), true)
-	fmt.Printf("Byte: %s\n", hex)
+	// hex := UintToHexString(uint64(byte4), true)
+	// fmt.Printf("Byte: %s\n", hex)
 
 	uartSend(byte(byte4), port)
 	time.Sleep(time.Microsecond * time.Duration(interByteDelay))

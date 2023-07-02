@@ -9,7 +9,7 @@ MEMORY
     KEYBUFF  :ORIGIN =0x00001A00,LENGTH =256
     DATA     :ORIGIN =0x00001B00,LENGTH =512
     STACK(w) :ORIGIN =0x00001D00,LENGTH =256
-    CODE(x)  :ORIGIN =0x00001E00,LENGTH =2K
+    CODE(x)  :ORIGIN =0x00001F00,LENGTH =2K
 }
 
 SECTIONS
@@ -33,7 +33,7 @@ SECTIONS
 
     stack : {
         *(stack)
-        stack_bottom = . + 256;
+        stack_bottom = .;
     }> STACK
 
     micro_code : {

@@ -15,11 +15,12 @@
 
 .global _start
 _start:
+    # Note: the Monitor has already saved its (sp)
+    la sp, stack_bottom             # Initialize Micro Stack
+
     # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     # Micro Prolog
     # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    la sp, stack_bottom             # Initialize Micro Stack
-
     PrologRa 12
     sw s2, 8(sp)
     sw s0, 12(sp)
