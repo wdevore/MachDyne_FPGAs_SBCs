@@ -2,36 +2,36 @@
 Memory Configuration
 
 Name             Origin             Length             Attributes
-BRAM             0x00001e00         0x00000500         xw
-ROM              0x00002300         0x00000200
-STACK            0x00002500         0x00000100         w
+BRAM             0x00001f00         0x00000500         xw
+ROM              0x00002400         0x00000200
+STACK            0x00002600         0x00000100         w
 *default*        0x00000000         0xffffffff
 
 Linker script and memory map
 
 
-.text           0x00001e00       0xa4
+.text           0x00001f00       0xd4
  *(.text)
- .text          0x00001e00       0xa4 /media/RAMDisk/program.o
-                0x00001e00                _start
+ .text          0x00001f00       0xd4 /media/RAMDisk/program.o
+                0x00001f00                _start
 
-.rodata         0x00002300       0x18
-                0x00002300                        rom_data = .
+.rodata         0x00002400       0x18
+                0x00002400                        rom_data = .
  *(.rodata)
- .rodata        0x00002300       0x18 /media/RAMDisk/program.o
+ .rodata        0x00002400       0x18 /media/RAMDisk/program.o
 
-.rela.dyn       0x00002318        0x0
- .rela.text     0x00002318        0x0 /media/RAMDisk/program.o
+.rela.dyn       0x00002418        0x0
+ .rela.text     0x00002418        0x0 /media/RAMDisk/program.o
 
-.data           0x00002318        0x0
- .data          0x00002318        0x0 /media/RAMDisk/program.o
+.data           0x00002418        0x0
+ .data          0x00002418        0x0 /media/RAMDisk/program.o
 
-.bss            0x00002318        0x0
- .bss           0x00002318        0x0 /media/RAMDisk/program.o
+.bss            0x00002418        0x0
+ .bss           0x00002418        0x0 /media/RAMDisk/program.o
 
-stack           0x00002500      0x100
+stack           0x00002600      0x100
  *(stack)
- stack          0x00002500      0x100 /media/RAMDisk/program.o
-                0x00002700                        stack_bottom = (. + 0x100)
+ stack          0x00002600      0x100 /media/RAMDisk/program.o
+                0x00002700                        stack_bottom = .
 LOAD /media/RAMDisk/program.o
 OUTPUT(/media/RAMDisk/program elf32-littleriscv)

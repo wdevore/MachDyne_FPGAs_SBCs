@@ -3,10 +3,11 @@ ENTRY(_start)
 
 MEMORY
 {
-    /* The address specified is in byte-address form */
-    BRAM(wx) :ORIGIN =0x00001E00,LENGTH =2K - 512 - 256
-    ROM      :ORIGIN =0x00002300,LENGTH =512
-    STACK(w) :ORIGIN =0x00002500,LENGTH =256
+    /* Note 1: The address specified is in byte-address form */
+    /* Note 2: BRAM origin needs to match monitor.ld's CODE origin */
+    BRAM(wx) :ORIGIN =0x00001F00,LENGTH =2K - 512 - 256
+    ROM      :ORIGIN =0x00002400,LENGTH =512
+    STACK(w) :ORIGIN =0x00002600,LENGTH =256
 }
 
 SECTIONS
@@ -22,6 +23,6 @@ SECTIONS
 
     stack : {
         *(stack)
-        stack_bottom = . + 256;
+        stack_bottom = .;
     }> STACK
 }

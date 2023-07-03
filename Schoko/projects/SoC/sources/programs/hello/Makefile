@@ -18,7 +18,7 @@ INCLUDES := ".."
 EMULATION := elf32lriscv
 
 BINARY_MODULE := program
-FIRMWARE := app
+FIRMWARE := program
 HEX_FIRMWARE := $(FIRMWARE).hex
 
 MODULES_FILES = \
@@ -103,7 +103,7 @@ out2verlog: $(BUILD_BIN)/$(BINARY_MODULE)
 	@$(RISCV_TOOLCHAIN)$(COPY) \
 	-O verilog \
 	--verilog-data-width 4 \
-	$(BUILD_BIN)/$(BINARY_MODULE) $(BUILD_BIN)/filename.hex
+	$(BUILD_BIN)/$(BINARY_MODULE) $(BUILD_BIN)/micro.hex
 
 .PHONY: clean
 clean:

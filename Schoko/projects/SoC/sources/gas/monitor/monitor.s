@@ -24,8 +24,6 @@
 # Ascii
 # **__**__**__**__**__**__**__**__**__**__**__**__**__**__
 .set ASCII_EoT,         0x03        # Control-C = End-of-Text
-.set ASCII_CR,          '\r'        # Carriage return
-.set ASCII_LF,          '\n'        # Line feed
 .set ASCII_DEL,         0x7F        # [Del] key
 .set ASCII_BACK,        0x08        # Backspace
 
@@ -1196,7 +1194,7 @@ CheckForCR:
     sw t1, 12(sp)
 
     # Is a0 = CR
-    li t0, ASCII_CR
+    li t0, '\r'                 # Carriage return
     bne a0, t0, 1f              # branch if not CR
     beq a0, t0, 2f
 
@@ -1221,7 +1219,7 @@ CheckForCR:
 
 2:  # Is CR
     # Echo a LF back as well
-    li a0, ASCII_LF
+    li a0, '\n'                 # Line feed
     jal PrintChar
 
     # Fetch current offset
@@ -1391,7 +1389,8 @@ PrintString:
 # ---------------------------------------------
 # @note PrintChar
 # Print a single character
-# a0 = char
+# Input:
+#   a0 = char
 # ---------------------------------------------
 PrintChar:
     PrologRa
@@ -1404,14 +1403,18 @@ PrintChar:
 
     ret
 
+# ---------------------------------------------
+# @note PrintCrLn
+# Print a CR and LF
+# ---------------------------------------------
 PrintCrLn:
     PrologRa
 
-    li a0, ASCII_CR
+    li a0, '\r'                 # Carriage return
     sb a0, UART_TX_REG_ADDR(s3) # Send
     jal PollTxBusy
 
-    li a0, ASCII_LF
+    li a0, '\n'                 # Line feed
     sb a0, UART_TX_REG_ADDR(s3) # Send
     jal PollTxBusy
 
@@ -1419,6 +1422,10 @@ PrintCrLn:
 
     ret
 
+# ---------------------------------------------
+# @note PrintCharCrLn
+# Print a char followed by CR and LF
+# ---------------------------------------------
 PrintCharCrLn:
     PrologRa
 

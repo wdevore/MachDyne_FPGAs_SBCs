@@ -32,6 +32,7 @@ _start:
    
     la a0, str_hello
     jal PrintString
+    jal PrintCrLn
 
     # --- Ends here ---
 
@@ -72,6 +73,25 @@ PrintString:
 1:  # Exit
     lw s0, 8(sp)
     EpilogeRa 8
+
+    ret
+
+# ---------------------------------------------
+# @note PrintCrLn
+# Print a CR and LF
+# ---------------------------------------------
+PrintCrLn:
+    PrologRa
+
+    li a0, '\r'                 # Carriage return
+    sb a0, UART_TX_REG_ADDR(s3) # Send
+    jal PollTxBusy
+
+    li a0, '\n'                 # Line feed
+    sb a0, UART_TX_REG_ADDR(s3) # Send
+    jal PollTxBusy
+
+    EpilogeRa
 
     ret
 

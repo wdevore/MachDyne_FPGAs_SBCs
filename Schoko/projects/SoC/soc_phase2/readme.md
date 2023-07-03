@@ -10,7 +10,7 @@ Open 4 Terminals laid out in quadrants.
 ## Using the Uploader
 The uploader is used with the Monitor's **u** command. First you issue the **u** command using the Monitor. Then run the uploader as follows: ```go run . /media/RAMDisk/filename.hex```. The *.hex* file is generated from a program within the ```/media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Schoko/projects/SoC/sources/programs``` folder, for example, *simple* program will generate a *.hex* file in the RAMDisk.
 
-## Using custom assembler (Deprecated)
+## Using custom assembler (<span style="color: red;">Deprecated</span>)
 - The lower right runs the assembler: ```go run . /media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Schoko/projects/SoC/sources/config.json``` from */media/iposthuman/Nihongo/Hardware/RISC-V/RISC-V-Assemblers/basic*
 
 ## Writing micro programs
