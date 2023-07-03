@@ -20,13 +20,14 @@ Each program must follow a specific Prolog/Epilog such that the program can run 
 
 The program can exit in one of two ways:
 
-1) via a Exit label or
+1) via a Exit label using "ret", or
 2) via a Ctrl-C interrupt.
 
-An example hello world
-```s
-
-```
+## Program interruption
+When a *micro* program is running the user should be able to *stop* it. This can be implemented in several ways:
+1) The micro program polls the UART control register. Note; the program must inform the Monitor of this intent.
+2) The Monitor can capture the interrupt and force the exit of the micro program.
+3) ??
 
 ## Using Gas
 - The lower right runs the assembler: ```make``` from */media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Schoko/projects/SoC/sources/gas/monitor*
