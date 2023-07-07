@@ -35,6 +35,7 @@ module FemtoRV32(
    output        mem_access,  // active (high) for memory data access
 
    input         interrupt_request,
+   output        irq_acknowledge,
 
    input         reset,     // set to 0 to reset the processor
 
@@ -83,7 +84,7 @@ module FemtoRV32(
    wire isJALR    =  (instr[6:2] == 5'b11001); // rd <- PC+4; PC<-rs1+Iimm
    wire isJAL     =  (instr[6:2] == 5'b11011); // rd <- PC+4; PC<-PC+Jimm
    wire isSYSTEM  =  (instr[6:2] == 5'b11100); // rd <- CSR <- rs1/uimm5
-   wire isEBREAK  = isSYSTEM & funct3Is[0];    // ebreak
+   wire isEBREAK  = isSYSTEM & funct3Is[0] & ~(instr[31:20]==12'h302);    // ebreak
 
    wire isALU = isALUimm | isALUreg;
 
@@ -282,6 +283,8 @@ module FemtoRV32(
    // Processor accepts interrupts in EXECUTE state.   
    wire interrupt_accepted = interrupt & state[EXECUTE_bit];        
 
+   assign irq_acknowledge = interrupt_accepted;
+   
    // If current interrupt is accepted, there already might be the next one, 
    // which should not be missed:
    always @(posedge clk) begin

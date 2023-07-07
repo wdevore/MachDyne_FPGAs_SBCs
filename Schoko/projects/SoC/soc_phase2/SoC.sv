@@ -166,7 +166,6 @@ assign uart_wr = uart_cs & (mem_wmask != 0);
 logic [7:0] uart_out_data;
 logic [7:0] uart_in_data;
 /* verilator lint_off UNUSEDSIGNAL */
-logic uart_irq;
 logic [2:0] uart_irq_id;
 /* verilator lint_on UNUSEDSIGNAL */
 
@@ -182,8 +181,9 @@ UART_Component uart_comp (
     .addr(uart_addr),
     .out_data(uart_out_data),	// Byte received
     .in_data(uart_in_data),		// Byte to transmit
-    .irq(uart_irq),
+    .irq(interrupt_request),	// Routed to femto (active high)
     .irq_id(uart_irq_id),
+	.irq_acknowledge(irq_acknowledge),	// Active high
 	.debug(debug)
 );
 
@@ -236,7 +236,8 @@ logic [31:0] mem_wdata;   // processor -> (mem and peripherals)
 logic        mem_rstrb;   // mem read strobe. Goes high to initiate memory write.
 logic        mem_rbusy;   // processor <- (mem and peripherals). Stays high until a read transfer is finished.
 logic        mem_wbusy;   // processor <- (mem and peripherals). Stays high until a write transfer is finished.
-logic        interrupt_request = 0; // Active high
+logic        interrupt_request; // Active high
+logic        irq_acknowledge;	// Active high
 logic        mem_access;
 
 assign mem_wbusy = 0;
@@ -247,15 +248,16 @@ FemtoRV32 #(
 	.RESET_ADDR(`NRV_RESET_ADDR)	      
 ) processor (
 	.clk(clk),			
-	.mem_addr(mem_address),		// (out) to Ram and peripherals
-	.mem_wdata(mem_wdata),		// out
-	.mem_wmask(mem_wmask),		// out
-	.mem_rdata(mem_rdata),		// in
-	.mem_rstrb(mem_rstrb),		// out
-	.mem_rbusy(mem_rbusy),		// in
-	.mem_wbusy(mem_wbusy),		// in
-	.mem_access(mem_access),	// out (active high)
+	.mem_addr(mem_address),					// (out) to Ram and peripherals
+	.mem_wdata(mem_wdata),					// out
+	.mem_wmask(mem_wmask),					// out
+	.mem_rdata(mem_rdata),					// in
+	.mem_rstrb(mem_rstrb),					// out
+	.mem_rbusy(mem_rbusy),					// in
+	.mem_wbusy(mem_wbusy),					// in
+	.mem_access(mem_access),				// out (active high)
 	.interrupt_request(interrupt_request),	// in
+	.irq_acknowledge(irq_acknowledge),
 	.reset(systemReset),					// (in) Active Low
 	.halt(halt)
 );

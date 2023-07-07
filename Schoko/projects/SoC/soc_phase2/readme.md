@@ -161,3 +161,35 @@ It is a binary editor.
 # RISC-V Assembler and Runtime Simulator
 - [RISC-V Assembler and Runtime Simulator](https://github.com/TheThirdOne/rars/wiki/Environment-Calls)
 - [ChibiAkumas](https://www.youtube.com/watch?v=bEUMLh2lasE&list=PLp_QNRIYljFqBuOYDFluT66Y7biUH1Dnc&index=2) Shows usage of Rars.
+
+
+# Junk
+localparam ASCII_EoT = 8'h03;     // End of Transmission
+
+// logic control_c_detected;
+// assign control_c_detected = rx_buffer == ASCII_EoT;
+
+        UARxIdle: begin
+            // if (rx_start) begin
+            // end
+
+            if (rx_complete) begin
+                // Byte arrived
+                rx_next_state = UARxComplete;
+
+                // if (control[CTL_IRQ_ENAB] & control_c_detected) begin
+                //     irq = 1;   // Trigger interrupt, auto deactivates
+                //     rx_next_state = UAIRQComplete;
+                // end
+            end
+        end
+
+
+        UAIRQComplete: begin
+            // if (control[CTL_IRQ_ENAB] & control_c_detected) begin
+            //     // Clear buffer
+            //     rx_buffer <= 0;
+            // end
+
+        end
+

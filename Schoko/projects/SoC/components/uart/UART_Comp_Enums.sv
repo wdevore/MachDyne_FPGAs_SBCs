@@ -14,13 +14,13 @@ typedef enum logic [5:0] {
 
 typedef enum logic [2:0] {
     // A byte has been loaded and is ready to transmit
-    CTL_TX_READY,
+    CTL_TX_READY,                           // 00000001
     // Device is busy sending byte
-    CTL_TX_BUSY,
+    CTL_TX_BUSY,                            // 00000010
     // A byte is waiting in the Rx buffer
-    CTL_RX_AVAL,
+    CTL_RX_AVAL,                            // 00000100
     // Enable/Disable interrupts
-    CTL_IRQ_ENAB
+    CTL_IRQ_ENAB                            // 00001000
 } UARTControlBits;
 
 // ------------------------------------------------------------------

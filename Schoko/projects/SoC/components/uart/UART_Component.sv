@@ -22,8 +22,12 @@ module UART_Component
     input  logic [2:0] addr,        // Address: controls, buffer, key-code
     output logic [7:0] out_data,    // Ouput data port
     input  logic [7:0] in_data,     // Input data port (routed to DeMux)
+
+    // -------- IRQ --------------------------
     output logic irq,               // Active high
     output logic [2:0] irq_id,      // ID. 8 possible ids.
+    input  logic irq_acknowledge,   // Active high
+
     // Debug ----------------------------
     output logic [7:0] debug
 );
@@ -127,6 +131,11 @@ UARTRx uart_rx (
     .rx_complete(rx_complete)
 );
 
+localparam ASCII_EoT = 8'h03;     // End of Transmission
+
+logic control_c_detected;
+assign control_c_detected = control[CTL_IRQ_ENAB] & (rx_buffer == ASCII_EoT);
+
 // ------------------------------------------------------------------------
 // State machine controlling device
 // ------------------------------------------------------------------------
@@ -208,26 +217,28 @@ always_comb begin
     // #### __---__---__---__---__---__---__---__---__---__---__--- ####
     case (rx_state)
         UARxIdle: begin
-            // if (rx_start) begin
-            // end
-
             if (rx_complete) begin
                 // Byte arrived
                 rx_next_state = UARxComplete;
-
-                if (control[CTL_IRQ_ENAB]) begin
-                    irq = 1;   // Trigger interrupt
-                    rx_next_state = UAIRQComplete;
-                end
             end
         end
 
         UARxComplete: begin
             rx_next_state = UARxIdle;
+
+            if (control_c_detected) begin
+                irq = 1;   // Trigger interrupt
+                rx_next_state = UAIRQComplete;
+            end
         end
 
+        // Wait for Acknowledge
         UAIRQComplete: begin
-            rx_next_state = UARxIdle;
+            rx_next_state = UAIRQComplete;
+            irq = 1;   // Maintain
+            if (irq_acknowledge) begin
+                rx_next_state = UARxIdle;
+            end
         end
 
         default: ;
@@ -321,7 +332,7 @@ always_ff @(posedge clock) begin
     case (rx_state)
         UARxIdle: begin
             if (rx_complete) begin
-                // A byte just arrived. Capture it.
+                // A byte just arrived. Capture it. It may be Ctrl-C
                 rx_buffer <= rx_byte;
                 // Move to UARxComplete
             end
@@ -329,9 +340,15 @@ always_ff @(posedge clock) begin
 
 
         UARxComplete: begin
-            // Signal a byte has arrived
-            control[CTL_RX_AVAL] <= 1;
-            // Move to UARxIdle
+            if (control_c_detected) begin
+                // Clear buffer
+                rx_buffer <= 0;
+            end
+            else begin
+                // Signal a byte has arrived
+                control[CTL_RX_AVAL] <= 1;
+                // Move to UARxIdle
+            end
         end
 
         default: ;

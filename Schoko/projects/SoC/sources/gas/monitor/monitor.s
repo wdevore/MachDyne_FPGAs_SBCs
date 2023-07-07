@@ -1,3 +1,8 @@
+# Note: You need to tell the assembler that you intend to use
+# CSR instructions, otherwise you get this kind of error:
+# monitor.s:1945: Error: unrecognized opcode `csrrw zero,mtvec,t0', extension `zicsr' required
+.option arch, +zicsr
+
 # A basic monitor
 
 .set KEY_BUFFER_SIZE, 32
@@ -19,6 +24,7 @@
 .set UART_TX_REG_ADDR, 2
 .set MASK_CTL_RX_AVAL, 0b00000100
 .set MASK_CTL_TX_BUSY, 0b00000010
+.set MASK_IRQ_ENADIS, 0b00001000        # Enable/Disable
 
 # **__**__**__**__**__**__**__**__**__**__**__**__**__**__
 # Ascii
@@ -34,6 +40,8 @@
 .set SIGNAL_DAT,        0x02        # Byte of data
 .set SIGNAL_EOT,        0x03        # End of Transmission
 .set SIGNAL_ADR,        0x04        # Address value
+
+.set MSTATUS_IRQ_ENABLE, 8
 
 # ---__------__------__------__------__------__------__---
 # Macros
@@ -89,19 +97,56 @@ _start:
     # Clear key buffer
     jal ClearKeyBuffer
 
+    # Set interrupt trap vector
+    jal ISR_Set_Trap
+    jal ISR_Enable
+    jal UART_IRQ_Enable
+
+    # # !!!!!!!!!!!!!!!!!!!!!
+    # jal PrintCrLn
+    # # !!!!!!!!!!!!!!!!!!!!!
+    # li a0, '{'
+    # jal PrintChar
+    # lbu a0, UART_CTRL_REG_ADDR(s3)
+    # jal HexByteToString
+    # la a0, string_buf
+    # jal PrintString
+    # jal PrintCrLn
+    # # !!!!!!!!!!!!!!!!!!!!!
+    # jal UART_IRQ_Enable
+    # li a0, '{'
+    # jal PrintChar
+    # lbu a0, UART_CTRL_REG_ADDR(s3)
+    # jal HexByteToString
+    # la a0, string_buf
+    # jal PrintString
+    # jal PrintCrLn
+    # # !!!!!!!!!!!!!!!!!!!!!
+    # jal UART_IRQ_Disable
+    # # !!!!!!!!!!!!!!!!!!!!!
+    # li a0, '{'
+    # jal PrintChar
+    # lbu a0, UART_CTRL_REG_ADDR(s3)
+    # jal HexByteToString
+    # la a0, string_buf
+    # jal PrintString
+    # jal PrintCrLn
+    # # !!!!!!!!!!!!!!!!!!!!!
+
     # Wait for an incomming byte
 ScanInput:
-    jal PollRxAvail                 # Blocks until byte arrives
+    jal UART_PollRxAvail            # Blocks until byte arrives
 
     lbu a0, UART_RX_REG_ADDR(s3)    # Access byte just received
 
-    # jal WritePortA                  # Echo to port A
     jal PrintChar                   # Echo char to Terminal
+    jal WritePortA
 
     li t0, ASCII_EoT                # Check EoT
-    beq a0, t0, Exit                # Terminate
+    beq a0, t0, 2f                  # Ignore for now
+    # beq a0, t0, Exit                # Terminate
 
-    # If CR then process buffer
+    # If CR then process buffer and store char in buffer
     jal CheckForCR
     beq zero, a0, 1f                # a0 == 1 if CR detected
     jal ProcessBuf
@@ -110,7 +155,7 @@ ScanInput:
 
 1:
     jal CheckForDEL
-
+2:
     j ScanInput                     # Loop (aka Goto)
 
 Exit:
@@ -534,7 +579,7 @@ Process_U_Command:
     jal PrintString
 
     # Begin waiting for a signal byte
-    jal PollRxAvail                 # Blocks until byte arrives
+    jal UART_PollRxAvail                 # Blocks until byte arrives
     lbu t0, UART_RX_REG_ADDR(s3)    # Access byte just received
 
     li t1, SIGNAL_SOT               # Check SoT
@@ -560,7 +605,7 @@ PUC_Load_Loop:
 
 PUC_Accum_Word:
     # Wait for DAT, EOT or ADR
-    jal PollRxAvail                 # Block until a byte arrives
+    jal UART_PollRxAvail                 # Block until a byte arrives
     lbu t0, UART_RX_REG_ADDR(s3)    # Fetch data byte
 
     # # !!!!!!!!!!!!!!!!!!!!!
@@ -610,7 +655,7 @@ PUC_Adr_Skip:
     # jal PrintCharCrLn
     # # !!!!!!!!!!!!!!!!!!!!!
 
-    jal PollRxAvail                 # Wait for Byte
+    jal UART_PollRxAvail                 # Wait for Byte
     lbu t0, UART_RX_REG_ADDR(s3)    # Fetch byte
 
     # # !!!!!!!!!!!!!!!!!!!!!
@@ -977,9 +1022,6 @@ WRD_Cont:
 # return = a0 => 0 (no), 1 (yes)
 # ---------------------------------------------
 IsHexDigit:
-    PrologRa 8
-    sw t0, 8(sp)
-
     li t0, '0'                  # if a0 < '0' it isn't a digit
     bltu a0, t0, 1f
 
@@ -1000,8 +1042,6 @@ IsHexDigit:
     li a0, 1                    # Yes: it valid
 
 3:  # Exit
-    lw t0, 8(sp)
-    EpilogeRa 8
     ret
 
 # ---------------------------------------------
@@ -1010,9 +1050,6 @@ IsHexDigit:
 # return = a0 => 0 (no), 1 (yes)
 # ---------------------------------------------
 IsIntDigit:
-    PrologRa 8
-    sw t0, 8(sp)
-
     li t0, '0'                  # if a0 < '0' it isn't a digit
     bltu a0, t0, 1f
 
@@ -1027,8 +1064,6 @@ IsIntDigit:
     li a0, 1                    # Yes: it integer
 
 3:  # Exit
-    lw t0, 8(sp)
-    EpilogeRa 8
     ret
 
 # ---------------------------------------------
@@ -1246,10 +1281,6 @@ CheckForCR:
 # Clear key input buffer
 # ---------------------------------------------
 ClearKeyBuffer:
-    PrologRa 12
-    sw t0, 8(sp)
-    sw t1, 12(sp)
-
     # Reset offset to zero
     la t0, bufOffset
     sb zero, 0(t0)
@@ -1264,10 +1295,6 @@ ClearKeyBuffer:
     j 1b
 
 1:  # Exit
-    lw t1, 12(sp)
-    lw t0, 8(sp)
-    EpilogeRa 12
-
     ret
 
 # ---------------------------------------------
@@ -1279,10 +1306,6 @@ ClearKeyBuffer:
 # last visible char.
 # ---------------------------------------------
 TrimLastKeyBuffer:
-    PrologRa 12
-    sw t0, 8(sp)
-    sw t1, 12(sp)
-
     la t0, bufOffset            # Pointer to offset
 
     # Is offset == 0?
@@ -1300,42 +1323,26 @@ TrimLastKeyBuffer:
     add t1, t1, t0              # Move pointer
     sb zero, 0(t1)              # zero = Null
 
-    # Exit
-    lw t1, 12(sp)
-    lw t0, 8(sp)
-    EpilogeRa 12
-
     ret
 
 # ---------------------------------------------
-# @note PollTxBusy
+# @note UART_PollTxBusy
 # Wait for the Tx busy bit to Clear
 # ---------------------------------------------
-PollTxBusy:
-    PrologRa 8
-    sw t0, 8(sp)
-
+UART_PollTxBusy:
 1:
     lbu t0, UART_CTRL_REG_ADDR(s3)  # Read UART Control reg
     andi t0, t0, MASK_CTL_TX_BUSY   # Mask
     bne zero, t0, 1b                # Loop
 
-    # Exit
-    lw t0, 8(sp)
-    EpilogeRa 8
-    
     ret
 
 # ----------------------------------------------------------
-# @note PollRxAvail
+# @note UART_PollRxAvail
 # Wait for the Rx byte available bit to Set when a byte
 # has arrived.
 # ----------------------------------------------------------
-PollRxAvail:
-    PrologRa 12
-    sw t1, 8(sp)
-    sw t0, 12(sp)
-
+UART_PollRxAvail:
     li t1, MASK_CTL_RX_AVAL         # Rx-Byte-Available mask
 
 1:
@@ -1343,9 +1350,29 @@ PollRxAvail:
     and t0, t0, t1                  # Apply Mask
     bne t1, t0, 1b                  # Loop
 
-    lw t0, 12(sp)
-    lw t1, 8(sp)
-    EpilogeRa 12
+    ret
+
+# ----------------------------------------------------------
+# @note UART_IRQ_Enable
+# Set IRQ bit.
+# ----------------------------------------------------------
+UART_IRQ_Enable:
+    lbu t0, UART_CTRL_REG_ADDR(s3)  # Read UART Control reg
+
+    ori t1, t0, MASK_IRQ_ENADIS
+    sb t1, UART_CTRL_REG_ADDR(s3)
+
+    ret
+
+# ----------------------------------------------------------
+# @note UART_IRQ_Disable
+# Clear IRQ bit.
+# ----------------------------------------------------------
+UART_IRQ_Disable:
+    lbu t0, UART_CTRL_REG_ADDR(s3)  # Read UART Control reg
+
+    andi t1, t0, ~MASK_IRQ_ENADIS
+    sb t1, UART_CTRL_REG_ADDR(s3)
 
     ret
 
@@ -1375,7 +1402,7 @@ PrintString:
 
     sb t0, UART_TX_REG_ADDR(s3) # Send
 
-    jal PollTxBusy              # Call subroutine
+    jal UART_PollTxBusy              # Call subroutine
 
     addi a0, a0, 1              # Next char
     j 1b
@@ -1397,7 +1424,7 @@ PrintChar:
 
     sb a0, UART_TX_REG_ADDR(s3) # Send
 
-    jal PollTxBusy              # Call subroutine
+    jal UART_PollTxBusy              # Call subroutine
 
     EpilogeRa
 
@@ -1412,11 +1439,11 @@ PrintCrLn:
 
     li a0, '\r'                 # Carriage return
     sb a0, UART_TX_REG_ADDR(s3) # Send
-    jal PollTxBusy
+    jal UART_PollTxBusy
 
     li a0, '\n'                 # Line feed
     sb a0, UART_TX_REG_ADDR(s3) # Send
-    jal PollTxBusy
+    jal UART_PollTxBusy
 
     EpilogeRa
 
@@ -1498,7 +1525,7 @@ PrintNibble:
 2:
     sb t0, UART_TX_REG_ADDR(s3) # Send
 
-    jal PollTxBusy              # Call subroutine
+    jal UART_PollTxBusy              # Call subroutine
 
     # Exit
     lw t0, 12(sp)
@@ -1508,70 +1535,72 @@ PrintNibble:
     ret
 
 # ---------------------------------------------
+# @audit Unused PrintByte
 # @note PrintByte
 # Print a0's LSB
 # Input:
 #   a0 = byte to print
 # ---------------------------------------------
-PrintByte:
-    PrologRa 12
-    sw a0, 8(sp)
-    sw t0, 12(sp)
+# PrintByte:
+#     PrologRa 12
+#     sw a0, 8(sp)
+#     sw t0, 12(sp)
 
-    mv t0, a0                   # Backup a0
-    andi a0, a0, 0x0F           # Mask off lower nibble
-    jal PrintNibble
-    mv a0, t0                   # Restore a0
-    slli a0, a0, 4              # Shift higher nibble to lower nibble
-    jal PrintNibble
+#     mv t0, a0                   # Backup a0
+#     andi a0, a0, 0x0F           # Mask off lower nibble
+#     jal PrintNibble
+#     mv a0, t0                   # Restore a0
+#     slli a0, a0, 4              # Shift higher nibble to lower nibble
+#     jal PrintNibble
 
-    # Exit
-    lw t0, 12(sp)
-    lw a0, 8(sp)
-    EpilogeRa 12
+#     # Exit
+#     lw t0, 12(sp)
+#     lw a0, 8(sp)
+#     EpilogeRa 12
     
-    ret
+#     ret
 
 # ---------------------------------------------
+# @audit Unused PrintWordAsBinary
 # @note PrintWordAsBinary
 # Print a0 Word as binary string
 # ---------------------------------------------
-PrintWordAsBinary:
-    PrologRa 20
-    sw t0, 8(sp)
-    sw t1, 12(sp)
-    sw t2, 16(sp)
-    sw t3, 20(sp)
+# PrintWordAsBinary:
+#     PrologRa 20
+#     sw t0, 8(sp)
+#     sw t1, 12(sp)
+#     sw t2, 16(sp)
+#     sw t3, 20(sp)
 
-    li t0, 32                   # Load Dec Counter
-    mv t2, a0                   # Copy a0 for modification
-    li t3, 0x80000000           # MSb mask for slli
+#     li t0, 32                   # Load Dec Counter
+#     mv t2, a0                   # Copy a0 for modification
+#     li t3, 0x80000000           # MSb mask for slli
 
-1:
-    and t1, t2, t3              # Mask in MSb
-    bne zero, t1, 2f            # Test
+# 1:
+#     and t1, t2, t3              # Mask in MSb
+#     bne zero, t1, 2f            # Test
 
-    li a0, '0'
-    jal PrintChar
-    j 3f
+#     li a0, '0'
+#     jal PrintChar
+#     j 3f
 
-2:
-    li a0, '1'
-    jal PrintChar
+# 2:
+#     li a0, '1'
+#     jal PrintChar
 
-3:
-    slli t2, t2, 1              # Move next bit to MSb
-    addi t0, t0, -1             # Dec counter
-    bne zero, t0, 1b            # Loop while t0 > 0
+# 3:
+#     slli t2, t2, 1              # Move next bit to MSb
+#     addi t0, t0, -1             # Dec counter
+#     bne zero, t0, 1b            # Loop while t0 > 0
 
-    # Exit
-    lw t3, 20(sp)
-    lw t2, 16(sp)
-    lw t1, 12(sp)
-    lw t0, 8(sp)
-    EpilogeRa 20
+#     # Exit
+#     lw t3, 20(sp)
+#     lw t2, 16(sp)
+#     lw t1, 12(sp)
+#     lw t0, 8(sp)
+#     EpilogeRa 20
 
-    ret
+#     ret
 
 # \__/\__/\__/\__/\__/\__/\__/\__/\__/\__/\__/\__/\__/
 # Conversions
@@ -1804,8 +1833,8 @@ HWT_Store:
 #   a0 = visibility adjusted
 # ---------------------------------------------
 ByteToChar:
-    PrologRa 8
-    sw t0, 8(sp)
+    # PrologRa 8
+    # sw t0, 8(sp)
 
     # If byte value < 0x20 (space), or = 7F (delete)
     # return a '.'
@@ -1820,8 +1849,8 @@ ByteToChar:
     li a0, '.'
 
 2:  # Exit
-    lw t0, 8(sp)
-    EpilogeRa 8
+    # lw t0, 8(sp)
+    # EpilogeRa 8
 
     ret
 
@@ -1928,6 +1957,91 @@ WordAlign:
     andi a0, a0, 0xFFFFFFFC
     ret
 
+# --/\--/\--/\--/\--/\--/\--/\--/\--/\--/\--/\--/\--/\--
+# Interrupt service routine (ISR)
+# --/\--/\--/\--/\--/\--/\--/\--/\--/\--/\--/\--/\--/\--
+# ---------------------------------------------
+# @note ISR_Set_Trap
+# Configure: mtvec (word)
+# ---------------------------------------------
+ISR_Set_Trap:
+    # Set trap vector
+    la t0, ISR_Entry
+    csrrw zero, mtvec, t0       # Write, ignore read
+    
+    ret
+
+# ---------------------------------------------
+# @note ISR_Enable
+# Configure: mstatus (mie enable bit),
+# mcause (bit set at onset of interrupt, cleared during mret).
+# Basically mcause is a guard bit.
+# ---------------------------------------------
+ISR_Enable:
+    # Enable machine mode interrupts (default is disabled)
+    la t0, rom_data
+    lw t0, MSTATUS_IRQ_ENABLE(t0)
+    csrrs zero, mstatus, t0     # Set bit, ignore read
+    
+    ret
+
+# ---------------------------------------------
+# @note ISR_Disable
+# Configure: mstatus (mie enable bit),
+# ---------------------------------------------
+ISR_Disable:
+    # Disable machine mode interrupts (default to disabled)
+    la t0, rom_data
+    lw t0, MSTATUS_IRQ_ENABLE(t0)
+    csrrc zero, mstatus, t0     # Clear bit, ignore read
+    
+    ret
+
+# ---------------------------------------------
+# @note ISR_Entry
+# Is called once an interrupt is detected. The address
+# of this subroutine is loaded into mtvec.
+# This ISR services only type of request:
+# reacting to Ctrl-C byte received via UART.
+# Note: The UART IRQ flag must be enabled.
+# ---------------------------------------------
+ISR_Entry:
+    PrologRa 8
+    sw a0, 8(sp)
+    # sw t0, 12(sp)
+    # sw t1, 16(sp)
+
+    # jal ISR_Disable
+    # la t0, rom_data
+    # lw t0, MSTATUS_IRQ_ENABLE(t0)
+
+    # jal UART_IRQ_Disable
+    # lbu t0, UART_CTRL_REG_ADDR(s3)  # Read UART Control reg
+    # andi t1, t0, ~MASK_IRQ_ENADIS
+    # sb t1, UART_CTRL_REG_ADDR(s3)
+
+    li a0, '*'
+    sb a0, UART_TX_REG_ADDR(s3) # Send
+    # jal PrintChar
+
+    # csrr a0, mepc
+    # jal HexWordToString
+    # la a0, string_buf
+    # jal PrintString
+    # jal PrintCrLn
+
+    # lw t1, 16(sp)
+    # lw t0, 12(sp)
+    lw a0, 8(sp)
+    EpilogeRa 8
+
+    # jal PrintCrLn
+    # la a0, str_irq_msg
+    # jal PrintString
+    # jal PrintCrLn
+    # jal PrintCursor
+    mret
+
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
 # ROM-ish
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
@@ -1935,7 +2049,8 @@ WordAlign:
 .balign 4
 .word 0x00400000                # Port A base
 .word 0x00400100                # UART base
-str_Greet:   .string "\r\nMonitor 0.0.16 - Ranger Retro - Jun 2023\r\n"
+.word 0x00000008                # Mask for Global interrupts of mstatus
+str_Greet:   .string "\r\nMonitor 0.0.2 - Ranger Retro - Jul 2023\r\n"
 .balign 4
 str_Bye:            .string "\r\nBye\r\n"
 .balign 4
@@ -1962,6 +2077,8 @@ str_UnknownCommand: .string "Unknown command\r\n"
 str_return_msg:     .string "Exit code: ("
 .balign 4
 str_running_msg:    .string "Running micro program\r\n"
+.balign 4
+str_irq_msg:    .string "Interrupt triggered\r\n"
 .balign 4
 
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
