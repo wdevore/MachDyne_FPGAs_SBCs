@@ -250,7 +250,6 @@ PAC_Words:
 
     la a0, string_buf2
     jal String32ToWord          # returns a0 = converted Word
-    # jal WritePortA
     jal WordAlign               # a0 aligned and returned in a0
 
     la t0, working_addr
@@ -576,7 +575,7 @@ Process_U_Command:
     jal PrintString
 
     # Begin waiting for a signal byte
-    jal UART_PollRxAvail                 # Blocks until byte arrives
+    jal UART_PollRxAvail            # Blocks until byte arrives
     lbu t0, UART_RX_REG_ADDR(s3)    # Access byte just received
 
     li t1, SIGNAL_SOT               # Check SoT
@@ -585,16 +584,16 @@ Process_U_Command:
     la a0, str_u_loading
     jal PrintString
 
-    la t2, working_addr         # Point to working address variable
-    lw t2, 0(t2)                # Fetch value from variable = working address
-    
+    la t2, working_addr             # Point to working address variable
+    lw t2, 0(t2)                    # Fetch value from variable = working address
+
+    # # !!!!!!!!!!!!!!!!!!!!!!!!!!!
+    # li a0, '!'
+    # jal PrintCharCrLn
+    # # !!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 # Loops while != EoT
 PUC_Load_Loop:
-    # # !!!!!!!!!!!!!!!!!!!!!
-    # li a0, 'R'
-    # jal PrintCharCrLn
-    # # !!!!!!!!!!!!!!!!!!!!!
-
     # Each byte that arrives is shifted into byte position within a Word
     mv t3, zero                     # Reset byte accumulator
     mv t4, zero                     # Reset shift amount
@@ -602,18 +601,8 @@ PUC_Load_Loop:
 
 PUC_Accum_Word:
     # Wait for DAT, EOT or ADR
-    jal UART_PollRxAvail                 # Block until a byte arrives
+    jal UART_PollRxAvail            # Block until a byte arrives
     lbu t0, UART_RX_REG_ADDR(s3)    # Fetch data byte
-
-    # # !!!!!!!!!!!!!!!!!!!!!
-    # li a0, '{'
-    # jal PrintChar
-    # mv a0, t0
-    # jal HexByteToString
-    # la a0, string_buf
-    # jal PrintString
-    # jal PrintCrLn
-    # # !!!!!!!!!!!!!!!!!!!!!
 
     li t1, SIGNAL_EOT
     beq t0, t1, PUC_End             # Finish if EoT
@@ -621,83 +610,25 @@ PUC_Accum_Word:
     li t1, SIGNAL_DAT
     beq t0, t1, PUC_Adr_Skip        # Skip flag check
 
-    # # !!!!!!!!!!!!!!!!!!!!!
-    # li a0, 'T'
-    # jal PrintChar
-    # mv a0, t6
-    # jal HexByteToString
-    # la a0, string_buf
-    # jal PrintString
-    # jal PrintCrLn
-    # # !!!!!!!!!!!!!!!!!!!!!
-
     bne zero, t6, PUC_Adr_Skip      # If flag set then skip
     li t1, SIGNAL_ADR
     sub t1, t1, t0                  # (SIGNAL_ADR - incoming_signal)
     seqz t6, t1                     # Set flag
-    # # !!!!!!!!!!!!!!!!!!!!!
-    # li a0, 'G'
-    # jal PrintChar
-    # mv a0, t6
-    # jal HexByteToString
-    # la a0, string_buf
-    # jal PrintString
-    # jal PrintCrLn
-    # # !!!!!!!!!!!!!!!!!!!!!
+
     j PUC_Load_Loop                 # Now Restart loop for Data bytes
 
 PUC_Adr_Skip:
-    # # !!!!!!!!!!!!!!!!!!!!!
-    # li a0, 'K'
-    # jal PrintCharCrLn
-    # # !!!!!!!!!!!!!!!!!!!!!
-
     jal UART_PollRxAvail                 # Wait for Byte
     lbu t0, UART_RX_REG_ADDR(s3)    # Fetch byte
 
-    # # !!!!!!!!!!!!!!!!!!!!!
-    # li a0, ':'
-    # jal PrintChar
-    # mv a0, t0
-    # jal HexByteToString
-    # la a0, string_buf
-    # jal PrintString
-    # jal PrintCrLn
-    # # !!!!!!!!!!!!!!!!!!!!!
-
     sll t0, t0, t4                  # Shift byte into position
     or t3, t3, t0                   # Merge into accumulator
-
-    # # !!!!!!!!!!!!!!!!!!!!!
-    # li a0, 'O'
-    # jal PrintCharCrLn
-    # mv a0, t3
-    # jal HexWordToString
-    # la a0, string_buf
-    # jal PrintString
-    # jal PrintCrLn
-    # # !!!!!!!!!!!!!!!!!!!!!
 
     addi t4, t4, 8                  # Inc shift amount by 8 bits
     addi t5, t5, -1                 # Dec byte counter
     bne zero, t5, PUC_Accum_Word
 
-    # All bytes received for Word.
-    # # !!!!!!!!!!!!!!!!!!!!!
-    # li a0, 'F'
-    # jal PrintChar
-    # mv a0, t6
-    # jal HexByteToString
-    # la a0, string_buf
-    # jal PrintString
-    # jal PrintCrLn
-    # # !!!!!!!!!!!!!!!!!!!!!
-
     beq zero, t6, PUC_Store         # Storing or Updating?
-    # # !!!!!!!!!!!!!!!!!!!!!
-    # li a0, 'U'
-    # jal PrintChar
-    # # !!!!!!!!!!!!!!!!!!!!!
 
     # Else: update working addr variable
     la t2, working_addr             # Point to working address variable
@@ -706,21 +637,9 @@ PUC_Adr_Skip:
     mv t2, t3                       # Use new working address
     mv t6, zero                     # Reset ADR tracking flag
 
-    # # !!!!!!!!!!!!!!!!!!!!!
-    # mv a0, t2
-    # jal HexWordToString
-    # la a0, string_buf
-    # jal PrintString
-    # jal PrintCrLn
-    # # !!!!!!!!!!!!!!!!!!!!!
-
     j PUC_Load_Loop
 
 PUC_Store:  # Store accumulator into memory
-    # # !!!!!!!!!!!!!!!!!!!!!
-    # li a0, 'S'
-    # jal PrintCharCrLn
-    # # !!!!!!!!!!!!!!!!!!!!!
     sw t3, 0(t2)                    # Store it
 
     addi t2, t2, 4                  # Move to next destination Word location
@@ -730,38 +649,30 @@ PUC_Store:  # Store accumulator into memory
     j PUC_Load_Loop
 
 PUC_End:
-    # # !!!!!!!!!!!!!!!!!!!!!
-    # li a0, 'E'
-    # jal PrintCharCrLn
-    # # !!!!!!!!!!!!!!!!!!!!!
     li a0, 1                    # Handled
-    j PUC_Exit
+    j PUC_LD_Complete
 
 PUC_Data_Error:
     la a0, str_u_data_error
     jal PrintString
     li a0, 2
-    j PUC_Exit
+    j PUC_LD_Complete
 
 PUC_LError:
     la a0, str_u_load_error
     jal PrintString
     li a0, 2
-    j PUC_Exit
+    j PUC_LD_Complete
 
 PUC_NH:
     li a0, 0                    # Not handled
-    j 1f
+    j PUC_Exit
 
-PUC_Exit:
+PUC_LD_Complete:
     la a0, str_u_load_cmplt
     jal PrintString
-    # # !!!!!!!!!!!!!!!!!!!!!
-    # li a0, 'X'
-    # jal PrintCharCrLn
-    # # !!!!!!!!!!!!!!!!!!!!!
 
-1:
+PUC_Exit:
     EpilogeRa
 
     ret
@@ -796,7 +707,10 @@ Process_X_Command:
 
     # At this point the micro program exited without interruption.
     la t0, stack_backup
-    lw sp, 0(t0)
+    lw sp, 0(t0)                # Restore (sp)
+
+    jal ISR_Disable
+    jal UART_IRQ_Disable
 
     # a0 has return code from micro program
     mv t0, a0                   # backup prior to printing
@@ -2013,9 +1927,6 @@ ISR_Entry:
     sw t0, 4(sp)
     sw t1, 8(sp)
 
-    # li a0, '*'
-    # sb a0, UART_TX_REG_ADDR(s3) # Send
-
     # We first disable interrupts globally to prevent reentrantency.
     jal ISR_Disable
     # And disable the UART's interrupt ability as well.
@@ -2036,7 +1947,7 @@ ISR_Entry:
     lw t0, 4(sp)
     addi sp, sp, 8              # Epilog
 
-    mret                        # Exit trap
+    mret                        # Exit trap. Set mcause to zero.
 
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
 # ROM-ish
@@ -2046,21 +1957,37 @@ ISR_Entry:
 .word 0x00400000                # Port A base
 .word 0x00400100                # UART base
 .word 0x00000008                # Mask for Global interrupts of mstatus
+.balign 4
 str_Greet:          .string "\r\nMonitor 0.0.2 - Ranger Retro - Jul 2023\r\n"
+.balign 4
 str_Bye:            .string "\r\nBye\r\n"
+.balign 4
 str_a_cmd_error:    .string "A: Invalid parameter(s): a('b' or 'w') address\r\n"
+.balign 4
 str_w_cmd_error:    .string "W: Invalid parameter(s): w('b' or 'w') value value...\r\n"
+.balign 4
 str_r_cmd_error:    .string "R: Invalid parameter(s): r('b' or 'w') count\r\n"
+.balign 4
 str_e_cmd_error:    .string "E: Invalid parameter(s): e('b' or 'l')\r\n"
+.balign 4
 str_u_load_error:   .string "U: SoT signal not detected\r\n"
+.balign 4
 str_u_data_error:   .string "U: DAT signal not detected\r\n"
+.balign 4
 str_u_loading:      .string "Loading...\r\n"
+.balign 4
 str_u_load_Wait:    .string "Waiting for SoT signal...\r\n"
+.balign 4
 str_u_load_cmplt:   .string "Loading complete.\r\n"
+.balign 4
 str_UnknownCommand: .string "Unknown command\r\n"
+.balign 4
 str_return_msg:     .string "Exit code: ("
+.balign 4
 str_running_msg:    .string "Running micro program\r\n"
+.balign 4
 str_irq_msg:        .string "Program interrupted at: 0x"
+.balign 4
 
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
 # Incoming data buffer

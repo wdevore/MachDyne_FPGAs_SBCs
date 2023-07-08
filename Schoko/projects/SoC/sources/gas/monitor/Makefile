@@ -20,7 +20,7 @@ MODULES_FILES = \
 BUILD_BIN = /media/RAMDisk
 
 .PHONY: all
-all: assemble link dump out2verlog
+all: assemble link dump out2hex
 
 assemble: $(MODULES_FILES)
 	@echo "############### Assembling ##################"
@@ -76,7 +76,7 @@ dump: $(BUILD_BIN)/${BINARY_MODULE}
 out2hex: $(BUILD_BIN)/$(FIRMWARE).out
 	@echo "############### Generating hex firmware... ##################"
 	@cd ../out2hex; \
-	go run . $(BUILD_BIN)/$(FIRMWARE).out ../../../binaries/$(FIRMWARE).hex
+	go run . $(BUILD_BIN)/$(FIRMWARE).out $(BUILD_BIN)/$(FIRMWARE).hex
 
 .PHONY: clean
 clean:
