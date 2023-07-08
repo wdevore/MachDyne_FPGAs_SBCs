@@ -85,6 +85,7 @@ module FemtoRV32(
    wire isJAL     =  (instr[6:2] == 5'b11011); // rd <- PC+4; PC<-PC+Jimm
    wire isSYSTEM  =  (instr[6:2] == 5'b11100); // rd <- CSR <- rs1/uimm5
    wire isEBREAK  = isSYSTEM & funct3Is[0] & ~(instr[31:20]==12'h302);    // ebreak
+   wire isCSR     = isSYSTEM & (instr[14:12] != 0);
 
    wire isALU = isALUimm | isALUreg;
 
@@ -331,13 +332,19 @@ module FemtoRV32(
 
    always @(posedge clk) begin
       if(!reset) begin
-	 mstatus <= 0;
+         mstatus <= 0;
       end else begin
-	 // Execute a CSR opcode
-	 if (isSYSTEM & (instr[14:12] != 0) & state[EXECUTE_bit]) begin
-	    if (sel_mstatus) mstatus <= CSR_write[3];
-	    if (sel_mtvec  ) mtvec   <= CSR_write[ADDR_WIDTH-1:0];
-	 end
+         // Execute a CSR opcode
+         if (state[EXECUTE_bit]) begin
+            if (interrupt) begin
+               mepc <= PC_new;
+            end
+            else if (isCSR) begin
+               if (sel_mstatus) mstatus <= CSR_write[3];
+               if (sel_mtvec  ) mtvec   <= CSR_write[ADDR_WIDTH-1:0];
+               if (sel_mepc  ) mepc   <= CSR_write[ADDR_WIDTH-1:0];
+            end
+         end
       end
    end
 
@@ -481,12 +488,14 @@ module FemtoRV32(
         state[EXECUTE_bit]: begin
            if (interrupt) begin
               PC     <= mtvec;
-              mepc   <= PC_new;
+            //   mepc   <= PC_new;
               mcause <= 1;
-           end else begin
+           end
+           else begin
               PC <= PC_new;
               if (interrupt_return) mcause <= 0;
            end
+           
            if (isEBREAK)
               state <= SYSTEM_EBREAK;
            else

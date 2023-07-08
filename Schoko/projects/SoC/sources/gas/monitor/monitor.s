@@ -67,7 +67,7 @@
 .endm
 
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++
-.section .text
+.section .text, "ax", @progbits
 .align 2
 
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
@@ -99,39 +99,6 @@ _start:
 
     # Set interrupt trap vector
     jal ISR_Set_Trap
-    jal ISR_Enable
-    jal UART_IRQ_Enable
-
-    # # !!!!!!!!!!!!!!!!!!!!!
-    # jal PrintCrLn
-    # # !!!!!!!!!!!!!!!!!!!!!
-    # li a0, '{'
-    # jal PrintChar
-    # lbu a0, UART_CTRL_REG_ADDR(s3)
-    # jal HexByteToString
-    # la a0, string_buf
-    # jal PrintString
-    # jal PrintCrLn
-    # # !!!!!!!!!!!!!!!!!!!!!
-    # jal UART_IRQ_Enable
-    # li a0, '{'
-    # jal PrintChar
-    # lbu a0, UART_CTRL_REG_ADDR(s3)
-    # jal HexByteToString
-    # la a0, string_buf
-    # jal PrintString
-    # jal PrintCrLn
-    # # !!!!!!!!!!!!!!!!!!!!!
-    # jal UART_IRQ_Disable
-    # # !!!!!!!!!!!!!!!!!!!!!
-    # li a0, '{'
-    # jal PrintChar
-    # lbu a0, UART_CTRL_REG_ADDR(s3)
-    # jal HexByteToString
-    # la a0, string_buf
-    # jal PrintString
-    # jal PrintCrLn
-    # # !!!!!!!!!!!!!!!!!!!!!
 
     # Wait for an incomming byte
 ScanInput:
@@ -140,28 +107,62 @@ ScanInput:
     lbu a0, UART_RX_REG_ADDR(s3)    # Access byte just received
 
     jal PrintChar                   # Echo char to Terminal
-    jal WritePortA
+    # jal WritePortA
 
-    li t0, ASCII_EoT                # Check EoT
-    beq a0, t0, 2f                  # Ignore for now
-    # beq a0, t0, Exit                # Terminate
+    # li t0, ASCII_EoT                # Check EoT
+    # beq a0, t0, 2f                  # Ignore for now
+    # beq a0, t0, Exit                # Terminate (deprecated)
 
     # If CR then process buffer and store char in buffer
     jal CheckForCR
     beq zero, a0, 1f                # a0 == 1 if CR detected
     jal ProcessBuf
 
+ResumeScan:
+    jal PrintCursor
+
+    jal ClearKeyBuffer
+
     j ScanInput
 
-1:
+1:  # CR Not detected
     jal CheckForDEL
-2:
+# 2:
     j ScanInput                     # Loop (aka Goto)
 
 Exit:
     la a0, str_Bye
     jal PrintString
     ebreak
+
+# ---------------------------------------------
+# @note ReEntry
+# This is the Trap vector redirect target. Once the Trap
+# completes it would normally return to the micro program.
+# Instead it's redirected here and the original mepc address
+# is printed.
+# Finally jump/resume back to the Monitor, scanning for input.
+# ---------------------------------------------
+ReEntry:
+    # Print mepc. The value is the interrupt address somewhere
+    # in the micro program.
+    jal PrintCrLn
+
+    # Example: "Program interrupted at: 0x000004dc"
+    la a0, str_irq_msg
+    jal PrintString
+
+    la a0, mepc_return_addr
+    lw a0, 0(a0)
+    jal HexWordToString
+
+    la a0, string_buf
+    jal PrintString
+
+    jal PrintCrLn
+
+    # Resume Monitor's scanner
+    j ResumeScan
 
 # ---------------------------------------------
 # @note Processbuf
@@ -192,10 +193,6 @@ ProcessBuf:
     jal PrintString
 
 PB_EXIT:
-    jal PrintCursor
-
-    jal ClearKeyBuffer
-
     EpilogeRa
 
     ret
@@ -792,8 +789,12 @@ Process_X_Command:
     la t0, stack_backup
     sw sp, 0(t0)
 
+    jal ISR_Enable
+    jal UART_IRQ_Enable
+
     jal micro_code              # Run the micro program
 
+    # At this point the micro program exited without interruption.
     la t0, stack_backup
     lw sp, 0(t0)
 
@@ -2000,47 +2001,42 @@ ISR_Disable:
 # ---------------------------------------------
 # @note ISR_Entry
 # Is called once an interrupt is detected. The address
-# of this subroutine is loaded into mtvec.
-# This ISR services only type of request:
-# reacting to Ctrl-C byte received via UART.
+# of this trap routine is loaded into mtvec.
+# This ISR services only Ctrl-C bytes received via UART.
 # Note: The UART IRQ flag must be enabled.
 # ---------------------------------------------
 ISR_Entry:
-    PrologRa 8
-    sw a0, 8(sp)
-    # sw t0, 12(sp)
-    # sw t1, 16(sp)
+    la sp, stack_backup         # Restore Monitor's stack
+    lw sp, 0(sp)
 
-    # jal ISR_Disable
-    # la t0, rom_data
-    # lw t0, MSTATUS_IRQ_ENABLE(t0)
+    addi sp, sp, -8             # Prolog
+    sw t0, 4(sp)
+    sw t1, 8(sp)
 
-    # jal UART_IRQ_Disable
-    # lbu t0, UART_CTRL_REG_ADDR(s3)  # Read UART Control reg
-    # andi t1, t0, ~MASK_IRQ_ENADIS
-    # sb t1, UART_CTRL_REG_ADDR(s3)
+    # li a0, '*'
+    # sb a0, UART_TX_REG_ADDR(s3) # Send
 
-    li a0, '*'
-    sb a0, UART_TX_REG_ADDR(s3) # Send
-    # jal PrintChar
+    # We first disable interrupts globally to prevent reentrantency.
+    jal ISR_Disable
+    # And disable the UART's interrupt ability as well.
+    jal UART_IRQ_Disable
+    
+    # Now store original mepc into memory. The Monitor will print
+    # the address to the console.
+    la t0, mepc_return_addr
+    csrr t1, mepc               # Fetch current return address
+    sw t1, 0(t0)                # Store in memory
 
-    # csrr a0, mepc
-    # jal HexWordToString
-    # la a0, string_buf
-    # jal PrintString
-    # jal PrintCrLn
+    # Next we "intercept" mepc such that mret is "redirected" to
+    # the Monitor's reentry routine instead of back to the micro program.
+    la t0, ReEntry
+    csrrw zero, mepc, t0        # Overwrite current return address
 
-    # lw t1, 16(sp)
-    # lw t0, 12(sp)
-    lw a0, 8(sp)
-    EpilogeRa 8
+    lw t1, 8(sp)
+    lw t0, 4(sp)
+    addi sp, sp, 8              # Epilog
 
-    # jal PrintCrLn
-    # la a0, str_irq_msg
-    # jal PrintString
-    # jal PrintCrLn
-    # jal PrintCursor
-    mret
+    mret                        # Exit trap
 
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
 # ROM-ish
@@ -2078,7 +2074,7 @@ str_return_msg:     .string "Exit code: ("
 .balign 4
 str_running_msg:    .string "Running micro program\r\n"
 .balign 4
-str_irq_msg:    .string "Interrupt triggered\r\n"
+str_irq_msg:        .string "Program interrupted at: 0x"
 .balign 4
 
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
@@ -2094,9 +2090,10 @@ keyBuf:
 # Program variables
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
 .section .data
-working_addr: .word 0x00000000
-stack_backup: .word 0x00000000
-endian_order: .byte 0               # Default to readable (0 = big endian)
+working_addr:     .word 0x00000000
+mepc_return_addr: .word 0x00000000
+stack_backup:     .word 0x00000000
+endian_order:     .byte 0            # Default to readable (0 = big endian)
 # String buffer used for conversions
 .balign 4
 string_buf:  .fill 128, 1, 0        # 128*1 bytes with value 0
@@ -2115,3 +2112,39 @@ string_buf2: .fill 128, 1, 0        # 128*1 bytes with value 0
 .section micro_code, "wx", @nobits
 .balign 4
 .skip MICROCODE_SIZE
+
+
+# $$$$$$$$---------------------- JUNK -----------------------------
+    # jal ISR_Enable
+    # jal UART_IRQ_Enable
+
+    # # !!!!!!!!!!!!!!!!!!!!!
+    # jal PrintCrLn
+    # # !!!!!!!!!!!!!!!!!!!!!
+    # li a0, '{'
+    # jal PrintChar
+    # lbu a0, UART_CTRL_REG_ADDR(s3)
+    # jal HexByteToString
+    # la a0, string_buf
+    # jal PrintString
+    # jal PrintCrLn
+    # # !!!!!!!!!!!!!!!!!!!!!
+    # jal UART_IRQ_Enable
+    # li a0, '{'
+    # jal PrintChar
+    # lbu a0, UART_CTRL_REG_ADDR(s3)
+    # jal HexByteToString
+    # la a0, string_buf
+    # jal PrintString
+    # jal PrintCrLn
+    # # !!!!!!!!!!!!!!!!!!!!!
+    # jal UART_IRQ_Disable
+    # # !!!!!!!!!!!!!!!!!!!!!
+    # li a0, '{'
+    # jal PrintChar
+    # lbu a0, UART_CTRL_REG_ADDR(s3)
+    # jal HexByteToString
+    # la a0, string_buf
+    # jal PrintString
+    # jal PrintCrLn
+    # # !!!!!!!!!!!!!!!!!!!!!

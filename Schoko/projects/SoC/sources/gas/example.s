@@ -107,8 +107,8 @@ L_ultostr_loop_push:			# loop to convert the whole number to text
 	remu t5, t2, a3			# least significant digit is calculated first
 	divu t2, t2, a3
 	bltu t5, t4, 1f
-	addi t5, t5, 'A - '0 - 10
-1:	addi t5, t5, '0
+	addi t5, t5, 'A' - '0' - 10
+1:	addi t5, t5, '0'
 	addi sp, sp, -1
 	sb t5, (sp)			# Store in stack to reverse later
 	addi t3, t3, 1			# increment character counter

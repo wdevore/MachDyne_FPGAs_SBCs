@@ -341,6 +341,8 @@ always_ff @(posedge clock) begin
 
         UARxComplete: begin
             if (control_c_detected) begin
+                // Don't signal byte available because this is a transiant
+                // byte used for an interrupt pattern.
                 // Clear buffer
                 rx_buffer <= 0;
             end
