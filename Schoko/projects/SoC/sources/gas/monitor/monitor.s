@@ -2046,36 +2046,21 @@ ISR_Entry:
 .word 0x00400000                # Port A base
 .word 0x00400100                # UART base
 .word 0x00000008                # Mask for Global interrupts of mstatus
-str_Greet:   .string "\r\nMonitor 0.0.2 - Ranger Retro - Jul 2023\r\n"
-.balign 4
+str_Greet:          .string "\r\nMonitor 0.0.2 - Ranger Retro - Jul 2023\r\n"
 str_Bye:            .string "\r\nBye\r\n"
-.balign 4
 str_a_cmd_error:    .string "A: Invalid parameter(s): a('b' or 'w') address\r\n"
-.balign 4
 str_w_cmd_error:    .string "W: Invalid parameter(s): w('b' or 'w') value value...\r\n"
-.balign 4
 str_r_cmd_error:    .string "R: Invalid parameter(s): r('b' or 'w') count\r\n"
-.balign 4
 str_e_cmd_error:    .string "E: Invalid parameter(s): e('b' or 'l')\r\n"
-.balign 4
 str_u_load_error:   .string "U: SoT signal not detected\r\n"
-.balign 4
 str_u_data_error:   .string "U: DAT signal not detected\r\n"
-.balign 4
 str_u_loading:      .string "Loading...\r\n"
-.balign 4
 str_u_load_Wait:    .string "Waiting for SoT signal...\r\n"
-.balign 4
 str_u_load_cmplt:   .string "Loading complete.\r\n"
-.balign 4
 str_UnknownCommand: .string "Unknown command\r\n"
-.balign 4
 str_return_msg:     .string "Exit code: ("
-.balign 4
 str_running_msg:    .string "Running micro program\r\n"
-.balign 4
 str_irq_msg:        .string "Program interrupted at: 0x"
-.balign 4
 
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
 # Incoming data buffer

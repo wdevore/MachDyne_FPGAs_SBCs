@@ -20,7 +20,7 @@ MODULES_FILES = \
 BUILD_BIN = /media/RAMDisk
 
 .PHONY: all
-all: assemble link dump out2hex
+all: assemble link dump out2verlog
 
 assemble: $(MODULES_FILES)
 	@echo "############### Assembling ##################"
@@ -86,7 +86,8 @@ clean:
 
 .PHONY: out2verlog
 out2verlog: $(BUILD_BIN)/$(BINARY_MODULE)
+	@echo "############### Generating hex firmware via objcopy... ##################"
 	@$(RISCV_TOOLCHAIN)$(COPY) \
 	-O verilog \
 	--verilog-data-width 4 \
-	$(BUILD_BIN)/$(BINARY_MODULE) $(BUILD_BIN)/filename.hex
+	$(BUILD_BIN)/$(BINARY_MODULE) $(BUILD_BIN)/firmware.hex
