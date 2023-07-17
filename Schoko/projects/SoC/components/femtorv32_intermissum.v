@@ -1,3 +1,8 @@
+`default_nettype none
+`ifdef SIMULATION
+`timescale 1ns/1ns
+`endif
+
 /*******************************************************************/
 // FemtoRV32, a collection of minimalistic RISC-V RV32 cores.
 //
