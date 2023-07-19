@@ -39,9 +39,16 @@ logic [31:0] mem_wdata;   // processor -> (mem and peripherals)
 logic        mem_rstrb;   // mem read strobe. Goes high to initiate memory write.
 logic        mem_rbusy;   // processor <- (mem and peripherals). Stays high until a read transfer is finished.
 logic        mem_wbusy;   // processor <- (mem and peripherals). Stays high until a write transfer is finished.
+logic        mem_wstrb;   // Validity strobes
+
+/* verilator lint_off UNUSED */
+/* verilator lint_off UNDRIVEN */
 logic        interrupt_request; // Active high
+/* verilator lint_on UNDRIVEN */
 logic        irq_acknowledge;	// Active high
 logic        mem_access;
+/* verilator lint_on UNUSED */
+logic [31:0] mem_addr;
 
 // Both rbusy and wbusy are sourced by a single SDRAM "ready" flag.
 // In the SoC they will need to be merged along with the other components,
@@ -66,23 +73,17 @@ FemtoRV32 #(
 	.halt(halt)
 );
 
-// SDRAM
-logic  [2:0] sdram_state;
-
-logic [24:0] sdram_addr;
-// logic [31:0] sdram_din;
-// logic [31:0] sdram_dout;
-// logic  [3:0] sdram_wmask;
+logic mem_valid;          // Indicates input signals are valid for use.
 
 // The combination of "ready" and "valid" means: if the input signals
 // area valid and the SDRAM is in a ready state then an activity can take
 // place.
 logic        sdram_ready;
-
-// Strobes usually indicate validity. For example, mem_rstrb or mem_wmask
 logic        sdram_valid;
-assign sdram_valid = mem_rstrb | (|mem_wmask);
+logic [24:0] sdram_addr;
+assign sdram_addr = mem_addr[24:0];
 
+// --------------- SDRAM outputs ------------------------
 /* verilator lint_off UNUSED */
 logic [12:0] sdram_a;
 logic [15:0] sdram_dq;
@@ -95,11 +96,13 @@ logic  [1:0] sdram_dm;
 logic  [1:0] sdram_ba;
 logic        sdram_clock;
 /* verilator lint_on UNUSED */
+// -------------------------------------------------------
 
 localparam SYSCLK = 50_000_000;
 
-assign mem_wbusy = |mem_wmask ? sdram_ready : 0;
-assign mem_rbusy = ~(|mem_wmask) ? sdram_ready : 0;
+assign mem_wstrb = |mem_wmask;
+assign mem_wbusy = mem_wstrb ? sdram_ready : 0;
+assign mem_rbusy = ~(mem_wstrb) ? sdram_ready : 0;
 
 sdram #(
     .SDRAM_CLK_FREQ(SYSCLK / 1_000_000)
@@ -129,70 +132,82 @@ sdram #(
 	// -----------------------------------
 );
 
+// logic SDRAM_Selected;
+// assign SDRAM_Selected = (sdram_addr & 25'h00f0_0000) == 25'h0080_0000;
+
 
 // ------------------------------------------------------------------------
 // State machine controlling simulation
 // ------------------------------------------------------------------------
-SimState state = SMReset;
-SimState next_state;
+SimState state;
+SimState state_nxt;
 logic reset;
-logic [15:0] delayCnt;
-logic transmitted;
+
+always_ff @(posedge sysClock) begin
+    if (~reset) begin
+        state <= SMReset;
+        sdram_addr <= 0;        
+    end
+    else begin
+        sdram_addr <= sdram_addr_nxt;
+        mem_wdata <= sdram_din_nxt;
+        mem_wmask <= sdram_wmask_nxt;
+        sdram_valid <= sdram_valid_nxt;
+
+        // sdram_state <= sdram_state_nxt;
+    	state <= state_nxt;
+    end
+end
 
 always_comb begin
-	next_state = SMReset;
+    state_nxt = state;
 	reset = 1'b1;	 // Default as non-active
 
     case (state)
         SMReset: begin
-            // Simulate pushing button
-			reset = 1'b0;	// Start reset
-            next_state = SimResetting;
+			reset = 1'b0;
+            state_nxt = SimResetting;
         end
 
 		SimResetting: begin
 			reset = 1'b0;
-			next_state = SMIdle;
+			state_nxt = SMIdle;
 		end
 
-        SMIdle: begin
-            next_state = SMIdle;
-        end
-
         SMState0: begin
-			next_state = SMState1;
+			state_nxt = SMState0;
+            if (~sdram_ready) begin
+                // Setup for a Read cycle by preparing for the next clock
+                sdram_addr_nxt = 25'h0080_0000;
+                sdram_din_nxt = 0;
+                sdram_wmask_nxt = mem_wstrb;
+                sdram_state_nxt = SMState1;
+                // Strobes usually indicate validity or readiness.
+                sdram_valid_nxt = 1;
+    			state_nxt = SMState1;
+            end
         end
 
         SMState1: begin
-			next_state = SMState2;
+			state_nxt = SMState2;
         end
 
         SMState2: begin
-			next_state = SMState3;
+			state_nxt = SMState3;
         end
 
         SMState3: begin
-            next_state = SMIdle;
+            state_nxt = SMIdle;
         end
 
-        default: ;
+        default: begin
+            state_nxt = state;
+        end
     endcase
 end
 
-// logic SDRAM_Selected;
-// assign SDRAM_Selected = (mem_addr & 32'hf000_0000) == 32'h4000_0000;
+endmodule
 
-always @(posedge sysClock) begin
-//     delayCnt <= delayCnt + 1;
-
-//     case (state)
-//         SMReset: begin
-// 			sdram_state <= 0;
-// 			sdram_valid <= 0;
-//         end
-
-//         default: ;
-//     endcase
 
 //     if (SDRAM_Selected) begin
 //         if (mem_wstrb) begin
@@ -254,7 +269,3 @@ always @(posedge sysClock) begin
 //             endcase
 //         end
 //     end
-
-	state <= next_state;
-end
-endmodule
