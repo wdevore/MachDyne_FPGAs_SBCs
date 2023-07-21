@@ -30,13 +30,12 @@ logic systemReset = 1;		// Default to non-active
 // ------------------------------------------------------------------
 /* verilator lint_off UNUSED */
 logic halt;
-// The memory bus.
-logic [31:0] mem_address; // 24 bits are used internally. The two LSBs are ignored (using word addresses)
+
 /* verilator lint_on UNUSED */
 logic  [3:0] mem_wmask;   // mem write mask and strobe /write Legal values are 000,0001,0010,0100,1000,0011,1100,1111
 logic [31:0] mem_rdata;   // processor <- (mem and peripherals) 
 logic [31:0] mem_wdata;   // processor -> (mem and peripherals)
-logic        mem_rstrb;   // mem read strobe. Goes high to initiate memory write.
+logic        mem_rstrb;   // Out: mem read strobe. Goes high to initiate memory reads.
 logic        mem_rbusy;   // processor <- (mem and peripherals). Stays high until a read transfer is finished.
 logic        mem_wbusy;   // processor <- (mem and peripherals). Stays high until a write transfer is finished.
 logic        mem_wstrb;   // Validity strobes
@@ -47,8 +46,8 @@ logic        interrupt_request; // Active high
 /* verilator lint_on UNDRIVEN */
 logic        irq_acknowledge;	// Active high
 logic        mem_access;
+logic [31:0] mem_addr;      // Only 25 bits are used
 /* verilator lint_on UNUSED */
-logic [31:0] mem_addr;
 
 // Both rbusy and wbusy are sourced by a single SDRAM "ready" flag.
 // In the SoC they will need to be merged along with the other components,
@@ -59,11 +58,11 @@ FemtoRV32 #(
 	.RESET_ADDR(`NRV_RESET_ADDR)	      
 ) processor (
 	.clk(sysClock),			
-	.mem_addr(mem_address),					// (out) to Ram
+	.mem_addr(mem_addr),					// (out) to Ram
 	.mem_wdata(mem_wdata),					// out
 	.mem_wmask(mem_wmask),					// out (DQM) = strobe
 	.mem_rdata(mem_rdata),					// in
-	.mem_rstrb(mem_rstrb),					// out
+	.mem_rstrb(mem_rstrb),					// out (Active high) = strobe
 	.mem_rbusy(mem_rbusy),					// in
 	.mem_wbusy(mem_wbusy),					// in
 	.mem_access(mem_access),				// out (active high)
@@ -73,15 +72,38 @@ FemtoRV32 #(
 	.halt(halt)
 );
 
-logic mem_valid;          // Indicates input signals are valid for use.
-
 // The combination of "ready" and "valid" means: if the input signals
 // area valid and the SDRAM is in a ready state then an activity can take
 // place.
-logic        sdram_ready;
-logic        sdram_valid;
+logic sdram_ready;
+
+// -------------- Validity ---------------------------------------------------
+assign mem_wstrb = |mem_wmask;      // Write strobe
+// The busy flags indicate that a particular Activity (Read/Write) in progress.
+assign mem_wbusy = sdram_ready;
+assign mem_rbusy = sdram_ready;
+
+logic SDRAM_Selected;
+assign SDRAM_Selected = (sdram_addr & 25'h00f0_0000) == 25'h0080_0000;
+
+// Valid is used to signal that the client is ready for an Activity.
+// The strobe signals will drive this as the strobes indicate that
+// the IO signals are setup.
+logic sdram_valid;
+assign sdram_valid = initiate_activity & SDRAM_Selected;
+
+// logic sdram_valid_nxt;
+
+logic initiate_activity;
+assign initiate_activity = mem_wstrb | mem_rstrb;
+// ----------------------------------------------------------------------------
+
 logic [24:0] sdram_addr;
+// logic [24:0] sdram_addr_nxt;
 assign sdram_addr = mem_addr[24:0];
+
+// logic [31:0] sdram_din_nxt;
+// logic  [3:0] sdram_wmask_nxt;
 
 // --------------- SDRAM outputs ------------------------
 /* verilator lint_off UNUSED */
@@ -100,10 +122,6 @@ logic        sdram_clock;
 
 localparam SYSCLK = 50_000_000;
 
-assign mem_wstrb = |mem_wmask;
-assign mem_wbusy = mem_wstrb ? sdram_ready : 0;
-assign mem_rbusy = ~(mem_wstrb) ? sdram_ready : 0;
-
 sdram #(
     .SDRAM_CLK_FREQ(SYSCLK / 1_000_000)
 ) sdram_i (
@@ -115,8 +133,8 @@ sdram #(
     .din(mem_wdata),            // 32 bits
     .dout(mem_rdata),           // 32 bits
     .wmask(mem_wmask),          // In: Any bit that is set defines a write strobe
-    .valid(sdram_valid),        // Indicates input signals are valid for use.
-    .ready(sdram_ready),        // Out: Used for both read and write (Active Low)
+    .valid(sdram_valid),        // In: Indicates input signals are valid for use. Generally strobes
+    .ready(sdram_ready),        // Out: Used for both read and write (High = busy)
 
 	// ------ To SDRAM chip -----------
     .sdram_clk(sdram_clock),
@@ -132,9 +150,6 @@ sdram #(
 	// -----------------------------------
 );
 
-// logic SDRAM_Selected;
-// assign SDRAM_Selected = (sdram_addr & 25'h00f0_0000) == 25'h0080_0000;
-
 
 // ------------------------------------------------------------------------
 // State machine controlling simulation
@@ -146,15 +161,14 @@ logic reset;
 always_ff @(posedge sysClock) begin
     if (~reset) begin
         state <= SMReset;
-        sdram_addr <= 0;        
+        // sdram_addr <= 0;        
     end
     else begin
-        sdram_addr <= sdram_addr_nxt;
-        mem_wdata <= sdram_din_nxt;
-        mem_wmask <= sdram_wmask_nxt;
-        sdram_valid <= sdram_valid_nxt;
+        // sdram_addr <= sdram_addr_nxt;
+        // mem_wdata <= sdram_din_nxt;
+        // mem_wmask <= sdram_wmask_nxt;
+        // sdram_valid <= sdram_valid_nxt;
 
-        // sdram_state <= sdram_state_nxt;
     	state <= state_nxt;
     end
 end
@@ -176,16 +190,16 @@ always_comb begin
 
         SMState0: begin
 			state_nxt = SMState0;
-            if (~sdram_ready) begin
-                // Setup for a Read cycle by preparing for the next clock
-                sdram_addr_nxt = 25'h0080_0000;
-                sdram_din_nxt = 0;
-                sdram_wmask_nxt = mem_wstrb;
-                sdram_state_nxt = SMState1;
-                // Strobes usually indicate validity or readiness.
-                sdram_valid_nxt = 1;
-    			state_nxt = SMState1;
-            end
+            // if (~sdram_ready) begin
+            //     // Memory is ready for a new activity.
+            //     // Setup for a Read cycle by preparing for the next clock
+            //     sdram_addr_nxt = 25'h0080_0000;
+            //     sdram_din_nxt = 0;
+            //     sdram_wmask_nxt = mem_wmask;
+            //     // Strobes usually indicate validity or readiness.
+            //     sdram_valid_nxt = initiate_activity;
+    		// 	state_nxt = SMState1;
+            // end
         end
 
         SMState1: begin

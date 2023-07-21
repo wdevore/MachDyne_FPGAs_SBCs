@@ -56,7 +56,7 @@ run:
 
 view:
 	@echo "################## Viewing ##################"
-	gtkwave ${BUILD_DIR}/waveform.vcd \
+	@gtkwave ${BUILD_DIR}/waveform.vcd \
 	${GTKWAVE_SETTINGS}.gtkw \
 	--rcvar 'splash_disable on' \
 	--rcvar 'fontname_signals Monospace 14' \

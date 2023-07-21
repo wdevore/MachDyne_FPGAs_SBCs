@@ -20,10 +20,11 @@
 
 // Usage example: CAST_TO_13bits'(TRP)
 // typedef logic [12:0] CAST_TO_13bits;
-
+/* verilator lint_off UNUSED */
 function [12:0] trunc_32_to_13(input [31:0] val32);
   trunc_32_to_13 = val32[12:0];
 endfunction
+/* verilator lint_on UNUSED */
 
 
 
@@ -44,7 +45,9 @@ module sdram #(
     input wire clk,
     input wire resetn,
 
+    /* verilator lint_off UNUSED */
     input wire [24:0] addr,
+    /* verilator lint_on UNUSED */
     input wire [31:0] din,
     input wire [3:0] wmask,
     input wire valid,
@@ -97,11 +100,15 @@ module sdram #(
   localparam CMD_ACT = 4'b0011;  // bank active
   localparam CMD_READ = 4'b0101;  // to have read variant with autoprecharge set A10=H
   localparam CMD_WRITE = 4'b0100;  // A10=H to have autoprecharge
+  /* verilator lint_off UNUSED */
   localparam CMD_BST = 4'b0110;  // burst stop
+  /* verilator lint_on UNUSED */
   localparam CMD_PRE = 4'b0010;  // precharge selected bank, A10=H both banks
   localparam CMD_REF = 4'b0001;  // auto refresh (cke=H), selfrefresh assign cke=L
   localparam CMD_NOP = 4'b0111;
+  /* verilator lint_off UNUSED */
   localparam CMD_DSEL = 4'b1xxx;
+  /* verilator lint_on UNUSED */
 
   reg [3:0] command;
   reg [3:0] command_nxt;
@@ -133,7 +140,9 @@ module sdram #(
   localparam COL_READH = 9;
   localparam COL_WRITEL = 10;
   localparam COL_WRITEH = 11;
+  /* verilator lint_off UNUSED */
   localparam AUTO_REFRESH = 12;
+  /* verilator lint_on UNUSED */
   localparam PRE_CHARGE_ALL = 13;
   localparam WAIT_STATE = 14;
   localparam LAST_STATE = 15;
