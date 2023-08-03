@@ -35,7 +35,7 @@ module FemtoRV32(
    output  [3:0] mem_wmask,   // write mask for the 4 bytes of each word
    input  [31:0] mem_rdata,   // input lines for both data and instr
    output        mem_rstrb,   // active to initiate memory read (used by IO)
-   input         mem_rbusy,   // asserted if memory is busy reading value
+   input         mem_rbusy,   // (Active high) asserted if memory is busy reading value
    input         mem_wbusy,   // asserted if memory is busy writing value
    output        mem_access,  // active (high) for memory data access
 

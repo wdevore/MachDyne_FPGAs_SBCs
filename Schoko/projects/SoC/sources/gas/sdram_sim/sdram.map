@@ -1,0 +1,28 @@
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+BRAM             0x00000000         0x00000080         xw
+ROM              0x00000080         0x00000080
+*default*        0x00000000         0xffffffff
+
+Linker script and memory map
+
+
+.text           0x00000000       0x24
+ *(.text)
+ .text          0x00000000       0x24 /media/RAMDisk/sdram.o
+                0x00000000                _start
+
+.rodata         0x00000080        0x8
+                0x00000080                        rom_data = .
+ *(.rodata)
+ .rodata        0x00000080        0x8 /media/RAMDisk/sdram.o
+LOAD /media/RAMDisk/sdram.o
+OUTPUT(/media/RAMDisk/sdram elf32-littleriscv)
+
+.data           0x00000088        0x0
+ .data          0x00000088        0x0 /media/RAMDisk/sdram.o
+
+.bss            0x00000088        0x0
+ .bss           0x00000088        0x0 /media/RAMDisk/sdram.o

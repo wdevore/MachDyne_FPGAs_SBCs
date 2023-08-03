@@ -17,3 +17,6 @@ assign F = (BCD > 4'd0) & (BCD < 4'd6);
 Equals:
 assign F = |BCD & (BCD < 4'd6);
 ```
+
+# Links and Notes
+- [Excellent explaination of SDRAM](https://alchitry.com/sdram-verilog). This article covers the 8bit bus version but directly applies to 16 or N bit versions. For example, it talks about the busy flag.

@@ -1,0 +1,6 @@
+0 RamRead
+1 RamReadL
+2 RamReadH
+3 RamWrite
+4 RamReset
+5 RamIdle

@@ -1,6 +1,0 @@
-0 Rst
-1 Rsting
-2 RstCmp
-3 SysRstComp
-4 Idle
-

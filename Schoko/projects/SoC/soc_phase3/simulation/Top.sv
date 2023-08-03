@@ -19,10 +19,57 @@
 module Top
 (
 	input logic sysClock
-    // Reset button is Active Low
 );
 
-logic systemReset = 1;		// Default to non-active
+// ------------------------------------------------------------------
+// Simulated BRAM Memory and Mapping
+// ------------------------------------------------------------------
+// (16384 * 4 =  64K) because each word is 32bits
+// 16384 requires only 14 bits to address
+localparam WORD = 4;
+localparam NRV_RAM = 2**14 * WORD;
+// localparam BIT_WIDTH = $clog2(NRV_RAM);
+
+// $clog2(`NRV_RAM)-1
+// logic [19:0] ram_word_address = mem_addr[21:2];
+// logic [BIT_WIDTH-1:0] ram_word_address = mem_addr[BIT_WIDTH+1:2];
+logic [13:0] ram_word_address;
+assign ram_word_address = mem_addr[15:2];
+
+
+// ----------- 0x00400000 ----------------
+// 0000_0000_0100_0000_0000_0000_0000_0000
+//            |                          |
+//            \--- Bit 22                 \--- Bit 0
+//
+logic mem_address_is_ram;
+assign mem_address_is_ram = !mem_addr[22] & mem_access;
+
+(* no_rw_check *)
+logic [31:0] RAM[0:(NRV_RAM/4)-1];
+logic [31:0] ram_rdata;
+
+// The power of YOSYS: it infers BRAM primitives automatically ! (and recognizes
+// masked writes, amazing ...)
+always_ff @(posedge sysClock) begin
+	if (mem_address_is_ram) begin
+		if (mem_wmask[0]) RAM[ram_word_address][ 7:0 ] <= mem_wdata[ 7:0 ];
+		if (mem_wmask[1]) RAM[ram_word_address][15:8 ] <= mem_wdata[15:8 ];
+		if (mem_wmask[2]) RAM[ram_word_address][23:16] <= mem_wdata[23:16];
+		if (mem_wmask[3]) RAM[ram_word_address][31:24] <= mem_wdata[31:24];
+	end
+
+	ram_rdata <= RAM[ram_word_address];
+end
+
+initial begin
+	`ifdef PRELOAD_MEMORY
+		// FIRMWARE is defined in defines.sv
+		$display("Using firmware: %s", `FIRMWARE);
+		// $readmemh("../binaries/firmware.hex", RAM);
+		$readmemh(`FIRMWARE, RAM);
+	`endif
+end
 
 // Femto
 // ------------------------------------------------------------------
@@ -39,6 +86,8 @@ logic        mem_rstrb;   // Out: mem read strobe. Goes high to initiate memory 
 logic        mem_rbusy;   // processor <- (mem and peripherals). Stays high until a read transfer is finished.
 logic        mem_wbusy;   // processor <- (mem and peripherals). Stays high until a write transfer is finished.
 logic        mem_wstrb;   // Validity strobes
+
+assign mem_rdata = SDRAM_Selected ? sdram_rdata : ram_rdata;
 
 /* verilator lint_off UNUSED */
 /* verilator lint_off UNDRIVEN */
@@ -57,34 +106,51 @@ FemtoRV32 #(
 	.ADDR_WIDTH(`NRV_ADDR_WIDTH),
 	.RESET_ADDR(`NRV_RESET_ADDR)	      
 ) processor (
-	.clk(sysClock),			
+	.clk(clkDivider[0]),			
 	.mem_addr(mem_addr),					// (out) to Ram
 	.mem_wdata(mem_wdata),					// out
 	.mem_wmask(mem_wmask),					// out (DQM) = strobe
 	.mem_rdata(mem_rdata),					// in
 	.mem_rstrb(mem_rstrb),					// out (Active high) = strobe
-	.mem_rbusy(mem_rbusy),					// in
-	.mem_wbusy(mem_wbusy),					// in
+	.mem_rbusy(mem_rbusy),					// in: (High = busy)
+	.mem_wbusy(mem_wbusy),					// in: (High = busy)
 	.mem_access(mem_access),				// out (active high)
 	.interrupt_request(interrupt_request),	// in
 	.irq_acknowledge(irq_acknowledge),
-	.reset(systemReset),					// (in) Active Low
+	.reset(cpuReset),					// (in) Active Low
 	.halt(halt)
 );
 
 // The combination of "ready" and "valid" means: if the input signals
 // area valid and the SDRAM is in a ready state then an activity can take
 // place.
+/* verilator lint_off UNUSED */
 logic sdram_ready;
+/* verilator lint_on UNUSED */
+
+logic sdram_initialized;
+logic sdram_busy;
 
 // -------------- Validity ---------------------------------------------------
 assign mem_wstrb = |mem_wmask;      // Write strobe
+
 // The busy flags indicate that a particular Activity (Read/Write) in progress.
-assign mem_wbusy = sdram_ready;
-assign mem_rbusy = sdram_ready;
+// The boolean chart below is for SDRAM only.
+// State: Ready = Low, Busy = High
+//
+// Sel  State | flag            == AND function
+// 0     0    |  0  = Ready
+// 0     1    |  0  = Ready
+// 1     0    |  0  = Ready
+// 1     1    |  1  = Busy
+assign mem_wbusy = sdram_busy; //SDRAM_Selected & sdram_ready;
+assign mem_rbusy = sdram_busy; //SDRAM_Selected & sdram_ready;  // High = busy
 
 logic SDRAM_Selected;
 assign SDRAM_Selected = (sdram_addr & 25'h00f0_0000) == 25'h0080_0000;
+
+logic initiate_activity;
+assign initiate_activity = mem_wstrb | mem_rstrb;
 
 // Valid is used to signal that the client is ready for an Activity.
 // The strobe signals will drive this as the strobes indicate that
@@ -94,16 +160,12 @@ assign sdram_valid = initiate_activity & SDRAM_Selected;
 
 // logic sdram_valid_nxt;
 
-logic initiate_activity;
-assign initiate_activity = mem_wstrb | mem_rstrb;
 // ----------------------------------------------------------------------------
 
 logic [24:0] sdram_addr;
-// logic [24:0] sdram_addr_nxt;
 assign sdram_addr = mem_addr[24:0];
 
-// logic [31:0] sdram_din_nxt;
-// logic  [3:0] sdram_wmask_nxt;
+logic [31:0] sdram_rdata;
 
 // --------------- SDRAM outputs ------------------------
 /* verilator lint_off UNUSED */
@@ -120,23 +182,29 @@ logic        sdram_clock;
 /* verilator lint_on UNUSED */
 // -------------------------------------------------------
 
-localparam SYSCLK = 50_000_000;
+// 50000000 MHz = 20 ns(period)
+//  100     100_000
+// ----- = --------
+//  us       ns
+// SDRAM_CLK = 50_000_000Hz / 1_000_000 = 50
 
-sdram #(
-    .SDRAM_CLK_FREQ(SYSCLK / 1_000_000)
-) sdram_i (
+logic [1:0] clkDivider;     // Used only for Simulation, not good for synth.
+
+sdram #() sdram_i (
 	// ------ For SDRAM module -----------
     .clk(sysClock),
-    .resetn(reset),             // Active low
+    .resetn(sdramReset),             // Active low
 
     .addr(sdram_addr),          // In:
-    .din(mem_wdata),            // 32 bits
-    .dout(mem_rdata),           // 32 bits
+    .din(mem_wdata),            // In: 32 bits
+    .dout(sdram_rdata),         // Out: 32 bits
     .wmask(mem_wmask),          // In: Any bit that is set defines a write strobe
     .valid(sdram_valid),        // In: Indicates input signals are valid for use. Generally strobes
     .ready(sdram_ready),        // Out: Used for both read and write (High = busy)
-
-	// ------ To SDRAM chip -----------
+    .initialized(sdram_initialized),
+    .busy(sdram_busy),
+    
+	// ------ To SDRAM emu chip -----------
     .sdram_clk(sdram_clock),
     .sdram_cke(sdram_cke),
     .sdram_csn(sdram_cs_n),
@@ -150,68 +218,68 @@ sdram #(
 	// -----------------------------------
 );
 
+// ------------------------------------------------------------------------
+// SDRAM Emulation
+// ------------------------------------------------------------------------
+emu_ram #() emu_sdram (
+    .sdram_clk(sdram_clock),
+    .sdram_cke(sdram_cke),
+    .sdram_csn(sdram_cs_n),
+    .sdram_rasn(sdram_ras_n),
+    .sdram_casn(sdram_cas_n),
+    .sdram_wen(sdram_we_n),
+    .sdram_addr(sdram_a),
+    .sdram_ba(sdram_ba),
+    .sdram_dq(sdram_dq),            // In-out
+    .sdram_dqm(sdram_dm)
+);
 
 // ------------------------------------------------------------------------
 // State machine controlling simulation
 // ------------------------------------------------------------------------
-SimState state;
+SimState state = SMReset;
 SimState state_nxt;
-logic reset;
+logic sdramReset;
+logic cpuReset = 0;
 
 always_ff @(posedge sysClock) begin
-    if (~reset) begin
-        state <= SMReset;
-        // sdram_addr <= 0;        
-    end
-    else begin
-        // sdram_addr <= sdram_addr_nxt;
-        // mem_wdata <= sdram_din_nxt;
-        // mem_wmask <= sdram_wmask_nxt;
-        // sdram_valid <= sdram_valid_nxt;
-
-    	state <= state_nxt;
-    end
-end
-
-always_comb begin
-    state_nxt = state;
-	reset = 1'b1;	 // Default as non-active
+    clkDivider <= clkDivider + 1;
 
     case (state)
         SMReset: begin
-			reset = 1'b0;
+        end
+
+        default: ;
+    endcase
+
+    state <= state_nxt;
+end
+
+always_comb begin
+	sdramReset = 1'b1;	// Default as non-active
+    cpuReset = 0;       // CPU is defaulted Reset
+
+    case (state)
+        SMReset: begin
+			sdramReset = 1'b0;   // Reset SDRAM properly prior to init sequence.
             state_nxt = SimResetting;
         end
 
 		SimResetting: begin
-			reset = 1'b0;
-			state_nxt = SMIdle;
+			sdramReset = 1'b0;
+			state_nxt = SMState0;
 		end
 
         SMState0: begin
 			state_nxt = SMState0;
-            // if (~sdram_ready) begin
-            //     // Memory is ready for a new activity.
-            //     // Setup for a Read cycle by preparing for the next clock
-            //     sdram_addr_nxt = 25'h0080_0000;
-            //     sdram_din_nxt = 0;
-            //     sdram_wmask_nxt = mem_wmask;
-            //     // Strobes usually indicate validity or readiness.
-            //     sdram_valid_nxt = initiate_activity;
-    		// 	state_nxt = SMState1;
-            // end
+            if (sdram_initialized) begin
+			    state_nxt = SMIdle;
+            end
         end
 
-        SMState1: begin
-			state_nxt = SMState2;
-        end
-
-        SMState2: begin
-			state_nxt = SMState3;
-        end
-
-        SMState3: begin
-            state_nxt = SMIdle;
+        SMIdle: begin
+            cpuReset = 1;    // Allow CPU to run
+			state_nxt = SMIdle;
         end
 
         default: begin
@@ -221,65 +289,3 @@ always_comb begin
 end
 
 endmodule
-
-
-//     if (SDRAM_Selected) begin
-//         if (mem_wstrb) begin
-//             case (sdram_state)
-//                 RAMState0: begin
-//                     if (~sdram_ready) begin
-//                         sdram_addr <= { (mem_addr & 32'h0fff_ffff) >> 2, 2'b00 };
-//                         sdram_din <= mem_wdata;
-//                         sdram_wmask <= mem_wstrb;
-//                         sdram_state <= RAMState1;
-//                         sdram_valid <= 1;
-//                     end
-//                 end
-
-//                 RAMState1: begin
-//                     if (sdram_ready) begin
-//                         sdram_wmask <= 0;
-//                         sdram_valid <= 0;
-//                         sdram_state <= RAMState2;
-//                     end
-//                 end
-
-//                 RAMState2: begin
-//                     if (~sdram_ready) begin
-//                         mem_ready <= 1;
-//                         sdram_state <= RAMState0;
-//                     end
-//                 end
-
-//                 default: ;
-//             endcase
-//         end
-//         else begin
-//             case (sdram_state)
-//                 RamState0: begin
-//                     if (~sdram_ready) begin
-//                         sdram_addr <= { (mem_addr & 32'h0fff_ffff) >> 2, 2'b00 };
-//                         sdram_valid <= 1;
-//                         sdram_state <= Ramtate1;
-//                     end
-//                 end
-
-//                 Ramtate1: begin
-//                     if (sdram_ready) begin
-//                         mem_rdata <= sdram_dout;
-//                         sdram_valid <= 0;
-//                         sdram_state <= Ramtate2;
-//                     end
-//                 end
-
-//                 Ramtate2: begin
-//                     if (~sdram_ready) begin
-//                         mem_ready <= 1;
-//                         sdram_state <= RamState0;
-//                     end
-//                 end
-
-//                 default: ;
-//             endcase
-//         end
-//     end

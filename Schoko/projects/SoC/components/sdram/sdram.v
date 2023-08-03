@@ -18,6 +18,11 @@
  */
 `default_nettype none `timescale 1ns / 1ps
 
+// ###################################################################
+// Note: excellent article about SDRAM chip (8 bit version which applies)
+// to N bits version: https://alchitry.com/sdram-verilog
+// ###################################################################
+
 // Usage example: CAST_TO_13bits'(TRP)
 // typedef logic [12:0] CAST_TO_13bits;
 /* verilator lint_off UNUSED */
@@ -52,17 +57,19 @@ module sdram #(
     input wire [3:0] wmask,
     input wire valid,
     output reg [31:0] dout,
-    output reg ready,               // 0 = Ready/(not busy), 1 = busy
+    output reg ready,               // Low = Ready/(not busy), High = busy
 
     output wire sdram_clk,
-    output wire sdram_cke,
+    output wire sdram_cke,          // Active High
     output wire [1:0] sdram_dqm,
-    output wire [12:0] sdram_addr,  //  A0-A12 row address, A0-A8 column address
-    output wire [1:0] sdram_ba,  // bank select A11,A12
-    output wire sdram_csn,
+    output wire [12:0] sdram_addr,  // A0-A12 row address, A0-A8 column address
+    output wire [1:0] sdram_ba,     // bank select A11,A12
+    //  ------------- Command -----------------------
+    output wire sdram_csn,          // Active Low
     output wire sdram_wen,
     output wire sdram_rasn,
     output wire sdram_casn,
+    //  ----------------------------------------------
     inout wire [15:0] sdram_dq
 );
 
@@ -170,12 +177,29 @@ module sdram #(
 
   reg oe;
   reg oe_nxt;
+  /* verilator lint_off UNUSED */
+  reg valid_q;
+  reg valid_d1;
+  /* verilator lint_on UNUSED */
+  
+  // Use Set/Reset D ff
+  // reg valid_reset;
+  // reg valid_strb;
+
+  // setResetFF #(
+  // ) valid_strobe (
+  //   .clk(clk),
+  //   .set(valid),          // In: signal sets the flop
+  //   .reset(valid_reset),  // Out: SDRAM clears the flop when recognized
+  //   .q(valid_strb),       // Out:
+  //   .d1(valid_strb)         // In: independent of reset/set
+  // );
 
   always @(posedge clk) begin
     if (~resetn) begin
       state <= RESET;
       ret_state <= RESET;
-      ready <= 1'b0;
+      ready <= 1'b0;      // Not ready
       wait_states <= 0;
       dout <= 0;
       command <= CMD_NOP;
@@ -234,7 +258,7 @@ module sdram #(
       end
 
       INIT_SEQ_PRE_CHARGE_ALL: begin
-        cke_nxt         = 1'b1;
+        // cke_nxt         = 1'b1;
         command_nxt     = CMD_PRE;
         saddr_nxt[10]   = 1'b1;
         wait_states_nxt = trunc_32_to_13(TRP);
@@ -263,15 +287,16 @@ module sdram #(
         ret_state_nxt = IDLE;
         state_nxt = WAIT_STATE;
       end
-
+// @audit-issue idle
       IDLE: begin
-        oe_nxt = 1'b0;
-        dqm_nxt = 2'b11;
-        ready_nxt = 1'b0;
+        oe_nxt = 1'b0;        // Disable output
+        dqm_nxt = 2'b11;      // Default to Read Disable for all data output
+        ready_nxt = 1'b0;     // Not ready
         if (valid && !ready) begin
+          // valid_reset = 1;
           command_nxt     = CMD_ACT;
           ba_nxt          = addr[22:21];
-          saddr_nxt       = {addr[24:23], addr[20:10]};
+          saddr_nxt       = {addr[24:23], addr[20:10]}; // Select Active Row
           wait_states_nxt = trunc_32_to_13(TRCD);
           ret_state_nxt   = |wmask ? COL_WRITEL : COL_READ;
           update_ready_nxt = 1'b1;
@@ -290,7 +315,7 @@ module sdram #(
 
       COL_READ: begin
         command_nxt     = CMD_READ;
-        dqm_nxt         = 2'b00;
+        dqm_nxt         = 2'b00;        // Zero's drive the outputs
         saddr_nxt       = {3'b001, addr[10:2], 1'b0};  // autoprecharge and column
         ba_nxt          = addr[22:21];
         wait_states_nxt = {10'b0, CAS_LATENCY};
@@ -350,13 +375,14 @@ module sdram #(
         ret_state_nxt = IDLE;
         state_nxt = WAIT_STATE;
       end
-
+// @audit-issue wait state
       WAIT_STATE: begin
         command_nxt = CMD_NOP;
         wait_states_nxt = wait_states - 1;
         if (wait_states == 1) begin
           state_nxt = ret_state;
           if (ret_state == IDLE && update_ready) begin
+          // valid_reset = 1;
             update_ready_nxt = 1'b0;
             ready_nxt = 1'b1;
           end

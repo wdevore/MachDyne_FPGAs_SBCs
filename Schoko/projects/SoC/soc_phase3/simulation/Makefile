@@ -17,9 +17,11 @@ GTKWAVE_SETTINGS = waveform
 MODULES_FILES =  \
 	defines.sv \
 	SimEnums.sv \
-	$(SOC_COMPONENT)/femtorv32_intermissum.v \
+	$(SOC_COMPONENT)/set_reset_ff.sv \
 	emu_ram.sv \
-	$(SOC_COMPONENT)/sdram/sdram.v \
+	$(SOC_COMPONENT)/femtorv32_intermissum.v \
+	$(SOC_COMPONENT)/sdram/SDRAM_Comp_Enums.sv \
+	$(SOC_COMPONENT)/sdram/sdram.sv \
 	Top.sv
 	
 # output build directory
