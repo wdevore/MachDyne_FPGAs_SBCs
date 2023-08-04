@@ -16,7 +16,8 @@ typedef enum logic [4:0] {
     RamReadH,
     RamWrite,
     RamReset,
-    RamIdle
+    RamIdle,
+    RamReadWait
 } RAMState; 
 
 module emu_ram (
@@ -57,6 +58,13 @@ logic [DATA_WIDTH-1:0] mem [(1<<HALF_WORDS)-1:0] /*verilator public*/;
 logic reset = 1;
 
 initial begin
+    // mem[0] =    16'h1234;       // Low
+    // mem[1] =    16'h5678;       // High
+    // mem[2] =    16'h1144;
+    // mem[3] =    16'h6688;
+    // mem[4] =    16'h0010;
+    // mem[5] =    16'h0073;
+
     mem[0] =    16'h1297;       // Low
     mem[1] =    16'h0000;       // High
     mem[2] =    16'h8293;
@@ -110,25 +118,26 @@ always_comb begin
             if (command == CMD_READ) begin
                 wait_states_nxt = 1; // TRCD + CAS  = 2 + 2 = 4
                 address_nxt = {9'b0,sdram_addr[3:0]};
-			    state_nxt = RamRead;       // 3 states to complete
+			    state_nxt = RamReadL;       // 3 states to complete
             end
             if (command == CMD_WRITE)
 			    state_nxt = RamWrite;
         end
 
-        RamRead: begin
-            wait_states_nxt = wait_states - 1;
-            if (wait_states == 1) begin
-                wait_states_nxt = 1; // TTRP  = 2 = 2
-                state_nxt = RamReadL;
-            end
-        end
+        // RamRead: begin
+        //     wait_states_nxt = wait_states - 1;
+        //     if (wait_states == 1) begin
+        //         wait_states_nxt = 1; // TTRP  = 2 = 2
+        //         state_nxt = RamReadL;
+        //     end
+        // end
 
         RamReadL: begin
             wait_states_nxt = wait_states - 1;
             if (wait_states == 1) begin
                 sdram_dq_nxt = mem[{12'b0, address[3:0]}];
                 $display("RamReadL: %h at: %h", mem[{12'b0, address[3:0]}], address);
+                // wait_states_nxt = 1; // TTRP  = 2 = 2
                 address_nxt = address_nxt + 1;
                 state_nxt = RamReadH;
             end
@@ -137,7 +146,15 @@ always_comb begin
         RamReadH: begin
             sdram_dq_nxt = mem[{12'b0, address[3:0]}];
             $display("RamReadH: %h at: %h", mem[{12'b0, address[3:0]}], address);
-            state_nxt = RamIdle;
+            wait_states_nxt = 1;
+            state_nxt = RamReadWait;
+        end
+
+        RamReadWait: begin
+            wait_states_nxt = wait_states - 1;
+            if (wait_states == 1) begin
+                state_nxt = RamIdle;
+            end
         end
 
         default: ;

@@ -4,3 +4,4 @@
 3 RamWrite
 4 RamReset
 5 RamIdle
+6 RamReadWait

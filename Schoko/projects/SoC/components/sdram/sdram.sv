@@ -150,6 +150,8 @@ module sdram #(
   logic update_ready;
   logic update_ready_nxt;
 
+  assign busy = update_ready;
+
   logic [15:0] dq;
   logic [15:0] dq_nxt;
   assign sdram_dq = oe ? dq : 16'hz;
@@ -163,8 +165,6 @@ module sdram #(
   
   logic initiate_activity;
   logic initiate_activity_nxt;
-
-  logic busy_nxt;
 
   always_ff @(posedge clk) begin
     if (~resetn) begin
@@ -182,7 +182,6 @@ module sdram #(
       update_ready <= 1'b0;
       initialized <= 1'b0;  // Not initialized (not ready)
       initiate_activity <= 0;
-      busy <= 1'b1;
     end else begin
       dq <= dq_nxt;
       dout <= dout_nxt;
@@ -199,7 +198,6 @@ module sdram #(
       update_ready <= update_ready_nxt;
       initialized <= sdram_initialized_nxt;
       initiate_activity <= initiate_activity_nxt;
-      busy <= busy_nxt;
     end
   end
 
@@ -220,11 +218,9 @@ module sdram #(
     update_ready_nxt = update_ready;
 
     sdram_initialized_nxt = initialized;    // Device initialized
-    busy_nxt = 0;
     
     if (valid) begin
       initiate_activity_nxt = 1'b1;
-      busy_nxt = 1;
     end
     else
       initiate_activity_nxt = initiate_activity;
@@ -331,7 +327,6 @@ module sdram #(
 
         if (initiate_activity && ~ready) begin
           // Begin an Activity (aka Read or Write)
-          busy_nxt = 1'b1;
           command_nxt     = CMD_ACT;
           ba_nxt          = addr[22:21];
           saddr_nxt       = {addr[24:23], addr[20:10]}; // Select Active Row
@@ -362,7 +357,6 @@ module sdram #(
       end
 
       READY_WAIT: begin
-        busy_nxt = 1'b1;
         command_nxt = CMD_NOP;
         initiate_activity_nxt = 1'b0;
         wait_states_nxt = wait_states - 1;
@@ -373,7 +367,6 @@ module sdram #(
 
       // --------- COL_READ ---------------------
       COL_READ: begin
-        busy_nxt = 1'b1;
         command_nxt     = CMD_READ;
         dqm_nxt         = 2'b00;        // Zero's drive the outputs
         saddr_nxt       = {3'b001, addr[10:2], 1'b0};  // autoprecharge and column
@@ -387,7 +380,6 @@ module sdram #(
       end
 
       COL_READ_WAIT: begin
-        busy_nxt = 1'b1;
         command_nxt = CMD_NOP;
         wait_states_nxt = wait_states - 1;
         if (wait_states == 1) begin
@@ -397,7 +389,6 @@ module sdram #(
 
       // --------- COL_READL ---------------------
       COL_READL: begin
-        busy_nxt = 1'b1;
         command_nxt    = CMD_NOP;
         dqm_nxt        = 2'b00;
         dout_nxt[15:0] = sdram_dq;
@@ -405,7 +396,6 @@ module sdram #(
       end
 
       COL_READH: begin
-        busy_nxt = 1'b1;
         command_nxt      = CMD_NOP;
         dqm_nxt          = 2'b00;
         dout_nxt[31:16]  = sdram_dq;
@@ -415,17 +405,19 @@ module sdram #(
       end
 
       COL_READH_WAIT: begin
-        busy_nxt = 1'b1;
         command_nxt = CMD_NOP;
         wait_states_nxt = wait_states - 1;
         if (wait_states == 1) begin
           state_nxt = IDLE;
+          if (update_ready) begin
+            update_ready_nxt = 1'b0;
+            ready_nxt = 1'b1;
+          end
         end
       end
 
       // --------- COL_WRITEL ---------------------
       COL_WRITEL: begin
-        busy_nxt = 1'b1;
         command_nxt = CMD_WRITE;
         dqm_nxt     = ~wmask[1:0];
         saddr_nxt   = {3'b001, addr[10:2], 1'b0};  // autoprecharge and column
@@ -436,7 +428,6 @@ module sdram #(
       end
 
       COL_WRITEH: begin
-        busy_nxt = 1'b1;
         command_nxt      = CMD_NOP;
         dqm_nxt          = ~wmask[3:2];
         saddr_nxt        = {3'b001, addr[10:2], 1'b0};  // autoprecharge and column
@@ -449,11 +440,14 @@ module sdram #(
       end
 
       COL_WRITEH_WAIT: begin
-        busy_nxt = 1'b1;
         command_nxt = CMD_NOP;
         wait_states_nxt = wait_states - 1;
         if (wait_states == 1) begin
           state_nxt = IDLE;
+          if (update_ready) begin
+            update_ready_nxt = 1'b0;
+            ready_nxt = 1'b1;
+          end
         end
       end
 
