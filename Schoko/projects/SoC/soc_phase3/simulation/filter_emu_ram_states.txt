@@ -1,7 +1,8 @@
-0 RamRead
-1 RamReadL
-2 RamReadH
-3 RamWrite
-4 RamReset
-5 RamIdle
-6 RamReadWait
+0 RamReadL
+1 RamReadH
+2 RamReadWait
+3 RamWriteL
+4 RamWriteH
+5 RamWriteWait
+6 RamReset
+7 RamIdle

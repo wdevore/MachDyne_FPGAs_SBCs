@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.103 (w)1999-2019 BSI
-[*] Fri Aug  4 02:21:17 2023
+[*] Sun Aug  6 00:12:27 2023
 [*]
 [dumpfile] "/media/RAMDisk/waveform.vcd"
-[dumpfile_mtime] "Fri Aug  4 02:21:08 2023"
-[dumpfile_size] 1745190
+[dumpfile_mtime] "Sun Aug  6 00:12:09 2023"
+[dumpfile_size] 1745345
 [savefile] "/media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Schoko/projects/SoC/soc_phase3/simulation/waveform.gtkw"
-[timestart] 2400
+[timestart] 2905
 [size] 2671 1530
-[pos] 119 264
-*-6.676829 2680 1154 2826 2584 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[pos] 120 264
+*-5.676829 2746 1154 2826 2584 3596 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] TOP.
 [sst_width] 221
 [signals_width] 348
@@ -26,6 +26,7 @@ Top.state[4:0]
 Top.mem_rstrb
 Top.SDRAM_Selected
 Top.sdram_ready
+[color] 2
 Top.sdram_valid
 [color] 3
 Top.sdram_initialized
@@ -34,7 +35,7 @@ Top.sdram_initialized
 @28
 [color] 2
 Top.processor.clk
-[color] 2
+[color] 1
 Top.processor.reset
 [color] 1
 Top.processor.halt
@@ -52,12 +53,16 @@ Top.processor.mem_addr[31:0]
 @28
 Top.processor.mem_rbusy
 Top.processor.mem_wbusy
+Top.processor.mem_wmask[3:0]
+@22
+Top.processor.mem_wdata[31:0]
 @200
 -SDRAM
 @28
 [color] 2
 Top.sdram_i.clk
 Top.sdram_i.resetn
+Top.sdram_i.oe
 Top.sdram_i.sdram_cke
 @2024
 [color] 5
@@ -70,9 +75,9 @@ Top.sdram_i.wait_states[5:0]
 [color] 2
 Top.sdram_i.valid
 Top.sdram_i.initiate_activity
+Top.sdram_i.wrmask[3:0]
 Top.sdram_i.ready
-[color] 1
-Top.sdram_i.busy
+[color] 3
 Top.sdram_i.update_ready
 Top.sdram_i.sdram_dqm[1:0]
 @22
@@ -94,10 +99,11 @@ Top.sdram_i.dout[31:0]
 Top.sdram_i.dout_nxt[31:0]
 Top.sdram_i.sdram_dq[15:0]
 @28
-Top.sdram_i.oe
+Top.sdram_i.wmask[3:0]
 @200
 -EmuRam
 @28
+[color] 2
 Top.emu_sdram.sdram_clk
 @2024
 ^4 /media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Schoko/projects/SoC/soc_phase3/simulation/filter_emu_ram_states.txt
@@ -109,5 +115,9 @@ Top.emu_sdram.address[12:0]
 [color] 3
 Top.emu_sdram.sdram_dq[15:0]
 Top.emu_sdram.sdram_dq_nxt[15:0]
+@23
+Top.emu_sdram.ram_d_in[15:0]
+@22
+Top.emu_sdram.ram_d_out[15:0]
 [pattern_trace] 1
 [pattern_trace] 0

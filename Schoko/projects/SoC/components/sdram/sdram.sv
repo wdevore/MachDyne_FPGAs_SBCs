@@ -61,6 +61,7 @@ module sdram #(
     parameter TCH_NS = 2,
     parameter CAS = 3'd2
 ) (
+    // -------------------------- @audit-info Interface Parms
     input  logic clk,
     input  logic resetn,
 
@@ -70,7 +71,11 @@ module sdram #(
     input  logic [31:0] din,
     input  logic [3:0] wmask,
     input  logic valid,               // Indicates all signals and data are valid for use.
+    `ifdef SIMULATION
     output logic [31:0] dout,
+    `else
+    inout  logic [31:0] dout,
+    `endif
     output logic ready,               // ???Low = Ready/(not busy), High = busy
     output logic initialized,         // Active high when device is initialized
     output logic busy,                // Active high (1 = busy)
@@ -149,8 +154,10 @@ module sdram #(
 
   logic update_ready;
   logic update_ready_nxt;
-
   assign busy = update_ready;
+
+  logic [3:0] wrmask;
+  logic [3:0] wrmask_nxt;
 
   logic [15:0] dq;
   logic [15:0] dq_nxt;
@@ -166,6 +173,7 @@ module sdram #(
   logic initiate_activity;
   logic initiate_activity_nxt;
 
+  // -------------------------- @audit-info Sync
   always_ff @(posedge clk) begin
     if (~resetn) begin
       state <= RESET;
@@ -182,6 +190,7 @@ module sdram #(
       update_ready <= 1'b0;
       initialized <= 1'b0;  // Not initialized (not ready)
       initiate_activity <= 0;
+      wrmask <= 0;
     end else begin
       dq <= dq_nxt;
       dout <= dout_nxt;
@@ -198,9 +207,11 @@ module sdram #(
       update_ready <= update_ready_nxt;
       initialized <= sdram_initialized_nxt;
       initiate_activity <= initiate_activity_nxt;
+      wrmask <= wrmask_nxt;
     end
   end
 
+  // -------------------------- @audit-info Comb
   always_comb begin
     wait_states_nxt  = wait_states;
     state_nxt        = state;
@@ -218,15 +229,17 @@ module sdram #(
     update_ready_nxt = update_ready;
 
     sdram_initialized_nxt = initialized;    // Device initialized
-    
+    wrmask_nxt = wrmask;
+
     if (valid) begin
-      initiate_activity_nxt = 1'b1;
+      initiate_activity_nxt = 1'b1;   // Capture strobe
+      wrmask_nxt = wmask;             // Capture mask before it disappears.
     end
     else
       initiate_activity_nxt = initiate_activity;
     
     case (state)
-      // --------- RESET ---------------------
+      // -------------------------- @audit-info RESET
       RESET: begin
         cke_nxt         = 1'b0;
         wait_states_nxt = trunc_32_to(WAIT_100US);
@@ -241,7 +254,7 @@ module sdram #(
         end
       end
 
-      // --------- ASSERT_CKE ---------------------
+      // -------------------------- @audit-info ASSERT_CKE
       ASSERT_CKE: begin
         cke_nxt         = 1'b1;
         wait_states_nxt = 2;
@@ -256,7 +269,7 @@ module sdram #(
         end
       end
 
-      // --------- INIT_SEQ_PRE_CHARGE_ALL ---------------------
+      // -------------------------- @audit-info INIT_SEQ_PRE_CHARGE_ALL
       INIT_SEQ_PRE_CHARGE_ALL: begin
         command_nxt     = CMD_PRE;
         saddr_nxt[10]   = 1'b1;
@@ -272,7 +285,7 @@ module sdram #(
         end
       end
 
-      // --------- INIT_SEQ_AUTO_REFRESH0 ---------------------
+      // -------------------------- @audit-info INIT_SEQ_AUTO_REFRESH0
       INIT_SEQ_AUTO_REFRESH0: begin
         command_nxt = CMD_REF;
         wait_states_nxt = trunc_32_to(TRC);
@@ -287,7 +300,7 @@ module sdram #(
         end
       end
 
-      // --------- INIT_SEQ_AUTO_REFRESH1 ---------------------
+      // -------------------------- @audit-info INIT_SEQ_AUTO_REFRESH1
       INIT_SEQ_AUTO_REFRESH1: begin
         wait_states_nxt = trunc_32_to(TRC);
         state_nxt = INIT_SEQ_AUTO_REFRESH1_WAIT;
@@ -301,7 +314,7 @@ module sdram #(
         end
       end
 
-      // --------- INIT_SEQ_LOAD_MODE ---------------------
+      // -------------------------- @audit-info INIT_SEQ_LOAD_MODE
       INIT_SEQ_LOAD_MODE: begin
         command_nxt = CMD_MRS;
         saddr_nxt = {2'b0, sdram_mode};
@@ -318,13 +331,12 @@ module sdram #(
         end
       end
 
-// @audit-issue idle
-      // --------- IDLE ---------------------
+      // -------------------------- @audit-info IDLE
       IDLE: begin
         oe_nxt = 1'b0;        // Disable output
         dqm_nxt = 2'b11;      // Default to Read Disable for all data output
         ready_nxt = 1'b0;     // Ready
-
+        
         if (initiate_activity && ~ready) begin
           // Begin an Activity (aka Read or Write)
           command_nxt     = CMD_ACT;
@@ -361,11 +373,11 @@ module sdram #(
         initiate_activity_nxt = 1'b0;
         wait_states_nxt = wait_states - 1;
         if (wait_states == 1) begin
-          state_nxt = |wmask ? COL_WRITEL : COL_READ;
+          state_nxt = |wrmask ? COL_WRITEL : COL_READ;
         end
       end
 
-      // --------- COL_READ ---------------------
+      // -------------------------- @audit-info COL_READ
       COL_READ: begin
         command_nxt     = CMD_READ;
         dqm_nxt         = 2'b00;        // Zero's drive the outputs
@@ -387,7 +399,7 @@ module sdram #(
         end
       end
 
-      // --------- COL_READL ---------------------
+      // -------------------------- @audit-info COL_READL
       COL_READL: begin
         command_nxt    = CMD_NOP;
         dqm_nxt        = 2'b00;
@@ -416,7 +428,7 @@ module sdram #(
         end
       end
 
-      // --------- COL_WRITEL ---------------------
+      // -------------------------- @audit-info COL_WRITEL
       COL_WRITEL: begin
         command_nxt = CMD_WRITE;
         dqm_nxt     = ~wmask[1:0];
@@ -447,6 +459,7 @@ module sdram #(
           if (update_ready) begin
             update_ready_nxt = 1'b0;
             ready_nxt = 1'b1;
+            wrmask_nxt = 0;
           end
         end
       end

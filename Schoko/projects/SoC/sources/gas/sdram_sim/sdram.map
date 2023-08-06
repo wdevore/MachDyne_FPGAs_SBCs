@@ -9,9 +9,9 @@ ROM              0x00000080         0x00000080
 Linker script and memory map
 
 
-.text           0x00000000       0x24
+.text           0x00000000       0x2c
  *(.text)
- .text          0x00000000       0x24 /media/RAMDisk/sdram.o
+ .text          0x00000000       0x2c /media/RAMDisk/sdram.o
                 0x00000000                _start
 
 .rodata         0x00000080        0x8

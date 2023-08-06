@@ -66,7 +66,6 @@ initial begin
 	`ifdef PRELOAD_MEMORY
 		// FIRMWARE is defined in defines.sv
 		$display("Using firmware: %s", `FIRMWARE);
-		// $readmemh("../binaries/firmware.hex", RAM);
 		$readmemh(`FIRMWARE, RAM);
 	`endif
 end
@@ -157,8 +156,6 @@ assign initiate_activity = mem_wstrb | mem_rstrb;
 // the IO signals are setup.
 logic sdram_valid;
 assign sdram_valid = initiate_activity & SDRAM_Selected;
-
-// logic sdram_valid_nxt;
 
 // ----------------------------------------------------------------------------
 
