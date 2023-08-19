@@ -5,23 +5,12 @@ SOC_COMPONENT = ../components
 
 SUB_MODULES_FILES = \
 	defines.sv \
-	${COMMON}/DeMux2.sv \
-	${COMMON}/Mux4.sv \
-	${COMMON}/Mux2.sv \
-	${COMMON}/UART_Defines.sv \
-	${COMMON}/UART_Enums.sv \
-	${COMMON}/CDCSynchron.sv \
-	${COMMON}/UARTRx.sv \
-	${COMMON}/UARTTx.sv \
-	$(SOC_COMPONENT)/uart/UART_Comp_Enums.sv \
-	$(SOC_COMPONENT)/uart/UART_Component.sv \
 	SynEnums.sv \
-	../components/femtorv32_intermissum.v \
 	cpuPLL.v \
 	ramPLL.v \
-	vgaPll.v \
-	$(SOC_COMPONENT)/sdram/SDRAM_Comp_Enums.sv \
-	$(SOC_COMPONENT)/sdram/sdram.sv \
+	$(SOC_COMPONENT)/sdram/sdram.v \
+	$(SOC_COMPONENT)/dff.sv \
+	debouncer_simpler.sv \
 	SoC.sv
 
 MODULES_FILES = ${SUB_MODULES_FILES} ${TOP_FILE}
@@ -122,9 +111,6 @@ vgaClock:
 	--highres \
 	-f vgaPll.v
 
-# -------------------------------------------------------
-# Misc
-# -------------------------------------------------------
 # The "-a 0" is important. You don't want to wipe-out the bootloader.
 # "-a 0" is the user-image.
 # You will need a udev rule to avoid "sudo"

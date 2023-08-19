@@ -1,8 +1,8 @@
 typedef enum logic [4:0] {
-    SoCReset,
+    SoCReset,           
     SoCResetSDRAM,
-    SoCResetting,
-    SoCResetComplete,
+    SoCResetting,       
+    SoCResetComplete,   
     SoCSystemResetComplete,
     SoCIdle
 } SynState; 

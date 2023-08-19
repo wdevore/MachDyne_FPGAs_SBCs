@@ -58,7 +58,7 @@ clkout0 frequency: 10.2857 MHz
 VCO frequency: 545.143
 ```
 
-The configuration for 640x480 VGA:
+## The configuration for 640x480 VGA:
 ```
 $ ecppll -i 48 --reset -o 25.175 --highres -f pll.v
 
@@ -72,6 +72,33 @@ clkout1 frequency: 25.1748 MHz
 clkout1 phase shift: 0 degrees
 VCO frequency: 553.846
 ```
+
+## Multiple clocks
+```
+sdramClock:
+	@ecppll -i 48 \
+	--module sdram_pll \
+	--reset \
+	--clkout0_name highClk --clkout0 100 \
+	--clkout1_name sdramClk --clkout1 50 \
+	-f ramPLL.v
+
+cpuClock:
+	@ecppll -i 100 \
+	--module cpu_pll \
+	--reset \
+	--clkout0_name cpuClk --clkout0 10 \
+	-f cpuPLL.v
+
+vgaClock:
+	@ecppll -i 48 \
+	--module vga_pll \
+	--reset \
+	--clkout0_name vgaClk --clkout0 25.175 \
+	--highres \
+	-f vgaPll.v
+```
+
 
 # Hex files
 We need to create basic binaries (aka hex files) for testing femto functionality.

@@ -122,9 +122,6 @@ vgaClock:
 	--highres \
 	-f vgaPll.v
 
-# -------------------------------------------------------
-# Misc
-# -------------------------------------------------------
 # The "-a 0" is important. You don't want to wipe-out the bootloader.
 # "-a 0" is the user-image.
 # You will need a udev rule to avoid "sudo"

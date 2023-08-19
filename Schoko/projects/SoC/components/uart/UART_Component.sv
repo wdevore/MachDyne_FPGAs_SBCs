@@ -88,15 +88,6 @@ DeMux2 #(
 logic rx_selected;
 assign rx_selected = addr[2:0] == 3'b001; // Reading Rx buffer?
 
-// Mux2 #(
-//     .DATA_WIDTH(DATA_WIDTH)
-// ) out_mux(
-//     .select_i(rx_selected),
-//     .data0_i(control),
-//     .data1_i(rx_buffer),
-//     .data_o(out_data)
-// );
-
 // ------------------------------------------------------------------------
 // UART IO channels
 // ------------------------------------------------------------------------
@@ -118,9 +109,9 @@ UARTTx uart_tx (
 // UART Receiver writes to the Rx buffer
 logic [DATA_WIDTH-1:0] rx_byte;
 logic rx_complete;
-/* verilator lint_off UNUSEDSIGNAL */
+/* verilator lint_off UNUSED */
 logic rx_start; // Active high
-/* verilator lint_on UNUSEDSIGNAL */
+/* verilator lint_on UNUSED */
 
 UARTRx uart_rx (
     .sourceClk(clock),

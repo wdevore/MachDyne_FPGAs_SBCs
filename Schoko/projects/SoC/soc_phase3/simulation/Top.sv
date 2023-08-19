@@ -142,8 +142,8 @@ assign mem_wstrb = |mem_wmask;      // Write strobe
 // 0     1    |  0  = Ready
 // 1     0    |  0  = Ready
 // 1     1    |  1  = Busy
-assign mem_wbusy = sdram_busy; //SDRAM_Selected & sdram_ready;
-assign mem_rbusy = sdram_busy; //SDRAM_Selected & sdram_ready;  // High = busy
+assign mem_wbusy = sdram_busy;
+assign mem_rbusy = sdram_busy;
 
 logic SDRAM_Selected;
 assign SDRAM_Selected = (sdram_addr & 25'h00f0_0000) == 25'h0080_0000;

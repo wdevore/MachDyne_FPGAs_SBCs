@@ -1,0 +1,98 @@
+			// Address 0 = 21305555
+			//         4 = 51595451
+			//         8 = 71531515
+
+			// Address 0 = 55301f6b
+			//         4 = 5b084408  03025b16
+			//         8 = 12_3456_78  55551278
+            //             11_2233_44  55551144 
+
+			// Address 0 = aaaaa28a
+			//         4 = aa2a28d0
+			//         8 = 12_3456_78
+            //             11_2233_44 <- 55553144 11223144
+            //         c = 99_8877_66 <- 5539--66
+typedef enum logic [7:0] {
+    SoCReset,           
+    SoCResetting,       
+    SoCResetComplete,   
+    SoCSetupRead1,
+    SoCSetupRead1a,
+    SoCSetupRead2,
+    SoCSetupRead3,
+    SoCSetupRead3a,
+    SoCSetupRead3b,
+    SoCSetupRead3c,
+    SoCSetupRead3d,
+    SoCSetupRead4,
+    SoCSetupRead5,
+    SoCSetupRead6,
+    SoCSetupRead7,
+    SoCSetupRead8,
+    SoCSetupRead8a,
+    SoCSetupRead9,
+    SoCSetupRead9a,
+    SoCSetupRead10,
+    SoCSetupRead11,
+    SoCSetupRead11a,
+    SoCSetupRead11b,
+    SoCSetupRead11c,
+    SoCSetupRead11d,
+    SoCSetupRead12,
+    SoCSetupRead13,
+    SoCSetupRead14,
+    SoCSetupRead15,
+    SoCSetupRead16,
+    SoCSetupRead16a,
+    SoCSetupRead17,
+    SoCSetupRead18,
+    SoCSetupRead18a,
+    SoCSetupRead18aa,
+    SoCSetupRead18b,
+    SoCSetupRead18c,
+    SoCSetupRead19,
+    SoCSetupRead19a,
+    SoCSetupRead20,
+    SoCSetupRead20a,
+    SoCSetupRead21,
+    SoCSetupRead22,
+    SoCSetupRead22a,
+    SoCSetupRead22b,
+    SoCSetupRead22c,
+    SoCSetupRead23,
+    SoCSetupRead23a,
+    SoCSetupRead24,
+    SoCSetupRead25,
+    SoCSetupRead26,
+    SoCSetupRead27,
+    SoCSetupRead28,
+    SoCSetupRead29,
+    SoCSetupRead30,
+    SoCSetupRead31,
+    SoCSetupRead32,
+    SoCSetupRead33,
+    SoCSetupRead34,
+    SoCSetupRead35,
+    SoCSetupRead36,
+    SoCSetupRead36a,
+    SoCSetupRead37,
+    SoCSetupRead37a,
+    SoCSetupRead38,
+    SoCSetupRead39,
+    SoCSetupRead40,
+    SoCSetupRead41,
+    SoCSetupRead42,
+    SoCSetupRead43,
+    SoCSetupRead43a,
+    SoCSetupRead44,
+    SoCSetupRead45,
+    SoCSetupRead46,
+    SoCSetupRead47,
+    SoCSetupRead48,
+    SoCSetupRead49,
+    SoCSetupRead50,
+    SoCSetupRead51,
+    SoCSetupRead52,
+    SoCIdle
+} SynState; 
+

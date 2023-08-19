@@ -8,7 +8,6 @@
 
 module SoC
 (
-	// @audit-info Module parms
 	input  logic clk_48mhz,
 	input  logic manualReset,	// Active high
 	output logic halt,			// Active high
@@ -20,16 +19,16 @@ module SoC
 	output logic port_lb,
 
 	// --------------- SDRAM ---------------------
-	// output [12:0] sdram_a,	// Address
-	// inout [15:0] sdram_dq,	// Data
-	// output sdram_cs_n,		// Chip select
-	// output sdram_cke,		// Clock enable
-	// output sdram_ras_n,
-	// output sdram_cas_n,
-	// output sdram_we_n,		// Write enable
-	// output [1:0] sdram_dm,	// Write strobe mask
-	// output [1:0] sdram_ba,	// Bank select
-	// output sdram_clock,
+	output [12:0] sdram_a,	// Address
+	inout [15:0] sdram_dq,	// Data
+	output sdram_cs_n,		// Chip select
+	output sdram_cke,		// Clock enable
+	output sdram_ras_n,
+	output sdram_cas_n,
+	output sdram_we_n,		// Write enable
+	output [1:0] sdram_dm,	// Write strobe mask
+	output [1:0] sdram_ba,	// Bank select
+	output sdram_clock,
 
 	// Debug ----------------------------
     output logic [7:0] debug
@@ -38,7 +37,7 @@ module SoC
 // ------------------------------------------------------------------
 //  @audit-info Clocks.
 // ------------------------------------------------------------------
-logic clk;
+// logic clk;
 /* verilator lint_off UNUSED */
 logic cpu_locked; // (Active high = cpu_locked)
 /* verilator lint_on UNUSED */
@@ -89,16 +88,52 @@ localparam NRV_RAM = 2**14 * WORD;
 logic [13:0] ram_word_address;
 assign ram_word_address = mem_address[15:2];
 
+// Bit 21->0     is BRAM
+// Bit 22        is IO
+// Bit 24,23     is SDRAM
 
+localparam IO_MEM_MASK = 25'h01C00000;
+
+// ------------------------------------------------------------------
+//  @audit-info Mapping of IO
+// ------------------------------------------------------------------
 // ----------- 0x00400000 ----------------
+// 0000_0001_1100_0000_0000_0000_0000_0000 = Mask = 1C
 // 0000_0000_0100_0000_0000_0000_0000_0000
 //            |                          |
 //            \--- Bit 22                \--- Bit 0
-//
 logic mem_address_is_io;
-assign mem_address_is_io =  mem_address[22] & mem_access;
+// assign mem_address_is_io =  mem_address[22] & mem_access;
+assign mem_address_is_io = ((mem_address & IO_MEM_MASK) == 25'h0040_0000) & mem_access;
+
+// ------------------------------------------------------------------
+//  @audit-info Mapping of sdram
+// ------------------------------------------------------------------
+logic mem_address_is_sdram;
+// ----------- 0x00800000 -> 0x01800000 ----------------
+// 0000_0001_1000_0000_0000_0000_0000_0000 = mask = 0x01800000
+//         |-|                           |
+//         \--- Bits 24,23               \--- Bit 0
+// assign mem_address_is_sdram = ((sdram_addr & 25'h00f0_0000) == 25'h0080_0000) & mem_access;
+// assign mem_address_is_sdram = ((mem_address & 25'h0180_0000) != 0) & mem_access;
+// assign mem_address_is_sdram = (|mem_address[24:23]) & mem_access;
+// ----------- 0x00800000  -> 0x01800000  ----------------
+// 0000_0000_1000_0000_0000_0000_0000_0000
+//         | |                           |
+//         \-\--- Bit 24, 23             \--- Bit 0
+assign mem_address_is_sdram = (mem_address[24] | mem_address[23]) & mem_access;
+
+// ------------------------------------------------------------------
+//  @audit-info Mapping of Ram
+// ------------------------------------------------------------------
+// ----------- 0x00400000 ----------------
+// 0000_0000_0000_0000_0000_0000_0000_0000 = Mask
+// 0000_0000_0010_0000_0000_0000_0000_0000
+//             |                         |
+//             \--- Bit 21    ->         \--- Bit 0
 logic mem_address_is_ram;
-assign mem_address_is_ram = !mem_address[22] & mem_access;
+// assign mem_address_is_ram = !mem_address[22] & mem_access;
+assign mem_address_is_ram = ~mem_address_is_sdram & ~mem_address_is_io & mem_access;
 
 (* no_rw_check *)
 logic [31:0] RAM[0:(NRV_RAM/4)-1];
@@ -106,7 +141,7 @@ logic [31:0] ram_rdata;
 
 // The power of YOSYS: it infers BRAM primitives automatically ! (and recognizes
 // masked writes, amazing ...)
-always_ff @(posedge clk) begin
+always_ff @(posedge cpu_clk) begin
 	if (mem_address_is_ram) begin
 		if (mem_wmask[0]) RAM[ram_word_address][ 7:0 ] <= mem_wdata[ 7:0 ];
 		if (mem_wmask[1]) RAM[ram_word_address][15:8 ] <= mem_wdata[15:8 ];
@@ -128,7 +163,7 @@ end
 
 
 // ------------------------------------------------------------------
-//  @audit-info IO
+// @audit-info IO
 // ------------------------------------------------------------------
 // Devices
 localparam IO_PORT_A = 8'h00;
@@ -152,9 +187,9 @@ logic [2:0] io_address;
 assign io_address = mem_address[2:0];
 
 
-// -----------------------------------------------------------
-//  @audit-info Port A
-// -----------------------------------------------------------
+// ------------------------------------------------------------------
+// @audit-info Port A
+// ------------------------------------------------------------------
 logic port_a_wr;
 assign port_a_wr = mem_address_is_io & (io_device == IO_PORT_A);
 
@@ -167,7 +202,7 @@ assign port_a_wr = mem_address_is_io & (io_device == IO_PORT_A);
 // assign port_a[6] = 0;
 // assign port_a[7] = 0;
 
-always_ff @(posedge clk) begin
+always_ff @(posedge cpu_clk) begin
 	if (port_a_wr) begin
 		// Write 8 bits to port A
 		if (mem_wmask[0])
@@ -182,17 +217,6 @@ always_ff @(posedge clk) begin
 			port_a = mem_wdata[7:0];
 	end
 end
-
-// ------------------------------------------------------------------
-//  @audit-info SDRAM
-// ------------------------------------------------------------------
-logic mem_address_is_sdram;
-// ----------- 0x00800000 -> 0x01800000 ----------------
-// 0000_0001_1000_0000_0000_0000_0000_0000 = mask = 0x01800000
-//         |-|                           |
-//         \--- Bits 23,24               \--- Bit 0
-// assign mem_address_is_sdram = ((mem_address & 25'h0180_0000) != 0) & mem_access;
-assign mem_address_is_sdram = (|mem_address[24:23]) & mem_access;
 
 // -------------- Validity ---------------------------------------------------
 assign mem_wstrb = |mem_wmask;      // Write strobe
@@ -224,42 +248,42 @@ assign initiate_activity = mem_wstrb | mem_rstrb;
 logic sdram_valid;
 assign sdram_valid = initiate_activity & mem_address_is_sdram;
 
-// sdram #() sdram_i (
-// 	// ------ For SDRAM module -----------
-//     .clk(sdram_clk),
-//     .resetn(sdramReset),             	// Active low
+sdram #() sdram_i (
+	// ------ For SDRAM module -----------
+    .clk(sdram_clk),
+    .resetn(sdramReset),             	// Active low
 
-// 	// ------------ To CPU ----------------
-//     .addr(sdram_addr),          		// In:
-//     .din(mem_wdata),            		// In: 32 bits
-//     .dout(sdram_rdata),         		// Out: 32 bits
-// 	// In: Any bit that is set defines a write strobe
-//     .wmask(mem_wmask),          		
-// 	// In: Indicates input signals are valid for use.
-//     .valid(sdram_valid),        		
-// 	// Out: Used for both read and write (High = busy)
-//     .ready(sdram_ready),        		
-// 	// Out: Active High. To SoC to exit Initialization
-//     .initialized(sdram_initialized),	
-//     .busy(sdram_busy),					// Out: Active high
+	// ------------ To CPU ----------------
+    .addr(sdram_addr),          		// In:
+    .din(mem_wdata),            		// In: 32 bits
+    .dout(sdram_rdata),         		// Out: 32 bits
+	// In: Any bit that is set defines a write strobe
+    .wmask(mem_wmask),          		
+	// In: Indicates input signals are valid for use.
+    .valid(sdram_valid),        		
+	// Out: Used for both read and write (High = busy)
+    .ready(sdram_ready),        		
+	// Out: Active High. To SoC to exit Initialization
+    .initialized(sdram_initialized),	
+    .busy(sdram_busy),					// Out: Active high
     
-// 	// ------ To SDRAM chip -----------
-//     .sdram_clk(sdram_clock),
-//     .sdram_cke(sdram_cke),
-//     .sdram_csn(sdram_cs_n),
-//     .sdram_rasn(sdram_ras_n),
-//     .sdram_casn(sdram_cas_n),
-//     .sdram_wen(sdram_we_n),
-//     .sdram_addr(sdram_a),
-//     .sdram_ba(sdram_ba),
-//     .sdram_dq(sdram_dq),            // In-out
-//     .sdram_dqm(sdram_dm)
-// 	// -----------------------------------
-// );
+	// ------ To SDRAM chip -----------
+    .sdram_clk(sdram_clock),
+    .sdram_cke(sdram_cke),
+    .sdram_csn(sdram_cs_n),
+    .sdram_rasn(sdram_ras_n),
+    .sdram_casn(sdram_cas_n),
+    .sdram_wen(sdram_we_n),
+    .sdram_addr(sdram_a),
+    .sdram_ba(sdram_ba),
+    .sdram_dq(sdram_dq),            // In-out
+    .sdram_dqm(sdram_dm)
+	// -----------------------------------
+);
 
-// -----------------------------------------------------------
-// @audit-info UART Module
-// -----------------------------------------------------------
+// ------------------------------------------------------------------
+// @audit-info UART
+// ------------------------------------------------------------------
 logic uart_cs;
 assign uart_cs = mem_address_is_io & (io_device == IO_UART);
 
@@ -271,15 +295,16 @@ assign uart_cs = mem_address_is_io & (io_device == IO_UART);
 logic [2:0] uart_addr; // Only the lower 3 bits are needed
 assign uart_addr = io_address[2:0];
 
+
 logic uart_rbusy;
 logic uart_wr;
 assign uart_wr = uart_cs & (mem_wmask != 0);
 
 logic [7:0] uart_out_data;
 logic [7:0] uart_in_data;
-/* verilator lint_off UNUSED */
+/* verilator lint_off UNUSEDSIGNAL */
 logic [2:0] uart_irq_id;
-/* verilator lint_on UNUSED */
+/* verilator lint_on UNUSEDSIGNAL */
 
 UART_Component uart_comp (
     .clock(clk_48mhz),
@@ -331,39 +356,41 @@ always_comb begin
 	end
 end
 
-// ----------- Reading -------------------
-// Either reading from IO or Ram.
-assign mem_rdata = mem_address_is_io ? io_rdata : ram_rdata;
-
 // ------------------------------------------------------------------
 // @audit-info CPU
 // ------------------------------------------------------------------
 // The memory bus.
-/* verilator lint_off UNUSED */
+/* verilator lint_off UNUSEDSIGNAL */
 logic [31:0] mem_address; // 24 bits are used internally. The two LSBs are ignored (using word addresses)
-/* verilator lint_on UNUSED */
+/* verilator lint_on UNUSEDSIGNAL */
 logic  [3:0] mem_wmask;   // mem write mask and strobe /write Legal values are 000,0001,0010,0100,1000,0011,1100,1111
 logic [31:0] mem_rdata;   // processor <- (mem and peripherals) 
 logic [31:0] mem_wdata;   // processor -> (mem and peripherals)
 logic        mem_rstrb;   // mem read strobe. Goes high to initiate memory write.
-logic        mem_rbusy;   // processor <- (mem and peripherals). Active high until a read transfer is finished.
-logic        mem_wbusy;   // processor <- (mem and peripherals). Active high until a write transfer is finished.
+logic        mem_rbusy;   // processor <- (mem and peripherals). Stays high until a read transfer is finished.
+logic        mem_wbusy;   // processor <- (mem and peripherals). Stays high until a write transfer is finished.
 logic        interrupt_request; // Active high
 logic        irq_acknowledge;	// Active high
 logic        mem_access;
 logic        mem_wstrb;   // Validity strobes
 
+// ### ----------- Reading ------------------- ###
+// Either reading from IO or Ram.
+// assign mem_rdata = mem_address_is_io ? io_rdata : ram_rdata;
+assign mem_rdata = mem_address_is_io ? io_rdata : mem_address_is_sdram ? sdram_rdata : ram_rdata;
+// assign mem_rdata = mem_address_is_sdram ? sdram_rdata : ram_rdata;
 
-// @audit WORKING
-assign mem_rbusy = uart_rbusy;
+// assign mem_rbusy = uart_rbusy;
 assign mem_rbusy = ~uart_cs ? uart_rbusy : mem_address_is_sdram ? sdram_busy : 0;
-// assign mem_wbusy = mem_address_is_sdram ? sdram_busy : 0;
+
+// assign mem_wbusy = 0;
+assign mem_wbusy = mem_address_is_sdram ? sdram_busy : 0;
 
 FemtoRV32 #(
 	.ADDR_WIDTH(`NRV_ADDR_WIDTH),
 	.RESET_ADDR(`NRV_RESET_ADDR)	      
 ) processor (
-	.clk(clk),			
+	.clk(cpu_clk),			
 	.mem_addr(mem_address),					// (out) to Ram and peripherals
 	.mem_wdata(mem_wdata),					// out
 	.mem_wmask(mem_wmask),					// out
@@ -384,14 +411,14 @@ FemtoRV32 #(
 logic sdramReset;
 // systemReset starts active (low) and deactivates after a few milliseconds delay
 logic systemReset = 1;		// Default to non-active
+logic [26:0] powerUpDelay;
+
 
 // ------------------------------------------------------------------
 //  @audit-info SoC FSM
 // ------------------------------------------------------------------
 SynState state = SoCReset;
 SynState next_state;
-
-logic [26:0] powerUpDelay;
 
 // PLL is active high
 // CPU is active low
@@ -412,7 +439,7 @@ always_comb begin
     case (state)
         SoCReset: begin
 			sdramReset = 1'b0;   // Reset SDRAM properly prior to init sequence.
-            next_state = SoCResetSDRAM;
+            next_state = SoCResetting;
         end
 
 		SoCResetSDRAM: begin
@@ -426,8 +453,8 @@ always_comb begin
 `ifdef SIMULATION
 			if (powerUpDelay[3]) begin
 `else
-			// Hold reset for >(~250ms) or SDRAM Init.
-			if (powerUpDelay[25] & sdram_initialized) begin 
+			// if (powerUpDelay[25] & sdram_initialized) begin // Hold reset for >(~250ms)
+			if (powerUpDelay[25]) begin // Hold reset for >(~250ms)
 `endif
 				next_state = SoCResetComplete;
 			end

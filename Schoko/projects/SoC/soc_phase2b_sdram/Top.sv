@@ -1,5 +1,6 @@
 // SCHOKO SoC
 
+
 module Top
 (
 	input logic CLK_48,
@@ -25,9 +26,9 @@ module Top
 	input  logic PMOD_B1,		// Manual reset (active low)
 	// output logic PMOD_B2,
 	// B3 sends to the Client which is the USB/UART's Rx (brown)
-	output logic PMOD_B3,
+	// output logic PMOD_B3,
 	// B4 receive from the Client which is the USB/UART's Tx (orange)
-	input  logic PMOD_B4,
+	// input  logic PMOD_B4,
 	// B5 = GRD, B6 = VSS
 	// output logic PMOD_B7,
 	// output logic PMOD_B8,
@@ -66,25 +67,36 @@ assign PMOD_A8  =  port_a[2];
 assign PMOD_A9  =  port_a[1];
 assign PMOD_A10 =  port_a[0];
 
-// assign PMOD_A1  =  debug[7];
-// assign PMOD_A2  =  debug[6];
-// assign PMOD_A3  =  debug[5];
-// assign PMOD_A4  =  debug[4];
-// assign PMOD_A7  =  debug[3];
-// assign PMOD_A8  =  debug[2];
-// assign PMOD_A9  =  debug[1];
-// assign PMOD_A10 =  debug[0];
+// assign PMOD_A1  =  counter[7];
+// assign PMOD_A2  =  counter[6];
+// assign PMOD_A3  =  counter[5];
+// assign PMOD_A4  =  counter[4];
+// assign PMOD_A7  =  counter[3];
+// assign PMOD_A8  =  counter[2];
+// assign PMOD_A9  =  counter[1];
+// assign PMOD_A10 =  counter[0];
 
-// assign PMOD_B1  =  port_b[7];
-// assign PMOD_B2  =  port_b[6];
-// assign PMOD_B3  =  port_b[5];
-// assign PMOD_B4  =  port_b[4];
-// assign PMOD_B7  =  port_b[3];
-// assign PMOD_B8  =  port_b[2];
-// assign PMOD_B9  =  port_b[1];
-// assign PMOD_B10 =  port_b[0];
+logic button;
+DebounceSimp bouncer(
+	.Clk(slowClk),
+	.in(~PMOD_B1),
+	.out(button)
+);
 
+logic slowClk;
+logic [25:0] slowCounter;
+
+// Slow clock for debouncer
 always @(posedge CLK_48) begin
+	if (slowCounter[20]) begin
+		slowCounter <= 0;
+		slowClk <= ~slowClk;
+	end
+	else
+		slowCounter <= slowCounter + 1;
+end
+
+always @(posedge button) begin
 	counter <= counter + 1;
 end
 
@@ -95,33 +107,29 @@ logic port_lb;
 
 logic halt;
 
-logic [7:0] debug;
-
 SoC soc(
 	.clk_48mhz(CLK_48),
-	.manualReset(~PMOD_B1),	// Invert because button is Active Low but manual is Active High
-    .halt(halt),                 // Active high
-	.uart_rx_in(PMOD_B4),  // From client
-	.uart_tx_out(PMOD_B3), // To client
+	.button_b1(button),
+	// .uart_rx_in(PMOD_B4),  // From client
+	// .uart_tx_out(PMOD_B3), // To client
 	.port_a(port_a),
 	.port_lr(port_lr),
 	.port_lg(port_lg),
 	.port_lb(port_lb),
-	// .port_b(port_b)
 
 	// --------------- SDRAM ---------------------
-	// .sdram_a(sdram_a),
-	// .sdram_dq(sdram_dq),
-	// .sdram_cs_n(sdram_cs_n),
-	// .sdram_cke(sdram_cke),
-	// .sdram_ras_n(sdram_ras_n),
-	// .sdram_cas_n(sdram_cas_n),
-	// .sdram_we_n(sdram_we_n),
-	// .sdram_dm(sdram_dm),
-	// .sdram_ba(sdram_ba),
-	// .sdram_clock(sdram_clock),
+	.sdram_a(sdram_a),
+	.sdram_dq(sdram_dq),
+	.sdram_cs_n(sdram_cs_n),
+	.sdram_cke(sdram_cke),
+	.sdram_ras_n(sdram_ras_n),
+	.sdram_cas_n(sdram_cas_n),
+	.sdram_we_n(sdram_we_n),
+	.sdram_dm(sdram_dm),
+	.sdram_ba(sdram_ba),
+	.sdram_clock(sdram_clock),
 
-	.debug(debug)
+	// .port_b(port_b)
 );
 
 endmodule

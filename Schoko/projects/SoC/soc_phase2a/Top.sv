@@ -107,20 +107,20 @@ SoC soc(
 	.port_lr(port_lr),
 	.port_lg(port_lg),
 	.port_lb(port_lb),
-	// .port_b(port_b)
 
 	// --------------- SDRAM ---------------------
-	// .sdram_a(sdram_a),
-	// .sdram_dq(sdram_dq),
-	// .sdram_cs_n(sdram_cs_n),
-	// .sdram_cke(sdram_cke),
-	// .sdram_ras_n(sdram_ras_n),
-	// .sdram_cas_n(sdram_cas_n),
-	// .sdram_we_n(sdram_we_n),
-	// .sdram_dm(sdram_dm),
-	// .sdram_ba(sdram_ba),
-	// .sdram_clock(sdram_clock),
+	.sdram_a(sdram_a),
+	.sdram_dq(sdram_dq),
+	.sdram_cs_n(sdram_cs_n),
+	.sdram_cke(sdram_cke),
+	.sdram_ras_n(sdram_ras_n),
+	.sdram_cas_n(sdram_cas_n),
+	.sdram_we_n(sdram_we_n),
+	.sdram_dm(sdram_dm),
+	.sdram_ba(sdram_ba),
+	.sdram_clock(sdram_clock),
 
+	// .port_b(port_b)
 	.debug(debug)
 );
 

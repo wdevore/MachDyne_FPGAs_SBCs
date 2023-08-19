@@ -22,16 +22,16 @@
 // Note: excellent article about SDRAM chip (8 bit version which applies)
 // to N bits version: https://alchitry.com/sdram-verilog
 // ###################################################################
+localparam ONE_MICROSECOND = 50; //`SDRAM_CLK_FREQ;
 
 // Usage example: trunc_32_to_13'(TRP)
 // typedef logic [12:0] trunc_32_to_13;
 `ifdef SIMULATION
-localparam WAIT_100US = 1 * ONE_MICROSECOND;
+localparam WAIT_100US = 50; //1 * ONE_MICROSECOND;
 `else
-localparam WAIT_100US = 100 * ONE_MICROSECOND;  // 64 * 1/64e6 = 1us => 100 * 1us
+localparam WAIT_100US = 5000; //100 * ONE_MICROSECOND;  // 64 * 1/64e6 = 1us => 100 * 1us
 `endif
 
-localparam ONE_MICROSECOND = `SDRAM_CLK_FREQ;
 localparam WAIT_WIDTH = $clog2(WAIT_100US);
 
 /* verilator lint_off WIDTH */
@@ -144,7 +144,7 @@ module sdram #(
   SDRAMState ret_state;
   SDRAMState ret_state_nxt;
 
-  localparam WAIT_STATE_WIDTH = $clog2(WAIT_100US);
+  localparam WAIT_STATE_WIDTH = WAIT_WIDTH;
   logic [WAIT_STATE_WIDTH -1:0] wait_states;
   logic [WAIT_STATE_WIDTH -1:0] wait_states_nxt;
 
@@ -342,7 +342,7 @@ module sdram #(
           command_nxt     = CMD_ACT;
           ba_nxt          = addr[22:21];
           saddr_nxt       = {addr[24:23], addr[20:10]}; // Select Active Row
-          wait_states_nxt = trunc_32_to(TRCD);
+          wait_states_nxt = 2;//trunc_32_to(TRCD);
           update_ready_nxt = 1'b1;
           state_nxt       = READY_WAIT;
         end else begin
@@ -350,7 +350,7 @@ module sdram #(
           command_nxt = CMD_REF;
           saddr_nxt = 0;
           ba_nxt = 0;
-          wait_states_nxt = 3;  //TRC;
+          wait_states_nxt = 3;  //TRC ????? Should = 4;
           update_ready_nxt = 1'b0;
           state_nxt = AUTO_REFRESH_WAIT;
         end
@@ -386,7 +386,7 @@ module sdram #(
         `ifdef SIMULATION
         wait_states_nxt = {3'b0, CAS_LATENCY};
         `else
-        wait_states_nxt = CAS_LATENCY;
+        wait_states_nxt = {10'b0, CAS_LATENCY};
         `endif
         state_nxt       = COL_READ_WAIT;
       end

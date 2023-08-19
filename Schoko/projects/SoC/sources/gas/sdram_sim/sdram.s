@@ -18,7 +18,7 @@ _start:
 
     lw t2, 4(t1)
 
-    li t0, 0x42
+    li t0, 0x12345678
     sw t0, 8(t1)
 
     ebreak

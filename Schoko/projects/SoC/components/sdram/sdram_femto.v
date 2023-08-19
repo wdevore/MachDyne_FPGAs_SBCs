@@ -18,6 +18,21 @@
  */
 `default_nettype none `timescale 1ns / 1ps
 
+// ###################################################################
+// Note: excellent article about SDRAM chip (8 bit version which applies)
+// to N bits version: https://alchitry.com/sdram-verilog
+// ###################################################################
+
+// Usage example: CAST_TO_13bits'(TRP)
+// typedef logic [12:0] CAST_TO_13bits;
+/* verilator lint_off UNUSED */
+function [12:0] trunc_32_to_13(input [31:0] val32);
+  trunc_32_to_13 = val32[12:0];
+endfunction
+/* verilator lint_on UNUSED */
+
+
+
 // ===============================
 // 16Mx16 = 32MByte
 // Row addressing 8k (A0-A12)
@@ -35,24 +50,32 @@ module sdram #(
     input wire clk,
     input wire resetn,
 
+    /* verilator lint_off UNUSED */
     input wire [24:0] addr,
+    /* verilator lint_on UNUSED */
     input wire [31:0] din,
     input wire [3:0] wmask,
     input wire valid,
     output reg [31:0] dout,
-    output reg ready,
+    output reg ready,               // Low = Ready/(not busy), High = busy
+    output reg initialized,         // Active high when device is initialized
+    output wire busy,                // Active high (1 = busy)
 
     output wire sdram_clk,
-    output wire sdram_cke,
+    output wire sdram_cke,          // Active High
     output wire [1:0] sdram_dqm,
-    output wire [12:0] sdram_addr,  //  A0-A12 row address, A0-A8 column address
-    output wire [1:0] sdram_ba,  // bank select A11,A12
-    output wire sdram_csn,
+    output wire [12:0] sdram_addr,  // A0-A12 row address, A0-A8 column address
+    output wire [1:0] sdram_ba,     // bank select A11,A12
+    //  ------------- Command -----------------------
+    output wire sdram_csn,          // Active Low
     output wire sdram_wen,
     output wire sdram_rasn,
     output wire sdram_casn,
+    //  ----------------------------------------------
     inout wire [15:0] sdram_dq
 );
+
+  reg sdram_initialized_nxt;
 
   localparam ONE_MICROSECOND = SDRAM_CLK_FREQ;
   localparam WAIT_100US = 100 * ONE_MICROSECOND;  // 64 * 1/64e6 = 1us => 100 * 1us
@@ -88,11 +111,15 @@ module sdram #(
   localparam CMD_ACT = 4'b0011;  // bank active
   localparam CMD_READ = 4'b0101;  // to have read variant with autoprecharge set A10=H
   localparam CMD_WRITE = 4'b0100;  // A10=H to have autoprecharge
+  /* verilator lint_off UNUSED */
   localparam CMD_BST = 4'b0110;  // burst stop
+  /* verilator lint_on UNUSED */
   localparam CMD_PRE = 4'b0010;  // precharge selected bank, A10=H both banks
   localparam CMD_REF = 4'b0001;  // auto refresh (cke=H), selfrefresh assign cke=L
   localparam CMD_NOP = 4'b0111;
+  /* verilator lint_off UNUSED */
   localparam CMD_DSEL = 4'b1xxx;
+  /* verilator lint_on UNUSED */
 
   reg [3:0] command;
   reg [3:0] command_nxt;
@@ -124,9 +151,13 @@ module sdram #(
   localparam COL_READH = 9;
   localparam COL_WRITEL = 10;
   localparam COL_WRITEH = 11;
+  /* verilator lint_off UNUSED */
   localparam AUTO_REFRESH = 12;
+  /* verilator lint_on UNUSED */
   localparam PRE_CHARGE_ALL = 13;
   localparam WAIT_STATE = 14;
+  localparam INIT_SEQ_LOAD_MODE_DONE = 15;
+
   localparam LAST_STATE = 15;
 
   localparam STATE_WIDTH = $clog2(LAST_STATE);
@@ -145,6 +176,7 @@ module sdram #(
 
   reg update_ready;
   reg update_ready_nxt;
+  assign busy = update_ready;
 
   reg [15:0] dq;
   reg [15:0] dq_nxt;
@@ -152,12 +184,22 @@ module sdram #(
 
   reg oe;
   reg oe_nxt;
+  /* verilator lint_off UNUSED */
+  reg valid_q;
+  reg valid_d1;
+  /* verilator lint_on UNUSED */
+  
+  reg [3:0] wrmask;
+  reg [3:0] wrmask_nxt;
+
+  reg initiate_activity;
+  reg initiate_activity_nxt;
 
   always @(posedge clk) begin
     if (~resetn) begin
       state <= RESET;
       ret_state <= RESET;
-      ready <= 1'b0;
+      ready <= 1'b0;      // Not ready
       wait_states <= 0;
       dout <= 0;
       command <= CMD_NOP;
@@ -167,6 +209,10 @@ module sdram #(
       oe <= 1'b0;
       saddr <= 0;
       update_ready <= 1'b0;
+      // -------------------
+      initialized <= 1'b0;  // Not initialized (not ready)
+      initiate_activity <= 0;
+      wrmask <= 0;
     end else begin
       dq <= dq_nxt;
       dout <= dout_nxt;
@@ -181,6 +227,10 @@ module sdram #(
       oe <= oe_nxt;
       saddr <= saddr_nxt;
       update_ready <= update_ready_nxt;
+      // -------------------
+      initialized <= sdram_initialized_nxt;
+      initiate_activity <= initiate_activity_nxt;
+      wrmask <= wrmask_nxt;
     end
   end
 
@@ -200,10 +250,20 @@ module sdram #(
     dq_nxt           = dq;
     update_ready_nxt = update_ready;
 
+    sdram_initialized_nxt = initialized;    // Device initialized
+    wrmask_nxt = wrmask;
+
+    if (valid) begin
+      initiate_activity_nxt = 1'b1;   // Capture strobe
+      wrmask_nxt = wmask;             // Capture mask before it disappears.
+    end
+    else
+      initiate_activity_nxt = initiate_activity;
+
     case (state)
       RESET: begin
         cke_nxt         = 1'b0;
-        wait_states_nxt = WAIT_100US;
+        wait_states_nxt = trunc_32_to_13(WAIT_100US);
         ret_state_nxt   = ASSERT_CKE;
         state_nxt       = WAIT_STATE;
       end
@@ -216,45 +276,54 @@ module sdram #(
       end
 
       INIT_SEQ_PRE_CHARGE_ALL: begin
-        cke_nxt         = 1'b1;
+        // cke_nxt         = 1'b1;
         command_nxt     = CMD_PRE;
         saddr_nxt[10]   = 1'b1;
-        wait_states_nxt = TRP;
+        wait_states_nxt = trunc_32_to_13(TRP);
         ret_state_nxt   = INIT_SEQ_AUTO_REFRESH0;
         state_nxt       = WAIT_STATE;
       end
 
       INIT_SEQ_AUTO_REFRESH0: begin
         command_nxt = CMD_REF;
-        wait_states_nxt = TRC;
+        wait_states_nxt = trunc_32_to_13(TRC);
         ret_state_nxt = INIT_SEQ_AUTO_REFRESH1;
         state_nxt = WAIT_STATE;
       end
 
       INIT_SEQ_AUTO_REFRESH1: begin
         command_nxt = CMD_REF;
-        wait_states_nxt = TRC;
+        wait_states_nxt = trunc_32_to_13(TRC);
         ret_state_nxt = INIT_SEQ_LOAD_MODE;
         state_nxt = WAIT_STATE;
       end
 
       INIT_SEQ_LOAD_MODE: begin
         command_nxt = CMD_MRS;
-        saddr_nxt = sdram_mode;
-        wait_states_nxt = TCH;
+        saddr_nxt = {2'b0, sdram_mode};
+        wait_states_nxt = trunc_32_to_13(TCH);
+        ret_state_nxt = IDLE; // INIT_SEQ_LOAD_MODE_DONE
+        state_nxt = WAIT_STATE;
+      end
+
+      INIT_SEQ_LOAD_MODE_DONE: begin
+        wait_states_nxt = 1;
+        sdram_initialized_nxt = 1'b1;    // Device initialized
         ret_state_nxt = IDLE;
         state_nxt = WAIT_STATE;
       end
 
+// @audit-issue idle
       IDLE: begin
-        oe_nxt = 1'b0;
-        dqm_nxt = 2'b11;
-        ready_nxt = 1'b0;
-        if (valid && !ready) begin
+        oe_nxt = 1'b0;        // Disable output
+        dqm_nxt = 2'b11;      // Default to Read Disable for all data output
+        ready_nxt = 1'b0;     // Not ready
+        if (initiate_activity && ~ready) begin
+          // valid_reset = 1;
           command_nxt     = CMD_ACT;
           ba_nxt          = addr[22:21];
-          saddr_nxt       = {addr[24:23], addr[20:10]};
-          wait_states_nxt = TRCD;
+          saddr_nxt       = {addr[24:23], addr[20:10]}; // Select Active Row
+          wait_states_nxt = trunc_32_to_13(TRCD);
           ret_state_nxt   = |wmask ? COL_WRITEL : COL_READ;
           update_ready_nxt = 1'b1;
           state_nxt       = WAIT_STATE;
@@ -272,10 +341,10 @@ module sdram #(
 
       COL_READ: begin
         command_nxt     = CMD_READ;
-        dqm_nxt         = 2'b00;
+        dqm_nxt         = 2'b00;        // Zero's drive the outputs
         saddr_nxt       = {3'b001, addr[10:2], 1'b0};  // autoprecharge and column
         ba_nxt          = addr[22:21];
-        wait_states_nxt = CAS_LATENCY;
+        wait_states_nxt = {10'b0, CAS_LATENCY};
         ret_state_nxt   = COL_READL;
         state_nxt       = WAIT_STATE;
       end
@@ -293,7 +362,7 @@ module sdram #(
         command_nxt      = CMD_NOP;
         dqm_nxt          = 2'b00;
         dout_nxt[31:16]  = sdram_dq;
-        wait_states_nxt  = TRP;
+        wait_states_nxt  = trunc_32_to_13(TRP);
         update_ready_nxt = 1'b1;
         ret_state_nxt    = IDLE;
         state_nxt        = WAIT_STATE;
@@ -318,7 +387,7 @@ module sdram #(
         ba_nxt           = addr[22:21];
         dq_nxt           = din[31:16];
         oe_nxt           = 1'b1;
-        wait_states_nxt  = TRP;
+        wait_states_nxt  = trunc_32_to_13(TRP);
         update_ready_nxt = 1'b1;
         ret_state_nxt    = IDLE;
         state_nxt        = WAIT_STATE;
@@ -328,7 +397,7 @@ module sdram #(
         command_nxt = CMD_PRE;
         saddr_nxt[10] = 1'b1;  // select all banks
         ba_nxt = 0;
-        wait_states_nxt = TRP;
+        wait_states_nxt = trunc_32_to_13(TRP);
         ret_state_nxt = IDLE;
         state_nxt = WAIT_STATE;
       end
@@ -339,6 +408,7 @@ module sdram #(
         if (wait_states == 1) begin
           state_nxt = ret_state;
           if (ret_state == IDLE && update_ready) begin
+          // valid_reset = 1;
             update_ready_nxt = 1'b0;
             ready_nxt = 1'b1;
           end
