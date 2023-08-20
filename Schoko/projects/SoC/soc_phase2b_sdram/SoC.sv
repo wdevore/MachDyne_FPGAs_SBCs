@@ -761,7 +761,8 @@ always_comb begin
 		// ---------------------------------------------
         SoCSetupRead30: begin
 			sdram_addr_nxt = 25'h00_000c;	// Address 1 (WA), 4 (BA)
-			mem_wdata_nxt = 32'h9988_7766;	// Data to Write
+			// mem_wdata_nxt = 32'h9988_7766;	// Data to Write
+			mem_wdata_nxt = 32'hdead_beaf;	// Data to Write
 			// The mask IS the strobe
 			mem_wmask_nxt = 4'b0000;		// Start with 0's
 			mem_rstrb_nxt = 1'b0;			// No read stobe

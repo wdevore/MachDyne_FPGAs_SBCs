@@ -36,16 +36,16 @@ module Top
 	// output logic PMOD_B10
 
 	// ------------ SDRAM ---------------------
-	output [12:0] sdram_a,
-	inout [15:0] sdram_dq,
-	output sdram_cs_n,
-	output sdram_cke,
-	output sdram_ras_n,
-	output sdram_cas_n,
-	output sdram_we_n,
-	output [1:0] sdram_dm,
-	output [1:0] sdram_ba,
-	output sdram_clock
+	output logic [12:0] sdram_a,
+	inout  logic [15:0] sdram_dq,
+	output logic sdram_cs_n,
+	output logic sdram_cke,
+	output logic sdram_ras_n,
+	output logic sdram_cas_n,
+	output logic sdram_we_n,
+	output logic [1:0] sdram_dm,
+	output logic [1:0] sdram_ba,
+	output logic sdram_clock
 );
 
 logic [26:0] counter = 0;
