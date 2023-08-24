@@ -9,3 +9,5 @@
 `define EN_SDRAM
 `define EN_BSRAM32
 `define EN_UART0
+
+`define FIRMWARE_PATH "../MiniSchoko/gas/sdram/"

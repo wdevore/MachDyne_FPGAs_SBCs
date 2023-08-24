@@ -1,4 +1,5 @@
 // This is technically the Top module
+`include "defines.vh"
 
 // From SYSCLK50 define
 localparam SYSCLK = 50_000_000;
@@ -17,10 +18,10 @@ module sysctl #()
 	output logic LED_B,
 
     // ------------- UART -------------------
-	input  logic UART0_RTS,
-	output logic UART0_RX,
-	input  logic UART0_TX,
-	output logic UART0_CTS,
+	input  logic PMOD_A1,			// A2 = UART0_RTS
+	output logic PMOD_A2,			// A3 = UART0_RX
+	input  logic PMOD_A3,			// A4 = UART0_TX
+	output logic PMOD_A4,			// A5 = UART0_CTS
 
     // ------------- SDRAM -------------------
 	output logic [12:0] sdram_a,
@@ -35,8 +36,15 @@ module sysctl #()
 	output logic sdram_clock,
 );
 
+	logic [2:0] LEDs;
+
+	assign LED_R = LEDs[0];
+	assign LED_G = LEDs[1];
+	assign LED_B = LEDs[2];
+
+
     // -----------------------------------------------------
-    // ------------ PLLs for the Clocks -----------------
+    // @audit-info PLLs for the Clocks -----------------
     // -----------------------------------------------------
     logic clk25mhz;
     logic clk50mhz;         // Output from PLL
@@ -58,7 +66,7 @@ module sysctl #()
 	);
 
     // -----------------------------------------------------
-    // ------------ Clocks -----------------
+    // @audit-info  Clocks -----------------
     // -----------------------------------------------------
     logic clk;
     assign clk = clk50mhz;
@@ -68,11 +76,12 @@ module sysctl #()
     // Reset is active is any bit of the counter is 0
     // Once the counter reaches max value (all 1's), reset
     // is disabled and the counter stops.
-	logic resetn = &resetn_counter;     // Active low
+	logic resetn;
+	assign resetn = &resetn_counter;     // Active low
 
 	always_ff @(posedge clk) begin
         // The PLL has priority over Reset.
-        // Once the PLL is locked the counter can begin counting.
+        // Once the PLL is locked the counter begins counting.
 		if (!pll_locked)
 			resetn_counter <= 0;
 		else if (!resetn)
@@ -80,21 +89,29 @@ module sysctl #()
 	end
 
     // -----------------------------------------------------
-    // ------------ BRAM -----------------
+    // @audit-info  BRAM -----------------
     // -----------------------------------------------------
-    localparam BRAM_WORDS = 1536;
+	// 0000_0000_0000_0000_0001_1000_0000_0000 = 1536
+	// 0000_0000_0000_0000_0010_0000_0000_0000 = 8192
+	// 0000_0000_0000_0000_0010_1011_1000_0000 = 11136
+    localparam BRAM_WORDS = 11136; //1536;
 	logic [31:0] bram [0:BRAM_WORDS-1];
-    // BRAM as 32bit words. Possibly associated with vram
-	logic [13:0] bsram_word = mem_addr[14:2];
 	logic [10:0] bram_word = mem_addr[14:2];    // BRAM
 
 	initial begin
-        // In out version this could be simple code or a Monitor
-        $readmemh("firmware/firmware_seed.hex", bram);
+        // In our version this could be simple code or a Monitor
+		// The sources are located in the "gas" folder.
+        $readmemh({`FIRMWARE_PATH, "firmware.hex"}, bram);
+        // $readmemh("../MiniSchoko/gas/blinky/firmware.hex", bram);
     end
 
     // -----------------------------------------------------
-    // ------------ SDRAM -----------------
+    // @audit-info  SDRAM Memory map -----------------
+    // -----------------------------------------------------
+	// 0100_0000_0000_0000_0000_0000_0000_0000
+	
+    // -----------------------------------------------------
+    // @audit-info  SDRAM -----------------
     // -----------------------------------------------------
     logic [2:0] sdram_state;
 	logic [24:0] sdram_addr;
@@ -136,27 +153,26 @@ module sysctl #()
 
 		if (uart0_received) begin
 			uart0_dr <= 1;
-			UART0_CTS <= 1;
+			PMOD_A4 <= 1;   // PMOD_A4 = UART0_CTS
 		end
 
-		if (!uart0_transmit && !uart0_is_transmitting && !UART0_RTS) begin
+		// PMOD_A1 = UART0_RTS
+		if (!uart0_transmit && !uart0_is_transmitting && !PMOD_A1) begin
 			uart0_txbusy <= 0;
 		end
 
 		if (!resetn) begin
 			uart0_dr <= 0;
 			uart0_txbusy <= 0;
-			UART0_CTS <= 0;
+			PMOD_A4 <= 0;    // PMOD_A4 = UART0_CTS
 
-			sram_state <= 0;
 			sdram_state <= 0;
 			sdram_valid <= 0;
 		end else if (mem_valid && !mem_ready) begin
 			(* parallel_case *)
 			case (1)
-
 				// BLOCK RAM
-				(mem_addr < 8192): begin
+				(mem_addr < BRAM_WORDS-1): begin  // 8192
 					if (mem_wstrb[0]) bram[bram_word][7:0] <= mem_wdata[7:0];
 					if (mem_wstrb[1]) bram[bram_word][15:8] <= mem_wdata[15:8];
 					if (mem_wstrb[2]) bram[bram_word][23:16] <= mem_wdata[23:16];
@@ -166,54 +182,7 @@ module sysctl #()
 					mem_ready <= 1;
 				end
 
-				// BLOCK RAM AS 32-bit SRAM
-				(((mem_addr & 32'hf000_0000) == 32'h2000_0000)): begin
-					sram_state <= 1;
-
-					if (mem_wstrb[0]) bsram[bsram_word][7:0] <= mem_wdata[7:0];
-					if (mem_wstrb[1]) bsram[bsram_word][15:8] <= mem_wdata[15:8];
-					if (mem_wstrb[2]) bsram[bsram_word][23:16] <= mem_wdata[23:16];
-					if (mem_wstrb[3]) bsram[bsram_word][31:24] <= mem_wdata[31:24];
-
-					mem_rdata <= bsram[bsram_word];
-
-					if (sram_state == 1) begin
-						sram_state <= 0;
-						mem_ready <= 1;
-					end
-				end
-
-				((mem_addr & 32'hf000_0000) == 32'h1000_0000): begin
-                    mem_ready <= 1;
-				end
-
-				(((mem_addr & 32'hf000_0000) == 32'h2000_0000)): begin
-					if (mem_wstrb) begin
-						if (sram_state == 0) begin
-							sram_addr <= (mem_addr & 32'h0fff_ffff) >> 2;
-							sram_dout <= mem_wdata;
-							sram1_wrub <= mem_wstrb[3];
-							sram1_wrlb <= mem_wstrb[2];
-							sram0_wrub <= mem_wstrb[1];
-							sram0_wrlb <= mem_wstrb[0];
-							sram_state <= 1;
-						end else if (sram_state == 1) begin
-							mem_ready <= 1;
-							sram_state <= 0;
-						end
-					end else begin
-
-						if (sram_state == 0) begin
-							sram_addr <= (mem_addr & 32'h0fff_ffff) >> 2;
-							sram_state <= 1;
-						end else if (sram_state == 1) begin
-							mem_rdata <= sram_din;
-							mem_ready <= 1;
-							sram_state <= 0;
-						end
-					end
-				end
-
+				// SDRAM
 				((mem_addr & 32'hf000_0000) == 32'h4000_0000): begin
 					if (mem_wstrb) begin
 						if (sdram_state == 0 && !sdram_ready) begin
@@ -259,7 +228,7 @@ module sysctl #()
 							end else if (!mem_wstrb) begin
 								mem_rdata[7:0] <= uart0_rx_byte;
 								uart0_dr <= 0;
-								UART0_CTS <= 0;
+								PMOD_A4 <= 0;  // PMOD_A4 = UART0_CTS
 								mem_ready <= 1;
 							end
 						end
@@ -273,25 +242,7 @@ module sysctl #()
 
 						16'h1000: begin
 							if (mem_wstrb)
-								LED_A <= ~mem_wdata[0];
-							else
-								mem_rdata[0] <= ~LED_A;
-							mem_ready <= 1;
-						end
-
-						16'h1100: begin
-							if (!mem_wstrb) mem_rdata <= clock_secs;
-							mem_ready <= 1;
-						end
-
-						16'h3000: begin
-							mem_ready <= 1;
-						end
-
-						16'h3004: begin
-							if (!mem_wstrb) begin
-								mem_rdata[7:0] <= 0;
-							end
+								LEDs <= mem_wdata[2:0];
 							mem_ready <= 1;
 						end
 
@@ -305,7 +256,7 @@ module sysctl #()
     end
 
     // -----------------------------------------------------
-    // ------------ PicoRV23 -----------------
+    // @audit-info  PicoRV23 -----------------
     // -----------------------------------------------------
 	logic cpu_trap;
 	logic [31:0] cpu_irq;
@@ -332,6 +283,7 @@ module sysctl #()
 		.clk(clk),
 		.resetn(resetn),
 		.trap(cpu_trap),
+
 		.mem_valid(mem_valid),
 		.mem_instr(mem_instr),
 		.mem_ready(mem_ready),
@@ -339,11 +291,12 @@ module sysctl #()
 		.mem_wdata(mem_wdata),
 		.mem_wstrb(mem_wstrb),
 		.mem_rdata(mem_rdata),
+		
 		.irq(cpu_irq)
 	);
 
     // -----------------------------------------------------
-    // ------------ UART 0 -----------------
+    // @audit-info  UART 0 -----------------
     // -----------------------------------------------------
 	logic uart0_transmit;
 	logic [7:0] uart0_tx_byte;
@@ -365,8 +318,8 @@ module sysctl #()
 	uart0 (
 		.clk(clk),
 		.rst(~resetn),
-		.rx(UART0_TX),
-		.tx(UART0_RX),
+		.rx(PMOD_A3), 					// PMOD_A3 = UART0_TX
+		.tx(PMOD_A2),  					// PMOD_A2 = UART0_RX
 		.transmit(uart0_transmit),
 		.tx_byte(uart0_tx_byte),
 		.received(uart0_received),

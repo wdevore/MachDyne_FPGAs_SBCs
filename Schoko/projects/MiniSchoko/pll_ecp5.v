@@ -1,5 +1,3 @@
-`ifdef FPGA_ECP5
-
 module pll0
 (
     input clkin, // 48 MHz, 0 deg
@@ -99,5 +97,3 @@ EHXPLLL #(
         .LOCK(locked)
 	);
 endmodule
-
-`endif
