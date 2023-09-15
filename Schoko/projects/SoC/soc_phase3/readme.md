@@ -1,4 +1,6 @@
 # Description
+**THIS IS CURRENT DEFUNCT** It's not working. Ignore and goto to **phase4**
+
 *Phase 3* integrates SDRAM for larger programs and data.
 
 # Dev setup 
@@ -11,4 +13,3 @@ See *Phase 2* for terminal configuration, micro program uploader, assembler, lin
 - [Zucker: SDRAM controller](https://github.com/machdyne/zucker/blob/main/rtl/sdram.v)
 
 # Notes
-The file *zucker_soc_stripped.v* has been stripped down to the bare minimum in order to see the SDRAM portions more clear.

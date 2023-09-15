@@ -13,7 +13,7 @@ _start:
     lw a0, 0(t0)        # LED port address
 
     li t1, 7            # Mast to turn LEDs off (111)
-    li t4, 5            # AND Mask 110 to turn on (3,5,6)
+    li t4, 6            # AND Mask 110 to turn on (3,5,6)
 
     sb t1, 0(a0)        # Turn LEDs off
 

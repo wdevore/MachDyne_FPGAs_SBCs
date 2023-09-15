@@ -3,7 +3,15 @@ DEVICE = 45k
 PACKAGE = CABGA256
 LPF = schoko_v1.lpf
 
-TOP_FILE = soc.sv
+COMMON = ../../../common
+
+TOP_FILE = soc_uart0.sv
+
+	# ${COMMON}/UART_Defines.sv \
+	# ${COMMON}/UART_Enums.sv \
+	# ${COMMON}/CDCSynchron.sv \
+	# ${COMMON}/UARTRx.sv \
+	# ${COMMON}/UARTTx.sv \
 
 SUB_MODULES_FILES = \
 	pll_ecp5.v \

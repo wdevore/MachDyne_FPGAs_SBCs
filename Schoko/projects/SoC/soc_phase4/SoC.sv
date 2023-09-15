@@ -249,9 +249,6 @@ end
 // -------------- Validity ---------------------------------------------------
 assign mem_wstrb = |mem_wmask;      // Write strobe
 
-// logic SDRAM_Selected;
-// assign SDRAM_Selected = (sdram_addr & 25'h00f0_0000) == 25'h0080_0000;
-
 // ------------------------------------------------------------------
 // @audit-info SDRAM
 // ------------------------------------------------------------------
@@ -259,59 +256,57 @@ assign mem_wstrb = |mem_wmask;      // Write strobe
 // The combination of "ready" and "valid" means: if the input signals
 // area valid and the SDRAM is in a ready state then an activity can take
 // place.
-/* verilator lint_off UNUSED */
-// logic sdram_ready;
-// /* verilator lint_on UNUSED */
+logic sdram_ready;
 
-// logic sdram_initialized;		// Sourced by SDRAM
-// logic sdram_busy;
+logic sdram_initialized;		// Sourced by SDRAM
+logic sdram_busy;
 
-// logic [24:0] sdram_addr;
-// assign sdram_addr = mem_address[24:0];
+logic [24:0] sdram_addr;
+assign sdram_addr = mem_address[24:0];
 
-// logic [31:0] sdram_rdata;
+logic [31:0] sdram_rdata;
 
-// logic initiate_activity;
-// assign initiate_activity = mem_wstrb | mem_rstrb;
+logic initiate_activity;
+assign initiate_activity = mem_wstrb | mem_rstrb;
 
-// // Valid is used to signal that the client is ready for an Activity.
-// // The strobe signals will drive this as the strobes indicate that
-// // the IO signals are setup.
-// logic sdram_valid;
-// assign sdram_valid = initiate_activity & mem_address_is_sdram;
+// Valid is used to signal that the client is ready for an Activity.
+// The strobe signals will drive this as the strobes indicate that
+// the IO signals are setup.
+logic sdram_valid;
+assign sdram_valid = initiate_activity & mem_address_is_sdram;
 
-// sdram #() sdram_i (
-// 	// ------ For SDRAM module -----------
-//     .clk(sdram_clk),
-//     .resetn(sdramReset),             	// Active low
+sdram #() sdram_i (
+	// ------ For SDRAM module -----------
+    .clk(sdram_clk),
+    .resetn(sdramReset),             	// Active low
 
-// 	// ------------ To CPU ----------------
-//     .addr(sdram_addr),          		// In:
-//     .din(mem_wdata),            		// In: 32 bits
-//     .dout(sdram_rdata),         		// Out: 32 bits
-// 	// In: Any bit that is set defines a write strobe
-//     .wmask(mem_wmask),          		
-// 	// In: Indicates input signals are valid for use.
-//     .valid(sdram_valid),        		
-// 	// Out: Used for both read and write (High = busy)
-//     .ready(sdram_ready),        		
-// 	// Out: Active High. To SoC to exit Initialization
-//     .initialized(sdram_initialized),	
-//     .busy(sdram_busy),					// Out: Active high
+	// ------------ To CPU ----------------
+    .addr(sdram_addr),          		// In:
+    .din(mem_wdata),            		// In: 32 bits
+    .dout(sdram_rdata),         		// Out: 32 bits
+	// In: Any bit that is set defines a write strobe
+    .wmask(mem_wmask),          		
+	// In: Indicates input signals are valid for use. (Active high when valid)
+    .valid(sdram_valid),        		
+	// Out: Used for both read and write (High = busy)
+    .ready(sdram_ready),        		
+	// Out: Active High. To SoC to exit Initialization
+    .initialized(sdram_initialized),	
+    .busy(sdram_busy),					// Out: Active high
     
-// 	// ------ To SDRAM chip -----------
-//     .sdram_clk(sdram_clock),
-//     .sdram_cke(sdram_cke),
-//     .sdram_csn(sdram_cs_n),
-//     .sdram_rasn(sdram_ras_n),
-//     .sdram_casn(sdram_cas_n),
-//     .sdram_wen(sdram_we_n),
-//     .sdram_addr(sdram_a),
-//     .sdram_ba(sdram_ba),
-//     .sdram_dq(sdram_dq),            // In-out
-//     .sdram_dqm(sdram_dm)
-// 	// -----------------------------------
-// );
+	// ------ To SDRAM chip -----------
+    .sdram_clk(sdram_clock),
+    .sdram_cke(sdram_cke),
+    .sdram_csn(sdram_cs_n),
+    .sdram_rasn(sdram_ras_n),
+    .sdram_casn(sdram_cas_n),
+    .sdram_wen(sdram_we_n),
+    .sdram_addr(sdram_a),
+    .sdram_ba(sdram_ba),
+    .sdram_dq(sdram_dq),            // In-out
+    .sdram_dqm(sdram_dm)
+	// -----------------------------------
+);
 
 // ------------------------------------------------------------------
 // @audit-info UART
@@ -398,7 +393,7 @@ logic [31:0] mem_address; // 24 bits are used internally. The two LSBs are ignor
 logic  [3:0] mem_wmask;   // mem write mask and strobe /write Legal values are 000,0001,0010,0100,1000,0011,1100,1111
 logic [31:0] mem_rdata;   // processor <- (mem and peripherals) 
 logic [31:0] mem_wdata;   // processor -> (mem and peripherals)
-logic        mem_rstrb;   // mem read strobe. Goes high to initiate memory write.
+logic        mem_rstrb;   // mem read strobe. Goes high to initiate memory read.
 logic        mem_rbusy;   // processor <- (mem and peripherals). Stays high until a read transfer is finished.
 logic        mem_wbusy;   // processor <- (mem and peripherals). Stays high until a write transfer is finished.
 logic        interrupt_request; // Active high

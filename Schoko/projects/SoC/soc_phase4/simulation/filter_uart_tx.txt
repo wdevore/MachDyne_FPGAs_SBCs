@@ -1,0 +1,6 @@
+0 TxRst
+1 TxIdle
+2 TxStrt
+3 TxSendg
+4 TxStopB
+5 TxCompt

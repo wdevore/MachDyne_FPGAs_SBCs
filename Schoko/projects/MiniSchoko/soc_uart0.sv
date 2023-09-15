@@ -18,10 +18,10 @@ module sysctl #()
 	output logic LED_B,
 
     // ------------- UART -------------------
-	input  logic PMOD_A1,			// A2 = UART0_RTS
-	output logic PMOD_A2,			// A3 = UART0_RX
-	input  logic PMOD_A3,			// A4 = UART0_TX
-	output logic PMOD_A4,			// A5 = UART0_CTS
+	input  logic PMOD_B1,			// A2 = UART0_RTS = Blue   = CTS
+	output logic PMOD_B2,			// A3 = UART0_RX  = Purple = RTS
+	input  logic PMOD_B3,			// A4 = UART0_TX  = Gray   = RX
+	output logic PMOD_B4,			// A5 = UART0_CTS = White  = TX
 
     // ------------- SDRAM -------------------
 	output logic [12:0] sdram_a,
@@ -153,18 +153,19 @@ module sysctl #()
 
 		if (uart0_received) begin
 			uart0_dr <= 1;
-			PMOD_A4 <= 1;   // PMOD_A4 = UART0_CTS
+			PMOD_B1 <= 1;   // old PMOD_B4 = UART0_CTS
 		end
 
-		// PMOD_A1 = UART0_RTS
-		if (!uart0_transmit && !uart0_is_transmitting && !PMOD_A1) begin
+		// PMOD_B2 = UART0_RTS (Active low)
+		// if (!uart0_transmit && !uart0_is_transmitting && !PMOD_B2) begin
+		if (!uart0_transmit && !uart0_is_transmitting) begin
 			uart0_txbusy <= 0;
 		end
 
 		if (!resetn) begin
 			uart0_dr <= 0;
 			uart0_txbusy <= 0;
-			PMOD_A4 <= 0;    // PMOD_A4 = UART0_CTS
+			// PMOD_B1 <= 0;    // old PMOD_B4 = UART0_CTS
 
 			sdram_state <= 0;
 			sdram_valid <= 0;
@@ -215,6 +216,7 @@ module sysctl #()
 					end
 				end
 
+				// UART
 				((mem_addr & 32'hf000_0000) == 32'hf000_0000): begin
 					(* parallel_case *)
 					case (mem_addr[15:0])
@@ -228,7 +230,7 @@ module sysctl #()
 							end else if (!mem_wstrb) begin
 								mem_rdata[7:0] <= uart0_rx_byte;
 								uart0_dr <= 0;
-								PMOD_A4 <= 0;  // PMOD_A4 = UART0_CTS
+								// PMOD_B1 <= 0;  // PMOD_B4 = UART0_CTS
 								mem_ready <= 1;
 							end
 						end
@@ -306,7 +308,7 @@ module sysctl #()
 	logic uart0_is_transmitting;
 	logic uart0_recv_error;
 
-	logic uart0_dr;
+	logic uart0_dr;			// Data received indicator
 	logic uart0_txbusy;
 
 	logic uart0_rx;
@@ -318,8 +320,8 @@ module sysctl #()
 	uart0 (
 		.clk(clk),
 		.rst(~resetn),
-		.rx(PMOD_A3), 					// PMOD_A3 = UART0_TX
-		.tx(PMOD_A2),  					// PMOD_A2 = UART0_RX
+		.rx(PMOD_B4), 					// PMOD_B3 = UART0_TX
+		.tx(PMOD_B3),  					// PMOD_B2 = UART0_RX
 		.transmit(uart0_transmit),
 		.tx_byte(uart0_tx_byte),
 		.received(uart0_received),

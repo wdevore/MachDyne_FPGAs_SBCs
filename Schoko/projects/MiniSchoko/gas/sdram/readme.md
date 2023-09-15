@@ -1,2 +1,2 @@
 # Description
-A extremely basic functionality test of the SoC.
+A extremely basic functionality test of the SDRAM.

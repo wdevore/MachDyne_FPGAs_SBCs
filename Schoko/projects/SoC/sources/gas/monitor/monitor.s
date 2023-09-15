@@ -91,8 +91,12 @@ _start:
     jal PrintCursor
 
     # Clear port A
+    # li a0, 0x42
     li a0, 0
     jal WritePortA
+
+# Spin:
+#     j Spin
 
     # Clear key buffer
     jal ClearKeyBuffer
