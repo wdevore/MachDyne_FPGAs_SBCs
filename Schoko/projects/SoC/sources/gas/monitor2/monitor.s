@@ -1,21 +1,20 @@
 # A basic monitor
 
+# -------------------------------------------------
+# @note Registers definitions
+# -------------------------------------------------
+# sp : monitor stack pointer
+# gp : ROM data pointer
+# tp : keyboard buffer pointer
+# s0 : Port-A base pointer
+# s1 : String scratch buffer pointer
+# s2 : Working address pointer
+# s3 : UART base pointer
+
 .set STACK_SIZE, 256
 .set MICROCODE_SIZE, 2048
 
-# **__**__**__**__**__**__**__**__**__**__**__**__**__**__
-# Port A
-# **__**__**__**__**__**__**__**__**__**__**__**__**__**__
-.set PORT_A_OFFSET, 0
-.set PORT_A_REG, 0
-
-# # **__**__**__**__**__**__**__**__**__**__**__**__**__**__
-# # UART
-# # **__**__**__**__**__**__**__**__**__**__**__**__**__**__
 .include "sets.s"
-# .set UART_OFFSET, 4
-# .set UART_RX_REG_ADDR, 1
-# .set UART_TX_REG_ADDR, 2
 
 # **__**__**__**__**__**__**__**__**__**__**__**__**__**__
 # Ascii
@@ -35,9 +34,12 @@
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
 .global _start
 _start:
-    la t0, rom_data
-    lw s2, PORT_A_OFFSET(t0)        # Port A base
-    lw s3, UART_OFFSET(t0)          # UART
+    la gp, rom_data
+    lw s0, PORT_A_OFFSET(gp)        # Port A base
+    la s1, string_buf               # String scratch buffer
+    la s2, working_addr
+    lw s3, UART_OFFSET(gp)          # UART
+    la tp, keyBuf                   # Pointer to keyboard input buffer
     la sp, stack_bottom             # Initialize Stack
 
     # Boot and send greetings
@@ -45,18 +47,14 @@ _start:
     jal PrintString
 
     # Clear working address
-    la a0, working_addr
+    mv a0, s2
     sw zero, 0(a0)   
 
     jal PrintCursor
 
     # Clear port A
-    # li a0, 0x42
     li a0, 0
     jal WritePortA
-
-# Spin:
-#     j Spin
 
     # Clear key buffer
     jal ClearKeyBuffer
@@ -71,11 +69,6 @@ ScanInput:
     lbu a0, UART_RX_REG_ADDR(s3)    # Access byte just received
 
     jal PrintChar                   # Echo char to Terminal
-    # jal WritePortA
-
-    # li t0, ASCII_EoT                # Check EoT
-    # beq a0, t0, 2f                  # Ignore for now
-    # beq a0, t0, Exit                # Terminate (deprecated)
 
     # If CR then process buffer and store char in buffer
     jal CheckForCR
@@ -121,7 +114,7 @@ ReEntry:
     lw a0, 0(a0)
     jal HexWordToString
 
-    la a0, string_buf
+    mv a0, s1
     jal PrintString
 
     jal PrintCrLn
@@ -168,8 +161,9 @@ PB_EXIT:
 # Moves the cursor back and then print a Space
 # ---------------------------------------------
 CheckForDEL:
-    PrologRa 8
+    PrologRa 12
     sw t0, 8(sp)
+    sw a0, 12(sp)
 
     lbu a0, UART_RX_REG_ADDR(s3)    # Access byte just received
 
@@ -194,8 +188,9 @@ CheckForDEL:
     jal TrimLastKeyBuffer
 
 1:  # Exit
+    lw a0, 12(sp)
     lw t0, 8(sp)
-    EpilogeRa 8
+    EpilogeRa 12
 
     ret
 
@@ -259,16 +254,6 @@ CheckForCR:
 
     ret
 
-# ---------------------------------------------
-# @note WritePortA
-# Input:
-#   a0 is byte to write to port
-# ---------------------------------------------
-WritePortA:
-    sb a0, PORT_A_REG(s2)
-
-    ret
-
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
 # ROM-ish
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
@@ -278,7 +263,7 @@ WritePortA:
 .word 0x00400100                # UART base
 .word 0x00000008                # Mask for Global interrupts of mstatus
 .balign 4
-str_Greet:          .string "\r\nMonitor 0.0.3 - Ranger Retro - Sep 2023\r\n"
+str_Greet:          .string "\r\nMonitor 0.0.4 - Ranger Retro - Sep 2023\r\n"
 .balign 4
 str_Bye:            .string "\r\nBye\r\n"
 .balign 4
@@ -286,16 +271,16 @@ str_Bye:            .string "\r\nBye\r\n"
 str_cmd_error:      .string "Invalid inputs\r\n"
 .balign 4
 .global str_u_load_error
-str_u_load_error:   .string "U: SoT signal not detected\r\n"
+str_u_load_error:   .string "SoT not detected\r\n"
 .balign 4
 .global str_u_data_error
-str_u_data_error:   .string "U: DAT signal not detected\r\n"
+str_u_data_error:   .string "DAT not detected\r\n"
 .balign 4
 .global str_u_loading
 str_u_loading:      .string "Loading...\r\n"
 .balign 4
 .global str_u_load_Wait
-str_u_load_Wait:    .string "Waiting for SoT signal...\r\n"
+str_u_load_Wait:    .string "Waiting for SoT...\r\n"
 .balign 4
 .global str_u_load_cmplt
 str_u_load_cmplt:   .string "Loading complete.\r\n"
@@ -356,38 +341,3 @@ string_buf2: .fill 128, 1, 0        # 128*1 bytes with value 0
 .balign 4
 .skip MICROCODE_SIZE
 
-
-# $$$$$$$$---------------------- JUNK -----------------------------
-    # jal ISR_Enable
-    # jal UART_IRQ_Enable
-
-    # # !!!!!!!!!!!!!!!!!!!!!
-    # jal PrintCrLn
-    # # !!!!!!!!!!!!!!!!!!!!!
-    # li a0, '{'
-    # jal PrintChar
-    # lbu a0, UART_CTRL_REG_ADDR(s3)
-    # jal HexByteToString
-    # la a0, string_buf
-    # jal PrintString
-    # jal PrintCrLn
-    # # !!!!!!!!!!!!!!!!!!!!!
-    # jal UART_IRQ_Enable
-    # li a0, '{'
-    # jal PrintChar
-    # lbu a0, UART_CTRL_REG_ADDR(s3)
-    # jal HexByteToString
-    # la a0, string_buf
-    # jal PrintString
-    # jal PrintCrLn
-    # # !!!!!!!!!!!!!!!!!!!!!
-    # jal UART_IRQ_Disable
-    # # !!!!!!!!!!!!!!!!!!!!!
-    # li a0, '{'
-    # jal PrintChar
-    # lbu a0, UART_CTRL_REG_ADDR(s3)
-    # jal HexByteToString
-    # la a0, string_buf
-    # jal PrintString
-    # jal PrintCrLn
-    # # !!!!!!!!!!!!!!!!!!!!!

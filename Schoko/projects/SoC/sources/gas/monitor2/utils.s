@@ -26,7 +26,7 @@ HexWordToString:
     sw t2, 16(sp)
     sw t3, 20(sp)
 
-    la t0, string_buf           # Pointer to buffer
+    mv t0, s1                   # Pointer to buffer
     li t2, 8                    # Count 8 chars
     li t3, ':'
 
@@ -329,7 +329,7 @@ HexByteToString:
     sw t0, 8(sp)
     sw t1, 12(sp)
 
-    la t0, string_buf           # Pointer to buffer
+    mv t0, s1           # Pointer to buffer
     mv t1, a0                   # Copy argument
 
     # Convert upper Nibble

@@ -15,12 +15,12 @@ Process_E_Command:
     PrologRa
 
     # The first char in the key buffer is the command
-    la t1, keyBuf
+    mv t1, tp
     lbu t1, 0(t1)
     li t0, 'e'
     bne t0, t1, PEC_NH          # Exit if not 'r' command
 
-    la a0, keyBuf
+    mv a0, tp
     addi a0, a0, 1              # Move to 'type'
 
     lbu t1, 0(a0)               # Get char to check

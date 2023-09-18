@@ -19,12 +19,12 @@ Process_W_Command:
     PrologRa
     
     # The first char in the key buffer is the command
-    la t1, keyBuf
+    mv t1, tp
     lbu t1, 0(t1)
     li t0, 'w'
     bne t0, t1, PWC_NH          # Exit if not 'w' command
 
-    la t4, keyBuf               # t4 Points to input buffer
+    mv t4, tp
     addi t4, t4, 1              # Move to 'type'
 
     lbu t1, 0(t4)               # Get char to check
@@ -53,7 +53,7 @@ PWC_Words:
     bne a0, a1, PWC_Error
 
     # Now write word to working address
-    la t0, working_addr         # Point to working address variable
+    mv t0, s2                   # Point to working address variable
     lw t0, 0(t0)                # Fetch value from variable = working address
 
     mv a0, t4
@@ -71,7 +71,7 @@ PWC_Bytes:
     beq zero, a0, PWC_Error
 
     # Fetch the location where bytes will be stored
-    la t0, working_addr         # Point to working address variable
+    mv t0, s2                   # Point to working address variable
     lw t0, 0(t0)                # Fetch value from variable = working address
 
 PWC_BLoop: # Scan for 2 char bytes and repeat until Null reached

@@ -32,8 +32,7 @@ ISR_Set_Trap:
 .global ISR_Enable
 ISR_Enable:
     # Enable machine mode interrupts (default is disabled)
-    la t0, rom_data
-    lw t0, MSTATUS_IRQ_ENABLE(t0)
+    lw t0, MSTATUS_IRQ_ENABLE(gp)
     csrrs zero, mstatus, t0     # Set bit, ignore read
     
     ret
@@ -45,8 +44,7 @@ ISR_Enable:
 .global ISR_Disable
 ISR_Disable:
     # Disable machine mode interrupts (default to disabled)
-    la t0, rom_data
-    lw t0, MSTATUS_IRQ_ENABLE(t0)
+    lw t0, MSTATUS_IRQ_ENABLE(gp)
     csrrc zero, mstatus, t0     # Clear bit, ignore read
     
     ret

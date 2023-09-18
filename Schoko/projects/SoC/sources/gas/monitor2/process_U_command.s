@@ -34,7 +34,7 @@ Process_U_Command:
     PrologRa
 
     # The first char in the key buffer is the command
-    la t1, keyBuf
+    mv t1, tp
     lbu t1, 0(t1)
     li t0, 'u'
     bne t0, t1, PUC_NH              # Exit if not 'u' command
@@ -52,7 +52,7 @@ Process_U_Command:
     la a0, str_u_loading
     jal PrintString
 
-    la t2, working_addr             # Point to working address variable
+    mv t2, s2             # Point to working address variable
     lw t2, 0(t2)                    # Fetch value from variable = working address
 
     # # !!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -99,7 +99,7 @@ PUC_Adr_Skip:
     beq zero, t6, PUC_Store         # Storing or Updating?
 
     # Else: update working addr variable
-    la t2, working_addr             # Point to working address variable
+    mv t2, s2                       # Point to working address variable
     slli t3, t3, 2                  # Convert Addr from Word to Byte addressing
     sw t3, 0(t2)                    # Update address variable
     mv t2, t3                       # Use new working address

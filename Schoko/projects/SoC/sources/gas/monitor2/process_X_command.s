@@ -12,7 +12,7 @@ Process_X_Command:
     PrologRa
     
     # The first char in the key buffer is the command
-    la t1, keyBuf
+    mv t1, tp
     lbu t1, 0(t1)
     li t0, 'x'
     bne t0, t1, PXC_NH          # Exit if not 'x' command
@@ -45,7 +45,7 @@ Process_X_Command:
     jal PrintString
     mv a0, t0                   # Restore for conversion
     jal HexByteToString
-    la a0, string_buf
+    mv a0, s1
     jal PrintString
     li a0, ')'
     jal PrintCharCrLn

@@ -28,6 +28,7 @@ MODULES_FILES = \
 	process_W_command.s \
 	process_U_command.s \
 	process_X_command.s \
+	io_port_A.s \
 	monitor.s
 
 # The order these are listed have a direct impact on
@@ -45,7 +46,8 @@ OBJECT_FILES = \
 	process_R_command.o \
 	process_W_command.o \
 	process_U_command.o \
-	process_X_command.o
+	process_X_command.o \
+	io_port_A.o
 
 # Append BUILD_BIN to every object file because they are
 # located in ram disk.

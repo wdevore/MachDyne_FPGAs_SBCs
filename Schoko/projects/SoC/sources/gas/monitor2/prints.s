@@ -98,12 +98,9 @@ PrintCursor:
     sw t0, 8(sp)
 
     # Print working address
-    la t0, working_addr
+    mv t0, s2
     lw a0, 0(t0)                # Word value to convert
     jal PrintAddress
-    # jal HexWordToString
-    # la a0, string_buf
-    # jal PrintString
 
     li a0, ']'
     jal PrintChar
@@ -125,7 +122,7 @@ PrintAddress:
     PrologRa
 
     jal HexWordToString
-    la a0, string_buf
+    mv a0, s1
     jal PrintString
 
     EpilogeRa

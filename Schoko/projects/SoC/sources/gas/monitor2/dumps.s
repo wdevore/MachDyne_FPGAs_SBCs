@@ -17,14 +17,14 @@ DumpWords:
     # Format:
     # 00000000: 12345678
     # 00000001: 12345678
-    la t0, working_addr         # Pointer to working address
+    mv t0, s2                   # Pointer to working address
     lw t1, 0(t0)                # Fetch value at pointer = new pointer
     mv t2, a0                   # Capture count argument
 
 DW_Loop:
     mv a0, t1                   # t1 points to current working address
     jal HexWordToString         # Convert address (a0) to string
-    la a0, string_buf
+    mv a0, s1
     jal PrintString             # Print address
 
     li a0, ':'
@@ -35,7 +35,7 @@ DW_Loop:
 
     lw a0, 0(t1)                # Fetch value
     jal HexWordToString         # Convert value to string
-    la a0, string_buf
+    mv a0, s1
     jal PrintString             # Print value
 
     li a0, ' '
@@ -116,7 +116,7 @@ DumpBytes:
     sw t3, 20(sp)
     sw t4, 24(sp)
 
-    la t0, working_addr         # Pointer to working address
+    mv t0, s2                   # Pointer to working address
     lw t1, 0(t0)                # Fetch value at pointer = new pointer
     mv t2, a0                   # Capture lines-to-display argument
 
@@ -124,7 +124,7 @@ DB_Loop_Lines:
     li t3, 12                   # How many bytes per line
     mv a0, t1                   # t1 points to current working address
     jal HexWordToString         # Convert address (a0) to string
-    la a0, string_buf
+    mv a0, s1
     jal PrintString             # Print address
 
     li a0, ':'
@@ -138,7 +138,7 @@ DB_Loop_Lines:
 WRD_Loop_Bytes: # Print 3 Words of bytes
     lbu a0, 0(t1)
     jal HexByteToString
-    la a0, string_buf
+    mv a0, s1
     jal PrintString             # Print Byte
 
     li a0, ' '

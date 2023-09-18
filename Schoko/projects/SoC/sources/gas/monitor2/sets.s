@@ -6,3 +6,9 @@
 .set UART_OFFSET, 4
 .set UART_RX_REG_ADDR, 1
 .set UART_TX_REG_ADDR, 2
+
+# **__**__**__**__**__**__**__**__**__**__**__**__**__**__
+# Port A
+# **__**__**__**__**__**__**__**__**__**__**__**__**__**__
+.set PORT_A_OFFSET, 0
+.set PORT_A_REG, 0
