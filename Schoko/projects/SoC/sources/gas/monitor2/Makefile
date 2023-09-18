@@ -16,42 +16,31 @@ HEX_FIRMWARE := $(FIRMWARE).hex
 
 BUILD_BIN = /media/RAMDisk
 
-MODULES_FILES = \
-	utils.s \
-	uart.s \
-	isrs.s \
-	prints.s \
-	dumps.s \
-	process_A_command.s \
-	process_E_command.s \
-	process_R_command.s \
-	process_W_command.s \
-	process_U_command.s \
-	process_X_command.s \
-	io_port_A.s \
-	monitor.s
+MODULES = \
+	monitor \
+	utils \
+	uart \
+	isrs \
+	prints \
+	dumps \
+	process_A_command \
+	process_E_command \
+	process_R_command \
+	process_W_command \
+	process_U_command \
+	process_X_command \
+	io_port_A
+
+MODULES_FILES = $(foreach mod,$(MODULES),$(mod).s)
 
 # The order these are listed have a direct impact on
 # how the linker assembles them. The monitor NEEDS to
 # be listed first such that it is at address 0x00000000.
-OBJECT_FILES = \
-	monitor.o \
-	uart.o \
-	isrs.o \
-	prints.o \
-	utils.o \
-	dumps.o \
-	process_A_command.o \
-	process_E_command.o \
-	process_R_command.o \
-	process_W_command.o \
-	process_U_command.o \
-	process_X_command.o \
-	io_port_A.o
+OBJECT_FILES = $(foreach mod,$(MODULES),$(mod).o)
 
 # Append BUILD_BIN to every object file because they are
 # located in ram disk.
-LINK_FILES = $(foreach fl,$(OBJECT_FILES),$(BUILD_BIN)/$(fl))
+LINK_FILES = $(foreach mod,$(OBJECT_FILES),$(BUILD_BIN)/$(mod))
 
 GAS_PARMS = \
 	-march=rv32im \
