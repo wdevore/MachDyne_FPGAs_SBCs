@@ -30,7 +30,7 @@
 .align 2
 
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
-# Main
+# @note Main
 # __++__++__++__++__++__++__++__++__++__++__++__++__++
 .global _start
 _start:
@@ -42,27 +42,9 @@ _start:
     la tp, keyBuf                   # Pointer to keyboard input buffer
     la sp, stack_bottom             # Initialize Stack
 
-    # Boot and send greetings
-    la a0, str_Greet             # Set pointer to String
-    jal PrintString
+    jal Configure
 
-    # Clear working address
-    mv a0, s2
-    sw zero, 0(a0)   
-
-    jal PrintCursor
-
-    # Clear port A
-    li a0, 0
-    jal WritePortA
-
-    # Clear key buffer
-    jal ClearKeyBuffer
-
-    # Set interrupt trap vector
-    jal ISR_Set_Trap
-
-    # Wait for an incomming byte
+    # Main scan loop. It should never exit.
 ScanInput:
     jal UART_PollRxAvail            # Blocks until byte arrives
 
@@ -84,13 +66,38 @@ ResumeScan:
 
 1:  # CR Not detected
     jal CheckForDEL
-# 2:
+
     j ScanInput                     # Loop (aka Goto)
 
-Exit:
-    la a0, str_Bye
+# ---------------------------------------------
+# @note Configure
+# ---------------------------------------------
+Configure:
+    PrologRa
+
+    # Send boot greeting
+    la a0, str_Greet             # Set pointer to String
     jal PrintString
-    ebreak
+
+    # Clear working address
+    mv a0, s2
+    sw zero, 0(a0)   
+
+    jal PrintCursor
+
+    # Clear port A
+    li a0, 0
+    jal WritePortA
+
+    # Clear key buffer
+    jal ClearKeyBuffer
+
+    # Set interrupt trap vector
+    jal ISR_Set_Trap
+
+    EpilogeRa
+
+    ret
 
 # ---------------------------------------------
 # @note ReEntry
@@ -263,7 +270,7 @@ CheckForCR:
 .word 0x00400100                # UART base
 .word 0x00000008                # Mask for Global interrupts of mstatus
 .balign 4
-str_Greet:          .string "\r\nMonitor 0.0.4 - Ranger Retro - Sep 2023\r\n"
+str_Greet:          .string "\r\nMonitor 0.0.5 - Ranger Retro - Sep 2023\r\n"
 .balign 4
 str_Bye:            .string "\r\nBye\r\n"
 .balign 4

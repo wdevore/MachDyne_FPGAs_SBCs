@@ -31,7 +31,7 @@ module Top
 	// B3 receive from the Client which is the USB/UART's Tx (orange)
 	input  logic PMOD_B3,
 	// B4 sends to the Client which is the USB/UART's Rx (brown)
-	output logic PMOD_B4
+	output logic PMOD_B4,
 
 	// B5 = GRD, B6 = VSS
 	// output logic PMOD_B7,
@@ -40,16 +40,16 @@ module Top
 	// output logic PMOD_B10
 
 	// ------------ SDRAM ---------------------
-	// output [12:0] sdram_a,
-	// inout [15:0] sdram_dq,
-	// output sdram_cs_n,
-	// output sdram_cke,
-	// output sdram_ras_n,
-	// output sdram_cas_n,
-	// output sdram_we_n,
-	// output [1:0] sdram_dm,
-	// output [1:0] sdram_ba,
-	// output sdram_clock
+	output [12:0] sdram_a,
+	inout [15:0] sdram_dq,
+	output sdram_cs_n,
+	output sdram_cke,
+	output sdram_ras_n,
+	output sdram_cas_n,
+	output sdram_we_n,
+	output [1:0] sdram_dm,
+	output [1:0] sdram_ba,
+	output sdram_clock
 );
 
 logic [26:0] counter = 0;
@@ -114,16 +114,16 @@ SoC soc(
 	.port_lb(port_lb),
 
 	// --------------- SDRAM ---------------------
-	// .sdram_a(sdram_a),
-	// .sdram_dq(sdram_dq),
-	// .sdram_cs_n(sdram_cs_n),
-	// .sdram_cke(sdram_cke),
-	// .sdram_ras_n(sdram_ras_n),
-	// .sdram_cas_n(sdram_cas_n),
-	// .sdram_we_n(sdram_we_n),
-	// .sdram_dm(sdram_dm),
-	// .sdram_ba(sdram_ba),
-	// .sdram_clock(sdram_clock),
+	.sdram_a(sdram_a),
+	.sdram_dq(sdram_dq),
+	.sdram_cs_n(sdram_cs_n),
+	.sdram_cke(sdram_cke),
+	.sdram_ras_n(sdram_ras_n),
+	.sdram_cas_n(sdram_cas_n),
+	.sdram_we_n(sdram_we_n),
+	.sdram_dm(sdram_dm),
+	.sdram_ba(sdram_ba),
+	.sdram_clock(sdram_clock),
 
 	// .port_b(port_b)
 	.debug(debug)
