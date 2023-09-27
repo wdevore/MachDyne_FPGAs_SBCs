@@ -94,6 +94,7 @@ module FemtoRV32(
 
    wire isALU = isALUimm | isALUreg;
 
+   // @audit !!! This is a weak concept !!!
    assign mem_access = isLoad | isStore | state[FETCH_INSTR_bit];         // Is memory data access
 
    /***************************************************************************/

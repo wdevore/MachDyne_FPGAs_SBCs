@@ -1,17 +1,26 @@
-# Description
-*Phase 2* integrates GNU Gas assembler for writing a basic Monitor. This does not include a bootloader, just a barebones monitor.
+# Description Phase 4
+This phase is the begining of video integration. Using the Monitor you can call sub routines that plot pixels on the display in a small area in the top left corner. 
+
+A single color per pixel that can be *on* or *off*. That means ```64*64``` = 4096 pixels = 512B.
+
+
+# Video module
+- Has a control register that contains signals for synchronization.
+  - Bit 0 => In: pageFlipBegin, cleared when flip starts
+  - Bit 1 => Out: pageFlipEnd, set when flip completes, cleared by CPU
+
+There are two 
+
+The code first checks that *pageFlipEnd* is cleared. If not it spins. If it is clear then the code can issue another flip by setting *pageFlipBegin*
 
 # Dev setup 
 Open 4 Terminals laid out in quadrants.
 - The upper left runs: ```minicom -b 115200 -o -D /dev/ttyUSB2```
-- The bottome left runs: ```make``` from */media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Schoko/projects/SoC/soc_phase2*
+- The bottome left runs: ```make``` from */media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Schoko/projects/SoC/soc_phase4*
 - The upper right runs the simple Go program to send a byte: ```go run . 0x34``` from */media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Schoko/go_clients/basic*
 
 ## Using the Uploader
 The uploader is used with the Monitor's **u** command. First you issue the **u** command using the Monitor. Then run the uploader as follows: ```go run . /media/RAMDisk/filename.hex```. The *.hex* file is generated from a program within the ```/media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Schoko/projects/SoC/sources/programs``` folder, for example, *simple* program will generate a *.hex* file in the RAMDisk.
-
-## Using custom assembler (<span style="color: red;">Deprecated</span>)
-- The lower right runs the assembler: ```go run . /media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Schoko/projects/SoC/sources/config.json``` from */media/iposthuman/Nihongo/Hardware/RISC-V/RISC-V-Assemblers/basic*
 
 ## Writing micro programs
 Micro programs are small programs that can be loaded into *micro_code* section just after the *stack*.

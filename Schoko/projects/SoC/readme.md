@@ -1,6 +1,12 @@
 # Description
 A port of Femto-intermissum from Verilog to SystemVerilog and Modulerized.
 
+# Daily misc
+- minicom -b 115200 -o -D /dev/ttyUSB2
+- cd /media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Schoko/projects/SoC/sources/gas/monitor2
+- cd /media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/Schoko/projects/SoC/soc_phase4
+- Doc: /media/iposthuman/Nihongo/Hardware/MachDyne_FPGAs_SBCs/resources/riscv Reference Card.pdf
+
 # Links
 - https://github.com/Ravenslofty/yosys-cookbook/blob/master/ecp5.md
 - https://projectf.io/posts/fpga-graphics/
