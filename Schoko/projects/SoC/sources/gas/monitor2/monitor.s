@@ -270,7 +270,7 @@ CheckForCR:
 .word 0x00400100                # UART base
 .word 0x00000008                # Mask for Global interrupts of mstatus
 .balign 4
-str_Greet:          .string "\r\nMonitor 0.0.5 - Ranger Retro - Sep 2023\r\n"
+str_Greet:          .string "\r\nMonitor 0.0.6 - Ranger Retro - Oct 2023\r\n"
 .balign 4
 str_Bye:            .string "\r\nBye\r\n"
 .balign 4

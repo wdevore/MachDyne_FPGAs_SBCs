@@ -93,9 +93,10 @@ module FemtoRV32(
    wire isCSR     = isSYSTEM & (instr[14:12] != 0);
 
    wire isALU = isALUimm | isALUreg;
+   wire isLoadStore = isLoad | isStore;
 
-   // @audit !!! This is a weak concept !!!
-   assign mem_access = isLoad | isStore | state[FETCH_INSTR_bit];         // Is memory data access
+   // @audit !!! mem_access is a weak concept !!!
+   assign mem_access = isLoadStore | state[FETCH_INSTR_bit];         // Is memory data access
 
    /***************************************************************************/
    // The register file.
@@ -273,8 +274,11 @@ module FemtoRV32(
                    (instr[5] ? Simm[ADDR_WIDTH-1:0] : Iimm[ADDR_WIDTH-1:0]);
 
    /* verilator lint_off WIDTH */
+   // @audit Added store/load check
+   // assign mem_addr =   state[WAIT_INSTR_bit] | state[FETCH_INSTR_bit] ?
+   //                     PC : loadstore_addr ;
    assign mem_addr =   state[WAIT_INSTR_bit] | state[FETCH_INSTR_bit] ?
-                       PC : loadstore_addr ;
+                       PC : isLoadStore ? loadstore_addr : 0;
    /* verilator lint_on WIDTH */
 
    /***************************************************************************/

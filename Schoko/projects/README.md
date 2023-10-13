@@ -81,3 +81,31 @@ And then program it:
 $ sudo openocd -f tigard-jtag.cfg -f lfe5u-45f.cfg -c "transport select jtag; init; scan_chain; svf -tap ecp5.tap -quiet -progress blinky.svf; exit"
 ```
 
+# Building FPGA toolchain Yosys
+
+## Yosys
+If new then do:
+- git clone xxx
+- make -j$(nproc)
+
+Otherwise
+- git pull
+
+## Nextpnr
+- git pull
+- git submodule update
+
+## Trellis
+- cmake . -DARCH=ecp5 -DTRELLIS_INSTALL_PREFIX=/usr/local
+- make -j$(nproc)
+- sudo make install
+
+## RISC-V toolchain
+???
+
+## ecpbram
+ecpbram and icebram are used to put the firmware into the bitstream.
+
+The bitstream includes random data (firmware_seed.hex), those tools find the random data and replace it with the actual firmware (firmware.hex).
+
+This lets you update the firmware quickly without having to rebuild the bitstream, which can take several minutes.

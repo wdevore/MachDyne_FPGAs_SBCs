@@ -82,12 +82,42 @@ cpuPLL femto_pll (
 // ------------------------------------------------------------------
 //  @audit-info Memory and Mapping
 // ------------------------------------------------------------------
+// 		|--------------------------| 0x02FFFFFF
+//		|                          |
+//		|         SDRAM            |                 is_sdram = bit[25] | bit[24]
+//		|                          |
+//		|--------------------------| 0x01000000
+//		|                          |
+//		|                          |
+//		|                          |
+//		|                          |
+//		|                          |
+//		|--------------------------| 
+//		|        RGB LED           | 0x0040_0200
+//		|--------------------------| 
+//		|                          |
+//		|          UART            | 0x0040_0100
+//		|                          |                 is_io = (bit[22]) & ~is_sdram
+//		|--------------------------| 
+//		|          Port A          | 0x0040_0000
+//		|--------------------------| 
+//		|                          |
+//		|         BRAM             |
+//		|                          |                 is_bram = ~is_io & ~is_sdram
+//		|                          |
+//		|--------------------------| 0x0000_0000
+
+// Devices
+localparam IO_PORT_A = 8'h00;
+localparam IO_UART = 8'h01;
+localparam IO_BLUE_LED = 8'h02;
+
 // (16384 * 4 =  64K) because each word is 32bits
 // 16384 requires only 14 bits to address
 localparam WORD = 4;
 localparam NRV_RAM = 2**14 * WORD;
-// localparam BIT_WIDTH = $clog2(NRV_RAM);
 
+// localparam BIT_WIDTH = $clog2(NRV_RAM);
 // $clog2(`NRV_RAM)-1
 // logic [19:0] ram_word_address = mem_address[21:2];
 // logic [BIT_WIDTH-1:0] ram_word_address = mem_address[BIT_WIDTH+1:2];
@@ -96,50 +126,36 @@ assign ram_word_address = mem_address[15:2];
 
 // Bit 21->0     is BRAM
 // Bit 22        is IO
-// Bit 24,23     is SDRAM
-
-localparam IO_MEM_MASK = 25'h01C00000;
+// Bit 25,24     is SDRAM
+// localparam IO_MEM_MASK = 32'h01C00000;
 
 // ------------------------------------------------------------------
-//  @audit-info Mapping of IO
+//  @audit-info Mapping of IO (UART, Port A and LED)
 // ------------------------------------------------------------------
 // ----------- 0x00400000 ----------------
-// 0000_0001_1100_0000_0000_0000_0000_0000 = Mask = 1C
 // 0000_0000_0100_0000_0000_0000_0000_0000
-//            |                          |
-//            \--- Bit 22                \--- Bit 0
 logic mem_address_is_io;
-// assign mem_address_is_io =  mem_address[22] & mem_access;
-assign mem_address_is_io = ((mem_address & IO_MEM_MASK) == 25'h0040_0000) & mem_access;
+// assign mem_address_is_io = ((mem_address & IO_MEM_MASK) == 32'h0040_0000);// & mem_access;
+assign mem_address_is_io = mem_address[22] & ~mem_address_is_sdram;
 
 // ------------------------------------------------------------------
 //  @audit-info Mapping of sdram
 // ------------------------------------------------------------------
 logic mem_address_is_sdram;
-// ----------- 0x00800000 -> 0x01800000 ----------------
-// 0000_0001_1000_0000_0000_0000_0000_0000 = mask = 0x01800000
-//         |-|                           |
-//         \--- Bits 24,23               \--- Bit 0
-// assign mem_address_is_sdram = ((sdram_addr & 25'h00f0_0000) == 25'h0080_0000) & mem_access;
-// assign mem_address_is_sdram = ((mem_address & 25'h0180_0000) != 0) & mem_access;
-// assign mem_address_is_sdram = (|mem_address[24:23]) & mem_access;
-// ----------- 0x00800000  -> 0x01800000  ----------------
-// 0000_0000_1000_0000_0000_0000_0000_0000
-//         | |                           |
-//         \-\--- Bit 24, 23             \--- Bit 0
-assign mem_address_is_sdram = (mem_address[24] | mem_address[23]) & mem_access;
+// 0000_0001_0000_0000_0000_0000_0000_0000 -> 0000_0010_1111_1111_1111_1111_1111_1111
+//                              0x01000000 -> 0x02FFFFFF
+//        ||--- Bit 24, 25
+// Mask = 0x03000000
+// localparam SDRAM_MEM_MASK = 32'h03000000;
+// assign mem_address_is_sdram = ((mem_address & SDRAM_MEM_MASK) == SDRAM_MEM_MASK);// & mem_access;
+assign mem_address_is_sdram = (mem_address[25] | mem_address[24]);
 
 // ------------------------------------------------------------------
 //  @audit-info Mapping of Ram
 // ------------------------------------------------------------------
-// ----------- 0x00400000 ----------------
-// 0000_0000_0000_0000_0000_0000_0000_0000 = Mask
-// 0000_0000_0010_0000_0000_0000_0000_0000
-//             |                         |
-//             \--- Bit 21    ->         \--- Bit 0
 logic mem_address_is_ram;
 // assign mem_address_is_ram = !mem_address[22] & mem_access;
-assign mem_address_is_ram = ~mem_address_is_sdram & ~mem_address_is_io & mem_access;
+assign mem_address_is_ram = ~mem_address_is_sdram & ~mem_address_is_io;// & mem_access;
 
 (* no_rw_check *)
 logic [31:0] RAM[0:(NRV_RAM/4)-1];
@@ -171,11 +187,6 @@ end
 // ------------------------------------------------------------------
 // @audit-info IO
 // ------------------------------------------------------------------
-// Devices
-localparam IO_PORT_A = 8'h00;
-localparam IO_UART = 8'h01;
-localparam IO_BLUE_LED = 8'h02;
-
 logic [31:0] io_rdata;
 
 // +++++++++++++++++++++++++++++++
@@ -405,14 +416,18 @@ logic        mem_wstrb;   // Validity strobes
 // Either reading from IO or Ram.
 // assign mem_rdata = ram_rdata;
 // assign mem_rdata = mem_address_is_io ? io_rdata : ram_rdata;
+// @audit !! sdram_rdata is still being accessed ???? !!
 assign mem_rdata = mem_address_is_io ? io_rdata : mem_address_is_sdram ? sdram_rdata : ram_rdata;
 
-// assign mem_rbusy = uart_rbusy;
-assign mem_rbusy = ~uart_cs ? uart_rbusy : mem_address_is_sdram ? sdram_busy : 0;
+// @audit !!! EVALUATING mem_address_is_sdram is still causing interference !!!
+// assign mem_rbusy = 0;
+assign mem_rbusy = uart_rbusy;
+// assign mem_rbusy = uart_cs ? uart_rbusy : 0;
+// assign mem_rbusy = ~uart_cs ? uart_rbusy : mem_address_is_sdram ? sdram_busy : 0;
 
-// @audit !!! THIS CAUSES SDRAM TO INTERFERE WITH FEMTO !!!
-assign mem_wbusy = 0;
-// assign mem_wbusy = mem_address_is_sdram ? sdram_busy : 0;
+// @audit !!! THIS CAUSES SDRAM TO INTERFERENCE WITH FEMTO !!!
+// assign mem_wbusy = 0;
+assign mem_wbusy = mem_address_is_sdram ? sdram_busy : 0;
 
 FemtoRV32 #(
 	.ADDR_WIDTH(`NRV_ADDR_WIDTH),

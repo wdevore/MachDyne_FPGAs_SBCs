@@ -1,6 +1,6 @@
 RISCV_TOOLCHAIN := /opt/riscv/bin/
 # "linux-gnu" or "elf"
-BUILD_TYPE := linux-gnu
+BUILD_TYPE := elf
 GAS := riscv64-unknown-$(BUILD_TYPE)-as
 LD  := riscv64-unknown-$(BUILD_TYPE)-ld
 DUMP := riscv64-unknown-$(BUILD_TYPE)-objdump
