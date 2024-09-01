@@ -1,0 +1,11 @@
+# Disable ModemManager for BlackIce
+ATTRS{idVendor}=="0483", ATTRS{idProduct}=="5740", ENV{ID_MM_DEVICE_IGNORE}="1"
+# Disable ModemManager for TinyFPGA B2
+ATTRS{idVendor}=="1209", ATTRS{idProduct}=="2100", ENV{ID_MM_DEVICE_IGNORE}="1"
+# Disable ModemManager for TinyFPGA BX
+ATTRS{idVendor}=="1d50", ATTRS{idProduct}=="6130", ENV{ID_MM_DEVICE_IGNORE}="1"
+# OpenFPGALoader
+ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="2e8a", ATTRS{idProduct}=="1025", MODE="0666", GROUP="plugdev" ENV{ID_MM_DEVICE_IGNORE}="1"
+# icesugar
+# ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="1d50", ATTRS{idProduct}=="602b", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+ATTR{idVendor}=="1d50", ATTRS{idProduct}=="602b", MODE="0660", GROUP="plugdev", TAG+="uaccess"

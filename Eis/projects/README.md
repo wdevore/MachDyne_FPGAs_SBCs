@@ -75,6 +75,7 @@ See:
 # openFPGALoader
 - https://trabucayre.github.io/openFPGALoader/index.html
 
+```sh
 sudo apt install libftdi1-2 libftdi1-dev libhidapi-hidraw0 libhidapi-dev libudev-dev zlib1g-dev
 
 cmake .. -DENABLE_CMSISDAP=OFF -DBUILD_STATIC=OFF -DENABLE_LIBGPIOD=OFF -DENABLE_UDEV=ON -DLINK_CMAKE_THREADS=ON
@@ -82,4 +83,9 @@ OR
 cmake .. -DENABLE_CMSISDAP=OFF -DBUILD_STATIC=OFF -DENABLE_LIBGPIOD=OFF -DENABLE_UDEV=OFF -DLINK_CMAKE_THREADS=ON
 
 make -j$(nproc)
+```
 
+# dmesg
+```sh
+sudo dmesg | grep FTDI
+```

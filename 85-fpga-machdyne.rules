@@ -1,0 +1,6 @@
+# Machdyne Eis SBC
+ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="2e8a", ATTRS{idProduct}=="1025", MODE="0666", GROUP="plugdev" ENV{ID_MM_DEVICE_IGNORE}="1"
+# Schoko DFU
+#ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="16d0", ATTRS{idProduct}=="116d", MODE="0666", GROUP="plugdev" ENV{ID_MM_DEVICE_IGNORE}="1" 
+# Riegel, Obst
+ATTR{idVendor}=="16d0", ATTRS{idProduct}=="116d", MODE="0666", GROUP="plugdev" TAG+="uaccess"
