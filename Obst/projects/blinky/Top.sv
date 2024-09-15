@@ -1,4 +1,4 @@
-// SCHOKO BLINKY
+// Obst BLINKY
 
 module Top
 #(
