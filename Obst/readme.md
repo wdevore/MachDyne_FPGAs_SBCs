@@ -4,11 +4,11 @@ Build a basic monitor system that communicates via UART and VGA.
 [Obst](https://machdyne.com/product/obst-computer/) is a Lattice ECP5 FPGA (LFE5U-12F). [Github](https://github.com/machdyne/obst).
 
 # Tasks
-- Blinky
-  - makefile
-  - lpf
-  - LED PMOD OR on board RGB
-  - system verilog file
+- Blinky (**DONE**)
+  - makefile (**DONE**)
+  - lpf (**DONE**)
+  - LED PMOD OR on board RGB (**DONE**)
+  - system verilog file (**DONE**)
 - VGA
 - UART
 - Audio
